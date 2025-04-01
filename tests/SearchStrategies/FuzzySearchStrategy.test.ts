@@ -20,4 +20,22 @@ describe('FuzzySearchStrategy', () => {
     expect(FuzzySearchStrategy.matches('lowercase', 'lc')).toBe(true);
     expect(FuzzySearchStrategy.matches('DiFfErENt cASeS', 'dc')).toBe(true);
   });
+
+  it('handles empty strings correctly', () => {
+    expect(FuzzySearchStrategy.matches('', '')).toBe(true);
+    expect(FuzzySearchStrategy.matches('text', '')).toBe(true);
+    expect(FuzzySearchStrategy.matches('', 'pattern')).toBe(false);
+  });
+
+  it('handles null values', () => {
+    expect(FuzzySearchStrategy.matches(null, 'test')).toBe(false);
+  });
+
+  it('matches characters in sequence', () => {
+    expect(FuzzySearchStrategy.matches('hello world', 'hlo wld')).toBe(true);
+    expect(FuzzySearchStrategy.matches('hello world', 'hw')).toBe(true);
+    expect(FuzzySearchStrategy.matches('hello world', 'hlowrd')).toBe(true);
+    expect(FuzzySearchStrategy.matches('hello world', 'wrld')).toBe(true);
+    expect(FuzzySearchStrategy.matches('hello world', 'wh')).toBe(false);
+  });
 }); 
