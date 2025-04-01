@@ -1,38 +1,40 @@
-import test from 'ava';
+import { describe, it, expect } from 'vitest';
 import { OptionsValidator } from '../src/OptionsValidator';
 
-test('can be instanciated with options', t => {
-  const requiredOptions = ['foo', 'bar'];
-  const optionsValidator = new OptionsValidator({
-    required: requiredOptions
+describe('OptionsValidator', () => {
+  it('can be instanciated with options', () => {
+    const requiredOptions = ['foo', 'bar'];
+    const optionsValidator = new OptionsValidator({
+      required: requiredOptions
+    });
+
+    expect(optionsValidator.getRequiredOptions()).toEqual(requiredOptions);
   });
 
-  t.deepEqual(optionsValidator.getRequiredOptions(), requiredOptions);
-});
+  it('returns empty errors array for valid options', () => {
+    const requiredOptions = ['foo', 'bar'];
+    const optionsValidator = new OptionsValidator({
+      required: requiredOptions
+    });
 
-test('returns empty errors array for valid options', t => {
-  const requiredOptions = ['foo', 'bar'];
-  const optionsValidator = new OptionsValidator({
-    required: requiredOptions
+    const errors = optionsValidator.validate({
+      foo: '',
+      bar: ''
+    });
+
+    expect(errors.length).toBe(0);
   });
 
-  const errors = optionsValidator.validate({
-    foo: '',
-    bar: ''
+  it('returns array with errors for invalid options', () => {
+    const requiredOptions = ['foo', 'bar'];
+    const optionsValidator = new OptionsValidator({
+      required: requiredOptions
+    });
+
+    const errors = optionsValidator.validate({
+      foo: ''
+    });
+
+    expect(errors.length).toBe(1);
   });
-
-  t.is(errors.length, 0);
-});
-
-test('returns array with errors for invalid options', t => {
-  const requiredOptions = ['foo', 'bar'];
-  const optionsValidator = new OptionsValidator({
-    required: requiredOptions
-  });
-
-  const errors = optionsValidator.validate({
-    foo: ''
-  });
-
-  t.is(errors.length, 1);
 }); 

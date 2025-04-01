@@ -1,21 +1,23 @@
-import test from 'ava';
+import { describe, it, expect } from 'vitest';
 import FuzzySearchStrategy from '../../src/SearchStrategies/FuzzySearchStrategy';
 
-test('does not match words that don\'t contain the search criteria', t => {
-  t.deepEqual(FuzzySearchStrategy.matches('fuzzy', 'fzyyy'), false);
-  t.deepEqual(FuzzySearchStrategy.matches('react', 'angular'), false);
-  t.deepEqual(FuzzySearchStrategy.matches('what the heck', 'wth?'), false);
-});
+describe('FuzzySearchStrategy', () => {
+  it('does not match words that don\'t contain the search criteria', () => {
+    expect(FuzzySearchStrategy.matches('fuzzy', 'fzyyy')).toBe(false);
+    expect(FuzzySearchStrategy.matches('react', 'angular')).toBe(false);
+    expect(FuzzySearchStrategy.matches('what the heck', 'wth?')).toBe(false);
+  });
 
-test('matches words containing the search criteria', t => {
-  t.deepEqual(FuzzySearchStrategy.matches('fuzzy', 'fzy'), true);
-  t.deepEqual(FuzzySearchStrategy.matches('react', 'rct'), true);
-  t.deepEqual(FuzzySearchStrategy.matches('what the heck', 'wth'), true);
-});
+  it('matches words containing the search criteria', () => {
+    expect(FuzzySearchStrategy.matches('fuzzy', 'fzy')).toBe(true);
+    expect(FuzzySearchStrategy.matches('react', 'rct')).toBe(true);
+    expect(FuzzySearchStrategy.matches('what the heck', 'wth')).toBe(true);
+  });
 
-test('is case insensitive', t => {
-  t.deepEqual(FuzzySearchStrategy.matches('Different Cases', 'dc'), true);
-  t.deepEqual(FuzzySearchStrategy.matches('UPPERCASE', 'upprcs'), true);
-  t.deepEqual(FuzzySearchStrategy.matches('lowercase', 'lc'), true);
-  t.deepEqual(FuzzySearchStrategy.matches('DiFfErENt cASeS', 'dc'), true);
+  it('is case insensitive', () => {
+    expect(FuzzySearchStrategy.matches('Different Cases', 'dc')).toBe(true);
+    expect(FuzzySearchStrategy.matches('UPPERCASE', 'upprcs')).toBe(true);
+    expect(FuzzySearchStrategy.matches('lowercase', 'lc')).toBe(true);
+    expect(FuzzySearchStrategy.matches('DiFfErENt cASeS', 'dc')).toBe(true);
+  });
 }); 

@@ -1,19 +1,19 @@
+type MiddlewareFunction = (prop: string, value: any, template: string) => any;
+
 interface TemplaterOptions {
   pattern?: RegExp;
   template?: string;
-  middleware?: (prop: string, value: any, template: string) => any;
+  middleware?: MiddlewareFunction;
 }
 
 interface Data {
   [key: string]: any;
 }
 
-type MiddlewareFunction = (prop: string, value: any, template: string) => any;
-
 const options: TemplaterOptions & { pattern: RegExp; template: string; middleware: MiddlewareFunction } = {
   pattern: /\{(.*?)\}/g,
   template: '',
-  middleware
+  middleware: function() { return undefined; }
 };
 
 export function setOptions(_options: TemplaterOptions): void {

@@ -1,15 +1,17 @@
-import test from 'ava';
+import { describe, it, expect } from 'vitest';
 import { merge, isJSON } from '../src/utils';
 
-test('merges objects', t => {
-  const defaultOptions = { foo: '', bar: '' };
-  const options = { bar: 'overwritten' };
-  const mergedOptions = merge(defaultOptions, options);
+describe('utils', () => {
+  it('merges objects', () => {
+    const defaultOptions = { foo: '', bar: '' };
+    const options = { bar: 'overwritten' };
+    const mergedOptions = merge(defaultOptions, options);
 
-  t.deepEqual(mergedOptions.foo, defaultOptions.foo);
-  t.deepEqual(mergedOptions.bar, options.bar);
+    expect(mergedOptions.foo).toBe(defaultOptions.foo);
+    expect(mergedOptions.bar).toBe(options.bar);
+  });
+
+  it('returns true if is JSON object', () => {
+    expect(isJSON({ foo: 'bar' })).toBe(true);
+  });
 });
-
-test('returns true if is JSON object', t => {
-  t.true(isJSON({ foo: 'bar' }));
-}); 
