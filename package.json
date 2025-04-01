@@ -3,19 +3,19 @@
   "version": "1.10.0",
   "description": "Simple Jekyll site search using javascript and json",
   "main": "dest/simple-jekyll-search.js",
+  "type": "module",
   "scripts": {
     "cypress": "cypress",
-    "lint": "standard",
+    "lint": "eslint . --ext .ts",
     "pretest": "npm run lint",
     "prebuild": "npm run test",
     "postbuild": "npm run copy-example-code",
-    "browserify": "browserify -p browser-pack-flat/plugin src/index.js | node scripts/stamp.js > dest/simple-jekyll-search.js",
-    "build": "npm run browserify && npm run uglify",
+    "build": "vite build",
     "dist": "npm run build && npm run copy-example-code",
-    "test": "ava",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "start": "cd example; jekyll serve",
-    "copy-example-code": "cp dest/* example/js/",
-    "uglify": "uglifyjs --compress --mangle --ie8 --comments \"/^/*!/\" --output dest/simple-jekyll-search.min.js dest/simple-jekyll-search.js"
+    "copy-example-code": "cp dest/* example/js/"
   },
   "repository": {
     "type": "git",
@@ -35,12 +35,15 @@
     "fuzzysearch": "^1.0.3"
   },
   "devDependencies": {
-    "ava": "^3.14.0",
-    "browser-pack-flat": "^3.4.2",
-    "browserify": "^17.0.0",
+    "@types/node": "^20.11.24",
+    "@typescript-eslint/eslint-plugin": "^7.1.0",
+    "@typescript-eslint/parser": "^7.1.0",
     "cypress": "^6.2.0",
-    "standard": "^16.0.3",
-    "uglify-js": "^3.12.3"
+    "eslint": "^8.57.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3",
+    "vite": "^6.2.4",
+    "vitest": "^3.1.1"
   },
   "standard": {
     "ignore": [
