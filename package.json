@@ -1,7 +1,7 @@
 {
   "name": "simple-jekyll-search",
-  "version": "1.10.0",
-  "description": "Simple Jekyll site search using javascript and json",
+  "version": "1.10.1",
+  "description": "Fork of Simple Jekyll Search from https://github.com/christian-fei/Simple-Jekyll-Search",
   "main": "dest/simple-jekyll-search.js",
   "type": "module",
   "scripts": {
@@ -19,9 +19,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/christian-fei/Simple-Jekyll-Search.git"
+    "url": "git+https://github.com/sylhare/Simple-Jekyll-Search.git"
   },
-  "author": "Christian Fei",
+  "author": "Sylhare (Original: Christian Fei)",
   "license": "MIT",
   "files": [
     "dest",
