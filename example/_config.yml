@@ -1,0 +1,11 @@
+# Site settings
+title: Simple Jekyll Search
+email: your-email@domain.com
+description: A simple search solution for Jekyll sites
+baseurl: ""
+url: ""
+
+# Build settings
+markdown: kramdown
+sass:
+  style: compressed
