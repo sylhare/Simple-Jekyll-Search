@@ -1,29 +1,18 @@
 name: Simple-Jekyll-Search
 on: [push]
 jobs:
-  build_deploy:
-    runs-on: ubuntu-18.04
+  build:
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          ref: refs/heads/master
-      - name: install
-        run: |
-          npm install
-      - name: test
-        run: |
-          npm t
-      # - name: start server for uat
-      #   run: |
-      #     npx http-server example/_site -p 4000 
-      # - name: uat
-      #   uses: cypress-io/github-action@v2
-      #   with:
-      #     record: false
-      #     # cache-key: node-v${{ matrix.node }}-on-${{ runner.os }}-hash-${{ hashFiles('package-lock.json') }}
-      - name: publish
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          npm config set '//registry.npmjs.org/:_authToken' "${{ secrets.NPM_TOKEN }}"
-          npm publish || true
+          node-version: '22'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Run tests
+        run: npm test
+      - name: Build application
+        run: npm run build
