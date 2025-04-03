@@ -14,7 +14,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": false,
-    "sourceMap": true,
+    "sourceMap": false,
     "typeRoots": ["./node_modules/@types", "./src/types"]
   },
   "files": ["src/index.ts"],
