@@ -71,9 +71,6 @@ For example in  **_layouts/default.html**:
 <!-- HTML elements for search -->
 <input type="text" id="search-input" placeholder="Search blog posts..">
 <ul id="results-container"></ul>
-
-<!-- or without installing anything -->
-<script src="https://unpkg.com/simple-jekyll-search@latest/dest/simple-jekyll-search.min.js"></script>
 ```
 
 
@@ -106,22 +103,19 @@ sjs.search('Hello')
 
 ## Options
 
-Here is a list of the available options, usage questions, troubleshooting & guides.
+Here is a table for the available options, usage questions, troubleshooting & guides:
 
-### searchInput (Element) [required]
-
-The input element on which the plugin should listen for keyboard event and trigger the searching and rendering for articles.
-
-
-### resultsContainer (Element) [required]
-
-The container element in which the search results should be rendered in. Typically a `<ul>`.
-
-
-### json (String|JSON) [required]
-
-You can either pass in an URL to the `search.json` file, or the results in form of JSON directly, to save one round trip to get the data.
-
+| Option             | Type          | Required | Description                                                                                       |
+|--------------------|---------------|----------|---------------------------------------------------------------------------------------------------|
+| `searchInput`      | Element       | Yes      | The input element on which the plugin should listen for keyboard events and trigger the searching and rendering for articles. |
+| `resultsContainer` | Element       | Yes      | The container element in which the search results should be rendered in. Typically, a `<ul>`.      |
+| `json`             | String \| JSON | Yes      | You can either pass in an URL to the `search.json` file, or the results in form of JSON directly, to save one round trip to get the data. |
+| `noResultsText`    | String        | No       | The HTML that will be shown if the query didn't match anything.                                    |
+| `limit`            | Number        | No       | You can limit the number of posts rendered on the page.                                            |
+| `fuzzy`            | Boolean       | No       | Enable fuzzy search to allow less restrictive matching.                                            |
+| `exclude`          | Array         | No       | Pass in a list of terms you want to exclude (terms will be matched against a regex, so URLs, words are allowed). |
+| `success`          | Function      | No       | A function called once the data has been loaded.                                                   |
+| `debounceTime`     | Number        | No       | Limit how many times the search function can be executed over the given time window. If no `debounceTime` (milliseconds) is provided a search will be triggered on each keystroke. |
 
 ### searchResultTemplate (String) [optional]
 
@@ -161,7 +155,6 @@ If the `search.json` contains this data
     }
 ]
 ```
-
 
 ### templateMiddleware (Function) [optional]
 
@@ -209,95 +202,7 @@ SimpleJekyllSearch({
 })
 ```
 
-### noResultsText (String) [optional]
-
-The HTML that will be shown if the query didn't match anything.
-
-
-### limit (Number) [optional]
-
-You can limit the number of posts rendered on the page.
-
-
-### fuzzy (Boolean) [optional]
-
-Enable fuzzy search to allow less restrictive matching.
-
-### exclude (Array) [optional]
-
-Pass in a list of terms you want to exclude (terms will be matched against a regex, so URLs, words are allowed).
-
-### success (Function) [optional]
-
-A function called once the data has been loaded.
-
-### debounceTime (Number) [optional]
-
-Limit how many times the search function can be executed over the given time window. This is especially useful to improve the user experience when searching over a large dataset (either with rare terms or because the number of posts to display is large). If no `debounceTime` (milliseconds) is provided a search will be triggered on each keystroke.
-
 ---
-
-## If search isn't working due to invalid JSON
-
-- There is a filter plugin in the _plugins folder which should remove most characters that cause invalid JSON. To use it, add the simple_search_filter.rb file to your _plugins folder, and use `remove_chars` as a filter.
-
-For example: in search.json, replace
-
-```json
-"content": "{{ page.content | strip_html | strip_newlines }}"
-```
-
-with
-
-```json
-"content": "{{ page.content | strip_html | strip_newlines | remove_chars | escape }}"
-```
-
-If this doesn't work when using Github pages you can try `jsonify` to make sure the content is json compatible:
-
-```js
-"content": {{ page.content | jsonify }}
-```
-
-**Note: you don't need to use quotes `"` in this since `jsonify` automatically inserts them.**
-
-
-## Enabling full-text search
-
-Replace `search.json` with the following code:
-
-```yaml
----
-layout: none
----
-[
-  {% for post in site.posts %}
-    {
-      "title"    : "{{ post.title | escape }}",
-      "category" : "{{ post.category }}",
-      "tags"     : "{{ post.tags | join: ', ' }}",
-      "url"      : "{{ site.baseurl }}{{ post.url }}",
-      "date"     : "{{ post.date }}",
-      "content"  : "{{ post.content | strip_html | strip_newlines }}"
-    } {% unless forloop.last %},{% endunless %}
-  {% endfor %}
-  ,
-  {% for page in site.pages %}
-   {
-     {% if page.title != nil %}
-        "title"    : "{{ page.title | escape }}",
-        "category" : "{{ page.category }}",
-        "tags"     : "{{ page.tags | join: ', ' }}",
-        "url"      : "{{ site.baseurl }}{{ page.url }}",
-        "date"     : "{{ page.date }}",
-        "content"  : "{{ page.content | strip_html | strip_newlines }}"
-     {% endif %}
-   } {% unless forloop.last %},{% endunless %}
-  {% endfor %}
-]
-```
-
-
 
 ## Development
 
@@ -306,29 +211,13 @@ layout: none
 
 #### Acceptance tests
 
+This should start and kill the example jekyll blog and run the cypress tests
+
 ```bash
-cd example; jekyll serve
-
-# in another tab
-
-npm run cypress -- run
+npm run cypress -- run 
 ```
 
 ## Contributors
 
-Thanks to all [contributors](https://github.com/christian-fei/Simple-Jekyll-Search/graphs/contributors) over the years! You are the best :)
+Fork from [Chirstian Fei](https://github.com/christian-fei/Simple-Jekyll-Search/graphs/contributors).
 
-> [@daviddarnes](https://github.com/daviddarnes)
-[@XhmikosR](https://github.com/XhmikosR)
-[@PeterDaveHello](https://github.com/PeterDaveHello)
-[@mikeybeck](https://github.com/mikeybeck)
-[@egladman](https://github.com/egladman)
-[@midzer](https://github.com/midzer)
-[@eduardoboucas](https://github.com/eduardoboucas)
-[@kremalicious](https://github.com/kremalicious)
-[@tibotiber](https://github.com/tibotiber)
-and many others!
-
-## Stargazers over time
-
-[![Stargazers over time](https://starchart.cc/christian-fei/Simple-Jekyll-Search.svg)](https://starchart.cc/christian-fei/Simple-Jekyll-Search)
