@@ -38,3 +38,22 @@ $on-laptop:        800px;
 @mixin vertical-rhythm {
   margin-bottom: $spacing-unit-sm;
 }
+
+#results-container {
+  margin-top: $spacing-unit;
+}
+#search-demo-container {
+  max-width: 40em;
+  padding: 1em;
+  margin: 1em auto;
+  border: 1px solid lightgrey;
+}
+#search-input {
+  display: inline-block;
+  padding: .5em;
+  width: 100%;
+  font-size: 0.8em;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}
