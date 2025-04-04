@@ -6,6 +6,8 @@
   "type": "module",
   "scripts": {
     "cypress": "cypress",
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run",
     "lint": "eslint . --ext .ts",
     "pretest": "npm run lint",
     "prebuild": "npm run test",
@@ -42,5 +44,9 @@
     "typescript": "^5.3.3",
     "vite": "^6.2.4",
     "vitest": "^3.1.1"
+  },
+  "ts-node": {
+    "esm": true,
+    "experimentalSpecifierResolution": "node"
   }
 }
