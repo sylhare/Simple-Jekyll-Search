@@ -1,5 +1,5 @@
-describe('Simple Jekyll Search', function () {
-  it('Searching a Post', function () {
+describe('Simple Jekyll Search', () => {
+  it('Searching a Post', () => {
     cy.visit('http://localhost:4000')
 
     cy.get('#search-input')
@@ -9,7 +9,7 @@ describe('Simple Jekyll Search', function () {
       .contains('This is just a test')
   })
 
-  it('Searching a Post follows link with query', function () {
+  it('Searching a Post follows link with query', () => {
     cy.visit('http://localhost:4000')
 
     cy.get('#search-input')
@@ -22,12 +22,13 @@ describe('Simple Jekyll Search', function () {
     cy.url().should('include', '?query=This')
   })
 
-  it('No results found', function () {
+  it('No results found', () => {
     cy.visit('http://localhost:4000')
 
     cy.get('#search-input')
-      .type('404')
+      .type('random')
 
-    cy.contains('No results found')
+    cy.get('#results-container')
+      .contains('No results found')
   })
-})
+}) 

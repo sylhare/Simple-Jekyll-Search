@@ -1,5 +1,5 @@
 // ***********************************************************
-// This example plugins/index.js can be used to load plugins
+// This example plugins/index.ts can be used to load plugins
 //
 // You can change the location of this file or turn off loading
 // the plugins file with the 'pluginsFile' configuration option.
@@ -12,24 +12,24 @@
 // the project's config changing)
 
 import { exec } from 'child_process';
-import { promisify } from 'util';
-import http from 'http';
-import { fileURLToPath } from 'url';
+import http, { IncomingMessage } from 'http';
 import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
+import { promisify } from 'util';
 
 const execAsync = promisify(exec);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-let jekyllProcess = null;
+let jekyllProcess: any = null;
 
 console.log('Cypress plugin loaded!');
 
-function waitForServer(url, maxAttempts = 10) {
-  return new Promise((resolve, reject) => {
+function waitForServer(url: string, maxAttempts = 10): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
     let attempts = 0;
     const checkServer = () => {
       attempts++;
-      http.get(url, (res) => {
+      http.get(url, (res: IncomingMessage) => {
         if (res.statusCode === 200) {
           resolve();
         } else {
@@ -39,7 +39,7 @@ function waitForServer(url, maxAttempts = 10) {
             setTimeout(checkServer, 1000);
           }
         }
-      }).on('error', (err) => {
+      }).on('error', (err: Error) => {
         if (attempts >= maxAttempts) {
           reject(err);
         } else {
@@ -51,7 +51,7 @@ function waitForServer(url, maxAttempts = 10) {
   });
 }
 
-async function startJekyllServer() {
+async function startJekyllServer(): Promise<void> {
   const exampleDir = join(__dirname, '..', '..', 'example');
   console.log('Starting Jekyll server in:', exampleDir);
   
@@ -80,7 +80,7 @@ async function startJekyllServer() {
   }
 }
 
-export default function(on, config) {
+export default function(on: any, _config: any) {
   console.log('Plugin setup function called!');
   
   on('before:run', async () => {
@@ -105,4 +105,4 @@ export default function(on, config) {
       }
     }
   });
-}
+} 
