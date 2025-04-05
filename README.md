@@ -218,5 +218,4 @@ npm run cypress -- run
 
 ## Contributors
 
-Fork from [Chirstian Fei](https://github.com/christian-fei/Simple-Jekyll-Search/graphs/contributors).
-
+Fork from [Christian Fei](https://github.com/christian-fei/Simple-Jekyll-Search/graphs/contributors).
