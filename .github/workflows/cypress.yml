@@ -9,11 +9,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
+          cache: 'yarn'
       - name: Install dependencies
-        run: npm ci
+        run: yarn ci
       - name: Build application
-        run: npm run build
+        run: yarn run build
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
@@ -28,4 +28,4 @@ jobs:
           cd example
           bundle exec jekyll build
       - name: Run Cypress tests
-        run: npm run cypress -- run 
+        run: yarn run cypress -- run 
