@@ -204,11 +204,8 @@
   }
   function isJSON(json) {
     try {
-      if (json instanceof Object && JSON.parse(JSON.stringify(json))) {
-        return true;
-      }
-      return false;
-    } catch (err) {
+      return !!(json instanceof Object && JSON.parse(JSON.stringify(json)));
+    } catch (_err) {
       return false;
     }
   }

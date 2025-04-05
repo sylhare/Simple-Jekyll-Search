@@ -1,19 +1,20 @@
 {
   "name": "simple-jekyll-search",
-  "version": "1.10.1",
+  "version": "1.11.0",
   "description": "Fork of Simple Jekyll Search from https://github.com/christian-fei/Simple-Jekyll-Search",
   "main": "dest/simple-jekyll-search.js",
   "type": "module",
   "scripts": {
     "cypress": "cypress",
-    "cypress:open": "cypress open",
+    "cypress:ci": "node scripts/start-jekyll.js && cypress run",
     "cypress:run": "cypress run",
+    "precypress:run": "node scripts/start-jekyll.js",
+    "postcypress:run": "node scripts/kill-jekyll.js",
     "lint": "eslint . --ext .ts",
     "pretest": "yarn run lint",
+    "build": "vite build && terser dest/simple-jekyll-search.js -o dest/simple-jekyll-search.min.js",
     "prebuild": "yarn run test",
     "postbuild": "node scripts/stamp.js < dest/simple-jekyll-search.min.js > dest/simple-jekyll-search.min.js.tmp && mv dest/simple-jekyll-search.min.js.tmp dest/simple-jekyll-search.min.js && yarn run copy-example-code",
-    "build": "vite build && terser dest/simple-jekyll-search.js -o dest/simple-jekyll-search.min.js",
-    "dist": "yarn run build && yarn run copy-example-code",
     "test": "vitest run",
     "test:watch": "vitest",
     "start": "cd example; jekyll serve",
@@ -23,7 +24,7 @@
     "type": "git",
     "url": "git+https://github.com/sylhare/Simple-Jekyll-Search.git"
   },
-  "author": "Sylhare (Original: Christian Fei)",
+  "author": "Sylhare",
   "license": "MIT",
   "files": [
     "dest",

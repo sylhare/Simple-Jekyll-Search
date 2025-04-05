@@ -11,7 +11,7 @@ jobs:
           node-version: '22'
           cache: 'yarn'
       - name: Install dependencies
-        run: yarn ci
+        run: yarn install --frozen-lockfile
       - name: Build application
         run: yarn run build
       - name: Setup Ruby
@@ -28,4 +28,6 @@ jobs:
           cd example
           bundle exec jekyll build
       - name: Run Cypress tests
-        run: yarn run cypress -- run 
+        run: yarn run cypress:ci
+        env:
+          NODE_NO_WARNINGS: 1

@@ -49,7 +49,6 @@ layout: none
 ]
 ```
 
-
 ## Preparing the plugin
 
 ### Add DOM elements
