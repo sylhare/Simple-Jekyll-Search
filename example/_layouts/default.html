@@ -20,7 +20,7 @@
 
     {% include footer.html %}
 
-    <script src="{{ site.baseurl }}/js/simple-jekyll-search.min.js"></script>
+    <script src="{{ '/assets/js/simple-jekyll-search.min.js' | prepend: site.baseurl }}"></script>
 
     <script>
       window.simpleJekyllSearch = new SimpleJekyllSearch({
@@ -30,7 +30,7 @@
         searchResultTemplate: '<li><a href="{url}?query={query}" title="{desc}">{title}</a></li>',
         noResultsText: 'No results found',
         limit: 10,
-        fuzzy: false,
+        fuzzy: true,
         exclude: ['Welcome']
       })
     </script>

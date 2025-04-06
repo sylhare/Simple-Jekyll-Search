@@ -1,27 +1,30 @@
 {
   "name": "simple-jekyll-search",
-  "version": "1.10.0",
-  "description": "Simple Jekyll site search using javascript and json",
+  "version": "1.11.0",
+  "description": "Fork of Simple Jekyll Search from https://github.com/christian-fei/Simple-Jekyll-Search",
   "main": "dest/simple-jekyll-search.js",
+  "type": "module",
   "scripts": {
     "cypress": "cypress",
-    "lint": "standard",
-    "pretest": "npm run lint",
-    "prebuild": "npm run test",
-    "postbuild": "npm run copy-example-code",
-    "browserify": "browserify -p browser-pack-flat/plugin src/index.js | node scripts/stamp.js > dest/simple-jekyll-search.js",
-    "build": "npm run browserify && npm run uglify",
-    "dist": "npm run build && npm run copy-example-code",
-    "test": "ava",
+    "cypress:ci": "node scripts/start-jekyll.js && cypress run",
+    "cypress:run": "cypress run",
+    "precypress:run": "node scripts/start-jekyll.js",
+    "postcypress:run": "node scripts/kill-jekyll.js",
+    "lint": "eslint . --ext .ts",
+    "pretest": "yarn run lint",
+    "build": "vite build && terser dest/simple-jekyll-search.js -o dest/simple-jekyll-search.min.js",
+    "prebuild": "yarn run test",
+    "postbuild": "node scripts/stamp.js < dest/simple-jekyll-search.min.js > dest/simple-jekyll-search.min.js.tmp && mv dest/simple-jekyll-search.min.js.tmp dest/simple-jekyll-search.min.js && yarn run copy-example-code",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "start": "cd example; jekyll serve",
-    "copy-example-code": "cp dest/* example/js/",
-    "uglify": "uglifyjs --compress --mangle --ie8 --comments \"/^/*!/\" --output dest/simple-jekyll-search.min.js dest/simple-jekyll-search.js"
+    "copy-example-code": "cp dest/* example/assets/js/"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/christian-fei/Simple-Jekyll-Search.git"
+    "url": "git+https://github.com/sylhare/Simple-Jekyll-Search.git"
   },
-  "author": "Christian Fei",
+  "author": "Sylhare",
   "license": "MIT",
   "files": [
     "dest",
@@ -31,22 +34,20 @@
     "url": "https://github.com/christian-fei/Simple-Jekyll-Search/issues"
   },
   "homepage": "https://github.com/christian-fei/Simple-Jekyll-Search",
-  "dependencies": {
-    "fuzzysearch": "^1.0.3"
-  },
   "devDependencies": {
-    "ava": "^3.14.0",
-    "browser-pack-flat": "^3.4.2",
-    "browserify": "^17.0.0",
-    "cypress": "^6.2.0",
-    "standard": "^16.0.3",
-    "uglify-js": "^3.12.3"
+    "@types/node": "^20.11.24",
+    "@typescript-eslint/eslint-plugin": "^8.29.0",
+    "@typescript-eslint/parser": "^8.29.0",
+    "cypress": "^14.1.0",
+    "eslint": "^9.24.0",
+    "terser": "^5.39.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3",
+    "vite": "^6.2.4",
+    "vitest": "^3.1.1"
   },
-  "standard": {
-    "ignore": [
-      "cypress/**",
-      "example/**",
-      "dest/**"
-    ]
+  "ts-node": {
+    "esm": true,
+    "experimentalSpecifierResolution": "node"
   }
 }

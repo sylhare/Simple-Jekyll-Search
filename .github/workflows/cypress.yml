@@ -1,0 +1,33 @@
+name: Cypress Tests
+on: [push]
+jobs:
+  cypress:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'yarn'
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+      - name: Build application
+        run: yarn run build
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+      - name: Install Jekyll dependencies
+        run: |
+          cd example
+          bundle install
+      - name: Build Jekyll site
+        run: |
+          cd example
+          bundle exec jekyll build
+      - name: Run Cypress tests
+        run: yarn run cypress:ci
+        env:
+          NODE_NO_WARNINGS: 1
