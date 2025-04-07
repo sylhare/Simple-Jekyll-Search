@@ -13,12 +13,6 @@ const optionsValidator = new OptionsValidator({
   required: REQUIRED_OPTIONS
 });
 
-declare global {
-  interface Window {
-    SimpleJekyllSearch: (options: SearchOptions) => SimpleJekyllSearchInstance;
-  }
-}
-
 const debounce = (func: () => void, delayMillis: number | null): void => {
   if (delayMillis) {
     clearTimeout(debounceTimerHandle);
