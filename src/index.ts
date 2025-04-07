@@ -1,67 +1,13 @@
-interface SearchResult {
-  url: string;
-  desc: string;
-  title: string;
-  query?: string;
-  [key: string]: string | undefined;
-}
-
-interface SearchData {
-  title: string;
-  category?: string;
-  tags?: string;
-  url: string;
-  date?: string;
-  [key: string]: string | undefined;
-}
-
-interface SearchOptions {
-  searchInput: HTMLInputElement;
-  resultsContainer: HTMLElement;
-  json: SearchData[] | string;
-  success?: (this: { search: (query: string) => void }) => void;
-  searchResultTemplate?: string;
-  templateMiddleware?: (prop: string, value: string, template: string) => string | undefined;
-  sortMiddleware?: (a: SearchResult, b: SearchResult) => number;
-  noResultsText?: string;
-  limit?: number;
-  fuzzy?: boolean;
-  debounceTime?: number | null;
-  exclude?: string[];
-  onSearch?: () => void;
-}
-
-interface SimpleJekyllSearchInstance {
-  search: (query: string) => void;
-}
-
-const DEFAULT_OPTIONS: SearchOptions = {
-  searchInput: null!,
-  resultsContainer: null!,
-  json: [],
-  success: function(this: { search: (query: string) => void }) {},
-  searchResultTemplate: '<li><a href="{url}" title="{desc}">{title}</a></li>',
-  templateMiddleware: (_prop: string, _value: string, _template: string) => undefined,
-  sortMiddleware: () => 0,
-  noResultsText: 'No results found',
-  limit: 10,
-  fuzzy: false,
-  debounceTime: null,
-  exclude: [],
-  onSearch: () => {}
-};
-
-const REQUIRED_OPTIONS = ['searchInput', 'resultsContainer', 'json'];
-const WHITELISTED_KEYS = new Set([13, 16, 20, 37, 38, 39, 40, 91]);
-
-let options: SearchOptions = { ...DEFAULT_OPTIONS };
-let debounceTimerHandle: NodeJS.Timeout;
-
 import { load as loadJSON } from './JSONLoader';
 import { OptionsValidator } from './OptionsValidator';
 import { put, search as repositorySearch, setOptions as setRepositoryOptions } from './Repository';
 import { compile as compileTemplate, setOptions as setTemplaterOptions } from './Templater';
 import { isJSON, merge } from './utils';
+import { DEFAULT_OPTIONS, REQUIRED_OPTIONS, WHITELISTED_KEYS } from './utils/default';
+import { SearchData, SearchOptions, SearchResult, SimpleJekyllSearchInstance } from './utils/types';
+
+let options: SearchOptions = { ...DEFAULT_OPTIONS };
+let debounceTimerHandle: NodeJS.Timeout;
 
 const optionsValidator = new OptionsValidator({
   required: REQUIRED_OPTIONS
