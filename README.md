@@ -1,34 +1,20 @@
-# [Simple-Jekyll-Search](https://www.npmjs.com/package/simple-jekyll-search)
-
-[![Build Status](https://img.shields.io/travis/christian-fei/Simple-Jekyll-Search/master.svg?)](https://travis-ci.org/christian-fei/Simple-Jekyll-Search)
-[![dependencies Status](https://img.shields.io/david/christian-fei/Simple-Jekyll-Search.svg)](https://david-dm.org/christian-fei/Simple-Jekyll-Search)
-[![devDependencies Status](https://img.shields.io/david/dev/christian-fei/Simple-Jekyll-Search.svg)](https://david-dm.org/christian-fei/Simple-Jekyll-Search?type=dev)
+# Simple-Jekyll-Search
 
 A JavaScript library to add search functionality to any Jekyll blog.
 
 ## Use case
 
-You have a blog, built with Jekyll, and want a **lightweight search functionality** on your blog, purely client-side?
-
-*No server configurations or databases to maintain*.
-
-Just **5 minutes** to have a **fully working searchable blog**.
-
----
-
-## Installation
-
-### npm
-
-```sh
-npm install simple-jekyll-search
-```
+You have a blog built with Jekyll and want a **lightweight search functionality** that is:
+- Purely client-side
+- No server configurations or databases to maintain
+- Set up in just **5 minutes**
 
 ## Getting started
 
 ### Create `search.json`
 
-Place the following code in a file called `search.json` in the **root** of your Jekyll blog. (You can also get a copy [from here](/example/search.json))
+Place the following code in a file called `search.json` in the **root** of your Jekyll blog. 
+(You can also get a copy [from here](/example/search.json))
 
 This file will be used as a small data source to perform the searches on the client side:
 
@@ -49,22 +35,18 @@ layout: none
 ]
 ```
 
-## Preparing the plugin
+### Preparing the plugin
 
-### Add DOM elements
+#### Add DOM elements
 
 SimpleJekyllSearch needs two `DOM` elements to work:
 
 - a search input field
 - a result container to display the results
 
-#### Give me the code
-
-Here is the code you can use with the default configuration:
-
-You need to place the following code within the layout where you want the search to appear. (See the configuration section below to customize it)
-
-For example in  **_layouts/default.html**:
+For example with the default configuration, 
+you need to place the following code within the layout where you want the search to appear.
+(See the configuration section below to customize it)
 
 ```html
 <!-- HTML elements for search -->
@@ -72,10 +54,9 @@ For example in  **_layouts/default.html**:
 <ul id="results-container"></ul>
 ```
 
+### Usage
 
-## Usage
-
-Customize SimpleJekyllSearch by passing in your configuration options:
+Customize `SimpleJekyllSearch` by passing in your configuration options:
 
 ```js
 var sjs = SimpleJekyllSearch({
@@ -85,13 +66,13 @@ var sjs = SimpleJekyllSearch({
 })
 ```
 
-### returns { search }
+The script and library needs to be imported in the `head` of your layout, or at the end of the `body` tag.
+
+#### returns { search }
 
 A new instance of SimpleJekyllSearch returns an object, with the only property `search`.
+The `search` is a function used to simulate a user input and display the matching results.
 
-`search` is a function used to simulate a user input and display the matching results. 
-
-E.g.:
 
 ```js
 var sjs = SimpleJekyllSearch({ ...options })
@@ -169,13 +150,12 @@ Example:
 
 ```js
 SimpleJekyllSearch({
-  ...
+  // ...other config
   templateMiddleware: function(prop, value, template) {
     if (prop === 'bar') {
       return value.replace(/^\//, '')
     }
-  }
-  ...
+  },
 })
 ```
 
@@ -191,31 +171,11 @@ Example:
 
 ```js
 SimpleJekyllSearch({
-  ...
+  // ...other config
   sortMiddleware: function(a, b) {
     var astr = String(a.section) + "-" + String(a.caption);
     var bstr = String(b.section) + "-" + String(b.caption);
     return astr.localeCompare(bstr)
-  }
-  ...
+  },
 })
 ```
-
----
-
-## Development
-
-- `npm install`
-- `npm test`
-
-#### Acceptance tests
-
-This should start and kill the example jekyll blog and run the cypress tests
-
-```bash
-npm run cypress -- run 
-```
-
-## Contributors
-
-Fork from [Christian Fei](https://github.com/christian-fei/Simple-Jekyll-Search/graphs/contributors).
