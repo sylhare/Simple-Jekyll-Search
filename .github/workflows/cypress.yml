@@ -21,11 +21,11 @@ jobs:
           bundler-cache: true
       - name: Install Jekyll dependencies
         run: |
-          cd example
+          cd docs
           bundle install
       - name: Build Jekyll site
         run: |
-          cd example
+          cd docs
           bundle exec jekyll build
       - name: Run Cypress tests
         run: yarn run cypress:ci

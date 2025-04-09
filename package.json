@@ -17,8 +17,8 @@
     "postbuild": "node scripts/stamp.js < dest/simple-jekyll-search.min.js > dest/simple-jekyll-search.min.js.tmp && mv dest/simple-jekyll-search.min.js.tmp dest/simple-jekyll-search.min.js && yarn run copy-example-code",
     "test": "vitest run",
     "test:watch": "vitest",
-    "start": "cd example; jekyll serve",
-    "copy-example-code": "cp dest/* example/assets/js/"
+    "start": "cd docs; jekyll serve",
+    "copy-example-code": "cp dest/* docs/assets/js/"
   },
   "repository": {
     "type": "git",

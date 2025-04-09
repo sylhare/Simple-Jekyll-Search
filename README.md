@@ -13,8 +13,8 @@ You have a blog built with Jekyll and want a **lightweight search functionality*
 
 ### Create `search.json`
 
-Place the following code in a file called `search.json` in the **root** of your Jekyll blog. 
-(You can also get a copy [from here](/example/search.json))
+Place the following code in a file called `search.json` in your Jekyll blog. 
+(You can also get a copy [from here](/docs/assets/data/search.json))
 
 This file will be used as a small data source to perform the searches on the client side:
 
@@ -62,7 +62,7 @@ Customize `SimpleJekyllSearch` by passing in your configuration options:
 var sjs = SimpleJekyllSearch({
   searchInput: document.getElementById('search-input'),
   resultsContainer: document.getElementById('results-container'),
-  json: '/search.json'
+  json: '{{ "/assets/data/search.json" | relative_url }}',
 })
 ```
 
@@ -111,7 +111,7 @@ The template
 var sjs = SimpleJekyllSearch({
   searchInput: document.getElementById('search-input'),
   resultsContainer: document.getElementById('results-container'),
-  json: '/search.json',
+  json: '{{ "/assets/data/search.json" | relative_url }}',
   searchResultTemplate: '<li><a href="{{ site.url }}{url}">{title}</a></li>'
 })
 ```
@@ -158,8 +158,6 @@ SimpleJekyllSearch({
   },
 })
 ```
-
-See the [tests](https://github.com/christian-fei/Simple-Jekyll-Search/blob/master/tests/Templater.test.js) for an in-depth code example
 
 ### sortMiddleware (Function) [optional]
 
