@@ -7,11 +7,6 @@
 
     {% include header.html %}
 
-    <div id="search-demo-container">
-      <input type="search" id="search-input" placeholder="search...">
-      <ul id="results-container"></ul>
-    </div>
-
     <div class="page-content">
       <div class="wrapper">
         {{ content }}
@@ -19,21 +14,6 @@
     </div>
 
     {% include footer.html %}
-
-    <script src="{{ '/assets/js/simple-jekyll-search.min.js' | prepend: site.baseurl }}"></script>
-
-    <script>
-      window.simpleJekyllSearch = new SimpleJekyllSearch({
-        searchInput: document.getElementById('search-input'),
-        resultsContainer: document.getElementById('results-container'),
-        json: '{{ site.baseurl }}/search.json',
-        searchResultTemplate: '<li><a href="{url}?query={query}" title="{desc}">{title}</a></li>',
-        noResultsText: 'No results found',
-        limit: 10,
-        fuzzy: true,
-        exclude: ['Welcome']
-      })
-    </script>
 
   </body>
 

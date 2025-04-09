@@ -1,0 +1,22 @@
+<div>
+  <div id="search-demo-container">
+    <input type="search" id="search-input" placeholder="search...">
+    <ul id="results-container"></ul>
+  </div>
+
+  <script src="{{ '/assets/js/simple-jekyll-search.min.js' | prepend: site.baseurl }}"></script>
+
+  <script>
+    window.simpleJekyllSearch = new SimpleJekyllSearch({
+      searchInput: document.getElementById('search-input'),
+      resultsContainer: document.getElementById('results-container'),
+      json: '{{ "/assets/data/search.json" | relative_url }}',
+      searchResultTemplate: '<li><a href="{url}?query={query}" title="{desc}">{title}</a></li>',
+      noResultsText: 'No results found',
+      limit: 10,
+      fuzzy: true,
+      exclude: ['Welcome'],
+    });
+  </script>
+
+</div>

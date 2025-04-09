@@ -1,6 +1,6 @@
 ---
 layout: page
-title: About
+title: Get Started
 permalink: /about/
 ---
 
@@ -9,7 +9,8 @@ to showcase the jekyll-simple-search library.
 
 ### Create `search.json`
 
-Place the following code in a file called `search.json` in the **root** of your Jekyll blog. (You can also get a copy [from here](/docs/search.json))
+Place the following code in a file called `search.json` in your Jekyll blog. 
+(It's hosted [here]({{ "/assets/data/search.json" | relative_url }}) or in https://github.com/sylhare/Simple-Jekyll-Search/tree/docs/assets/data)
 
 This file will be used as a small data source to perform the searches on the client side:
 
@@ -56,7 +57,7 @@ Customize SimpleJekyllSearch by passing in your configuration options:
   window.simpleJekyllSearch = new SimpleJekyllSearch({
     searchInput: document.getElementById('search-input'),
     resultsContainer: document.getElementById('results-container'),
-    json: '{{ site.baseurl }}/search.json',
+    json: '{{ "/assets/data/search.json" | relative_url }}',
     searchResultTemplate: '<li><a href="{url}?query={query}" title="{desc}">{title}</a></li>',
     noResultsText: 'No results found',
     limit: 10,

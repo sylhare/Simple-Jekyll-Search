@@ -1,11 +1,17 @@
-# Welcome to the Simple-Jekyll-Search Wiki!
+---
+layout: page
+title: Wiki
+permalink: /wiki/
+---
+
+For question and troubleshooting Simple Jekyll Search. 
 
 ## If search isn't working due to invalid JSON
 
 - There is a filter plugin in the _plugins folder which should remove most characters that cause invalid JSON.
   To use it, add the simple_search_filter.rb file to your _plugins folder, and use `remove_chars` as a filter.
 
-For example: in search.json, replace
+For example, in search.json, replace:
 
 ```json
 "content": "{{ page.content | strip_html | strip_newlines }}"
@@ -23,7 +29,7 @@ If this doesn't work when using GitHub pages you can try `jsonify` to make sure 
 "content": {{ page.content | jsonify }}
 ```
 
-**Note: you don't need to use quotes `"` in this since `jsonify` automatically inserts them.**
+> Note: you don't need to use quotes `"` in this since `jsonify` automatically inserts them.
 
 
 ## Enabling full-text search

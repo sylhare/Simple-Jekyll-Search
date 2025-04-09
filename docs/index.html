@@ -4,7 +4,24 @@ layout: default
 
 <div class="home">
 
+  <h1 class="page-heading">Welcome to the Documentation</h1>
+
+  <div class="info-text">
+    <p>
+      Simple Jekyll Search is a lightweight search solution for Jekyll sites.
+      <a href="/get-started" class="get-started-link">Get Started</a> or visit the
+      <a href="/wiki" class="wiki-link">Wiki</a> for troubleshooting and more information.
+    </p>
+    <p>Try out the search bar below to see it in action!</p>
+  </div>
+
+  {% include search.html %}
+
   <h1 class="page-heading">Posts</h1>
+
+  <div>
+    <p>The posts hosted in this example blog.</p>
+  </div>
 
   <ul class="post-list">
     {% for post in site.posts %}
@@ -17,7 +34,5 @@ layout: default
       </li>
     {% endfor %}
   </ul>
-
-  <p class="rss-subscribe">subscribe <a href="{{ "/feed.xml" | prepend: site.baseurl }}">via RSS</a></p>
 
 </div>
