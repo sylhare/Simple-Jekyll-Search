@@ -14,7 +14,7 @@ You have a blog built with Jekyll and want a **lightweight search functionality*
 ### Create `search.json`
 
 Place the following code in a file called `search.json` in the **root** of your Jekyll blog. 
-(You can also get a copy [from here](/example/search.json))
+(You can also get a copy [from here](/docs/search.json))
 
 This file will be used as a small data source to perform the searches on the client side:
 
