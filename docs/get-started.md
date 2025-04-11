@@ -14,7 +14,8 @@ Place the following code in a file called `search.json` in your Jekyll blog.
 
 This file will be used as a small data source to perform the searches on the client side:
 
-```yaml
+{% raw %}
+```liquid
 ---
 layout: none
 ---
@@ -30,6 +31,7 @@ layout: none
   {% endfor %}
 ]
 ```
+{% endraw %}
 
 ### Add the search bar
 
@@ -38,18 +40,20 @@ SimpleJekyllSearch needs two `DOM` elements to work:
 - a search input field
 - a result container to display the results
 
+{% raw %}
 ```html
-    <div id="search-demo-container">
-      <input type="search" id="search-input" placeholder="search...">
-      <ul id="results-container"></ul>
-    </div>
+<div id="search-demo-container">
+  <input type="search" id="search-input" placeholder="search...">
+  <ul id="results-container"></ul>
+</div>
 ```
-
+{% endraw %}
 
 ### Add the script
 
 Customize SimpleJekyllSearch by passing in your configuration options:
 
+{% raw %}
 ```html
 <script src="{{ '/assets/js/simple-jekyll-search.min.js' | prepend: site.baseurl }}"></script>
 
@@ -66,3 +70,4 @@ Customize SimpleJekyllSearch by passing in your configuration options:
   })
 </script>
 ```
+{% endraw %}
