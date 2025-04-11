@@ -17,12 +17,12 @@ dl, dd, ol, ul, figure {
  * Basic styling
  */
 body {
-    font-family: custom.$base-font-family;
-    font-size: custom.$base-font-size;
-    line-height: custom.$base-line-height;
+    font-family: $base-font-family;
+    font-size: $base-font-size;
+    line-height: $base-line-height;
     font-weight: 300;
-    color: custom.$text-color;
-    background-color: custom.$background-color;
+    color: $text-color;
+    background-color: $background-color;
     -webkit-text-size-adjust: 100%;
 }
 
@@ -34,7 +34,7 @@ body {
 h1, h2, h3, h4, h5, h6,
 p, blockquote, pre,
 ul, ol, dl, figure {
-    @include custom.vertical-rhythm;
+    @include vertical-rhythm;
 }
 
 /**
@@ -55,7 +55,7 @@ figure > img {
 }
 
 figcaption {
-    font-size: custom.$small-font-size;
+    font-size: $small-font-size;
 }
 
 
@@ -64,7 +64,7 @@ figcaption {
  * Lists
  */
 ul, ol {
-    margin-left: custom.$spacing-unit;
+    margin-left: $spacing-unit;
 }
 
 li {
@@ -89,15 +89,15 @@ h1, h2, h3, h4, h5, h6 {
  * Links
  */
 a {
-    color: custom.$brand-color;
+    color: $brand-color;
     text-decoration: none;
 
     &:visited {
-        color: color.adjust(custom.$brand-color, $lightness: -15%);
+        color: #5a96e8;
     }
 
     &:hover {
-        color: custom.$text-color;
+        color: $text-color;
         text-decoration: underline;
     }
 }
@@ -108,9 +108,9 @@ a {
  * Blockquotes
  */
 blockquote {
-    color: custom.$grey-color;
-    border-left: 4px solid custom.$grey-color-light;
-    padding-left: custom.$spacing-unit-sm;
+    color: $grey-color;
+    border-left: 4px solid $grey-color-light;
+    padding-left: $spacing-unit-sm;
     font-size: 18px;
     letter-spacing: -1px;
     font-style: italic;
@@ -128,7 +128,7 @@ blockquote {
 pre,
 code {
     font-size: 15px;
-    border: 1px solid custom.$grey-color-light;
+    border: 1px solid $grey-color-light;
     border-radius: 3px;
     background-color: #eef;
 
@@ -158,19 +158,19 @@ pre {
  * Wrapper
  */
 .wrapper {
-    max-width: -webkit-calc(800px - (#{custom.$spacing-unit} * 2));
-    max-width:         calc(800px - (#{custom.$spacing-unit} * 2));
+    max-width: -webkit-calc(800px - (#{$spacing-unit} * 2));
+    max-width:         calc(800px - (#{$spacing-unit} * 2));
     margin-right: auto;
     margin-left: auto;
-    padding-right: custom.$spacing-unit;
-    padding-left: custom.$spacing-unit;
-    @include custom.clearfix;
+    padding-right: $spacing-unit;
+    padding-left: $spacing-unit;
+    @include clearfix;
 
-    @include custom.media-query(custom.$on-laptop) {
-        max-width: -webkit-calc(800px - (#{custom.$spacing-unit}));
-        max-width:         calc(800px - (#{custom.$spacing-unit}));
-        padding-right: custom.$spacing-unit-sm;
-        padding-left: custom.$spacing-unit-sm;
+    @include media-query($on-laptop) {
+        max-width: -webkit-calc(800px - (#{$spacing-unit}));
+        max-width:         calc(800px - (#{$spacing-unit}));
+        padding-right: $spacing-unit-sm;
+        padding-left: $spacing-unit-sm;
     }
 }
 
@@ -187,7 +187,7 @@ pre {
         vertical-align: middle;
 
         path {
-            fill: custom.$grey-color;
+            fill: $grey-color;
         }
     }
 }
