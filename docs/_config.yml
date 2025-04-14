@@ -2,8 +2,8 @@
 title: Simple Jekyll Search
 email: your-email@domain.com
 description: A simple search solution for Jekyll sites
-baseurl: ""
-url: ""
+baseurl: "/Simple-Jekyll-Search"
+url: "https://sylhare.github.io"
 
 # Build settings
 markdown: kramdown
