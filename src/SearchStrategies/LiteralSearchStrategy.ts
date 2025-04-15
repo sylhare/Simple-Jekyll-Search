@@ -1,12 +1,12 @@
 import { SearchStrategy } from './FuzzySearchStrategy';
 
 export class LiteralSearchStrategy implements SearchStrategy {
-  public matches(str: string | null, crit: string): boolean {
-    if (!str) return false;
-    str = str.trim().toLowerCase();
-    const criteria = crit.endsWith(' ') ? [crit.toLowerCase()] : crit.trim().toLowerCase().split(' ');
+  public matches(text: string | null, criteria: string): boolean {
+    if (!text) return false;
+    text = text.trim().toLowerCase();
+    const pattern = criteria.endsWith(' ') ? [criteria.toLowerCase()] : criteria.trim().toLowerCase().split(' ');
 
-    return criteria.filter((word: string) => str.indexOf(word) >= 0).length === criteria.length;
+    return pattern.filter((word: string) => text.indexOf(word) >= 0).length === pattern.length;
   }
 }
 

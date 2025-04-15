@@ -1,15 +1,15 @@
 import { fuzzySearch } from '../utils/fuzzySearch';
 
 export interface SearchStrategy {
-  matches(string: string | null, criteria: string): boolean;
+  matches(text: string | null, criteria: string): boolean;
 }
 
 export class FuzzySearchStrategy implements SearchStrategy {
-  public matches(string: string | null, criteria: string): boolean {
-    if (string === null) {
+  public matches(text: string | null, criteria: string): boolean {
+    if (text === null) {
       return false;
     }
-    return fuzzySearch(criteria, string);
+    return fuzzySearch(criteria, text);
   }
 }
 
