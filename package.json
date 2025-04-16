@@ -1,6 +1,6 @@
 {
   "name": "simple-jekyll-search",
-  "version": "1.12.0",
+  "version": "1.13.0",
   "description": "Fork of Simple Jekyll Search from https://github.com/christian-fei/Simple-Jekyll-Search",
   "main": "dest/simple-jekyll-search.js",
   "type": "module",
