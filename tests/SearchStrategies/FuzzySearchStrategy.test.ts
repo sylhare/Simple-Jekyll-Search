@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import FuzzySearchStrategy from '../../src/SearchStrategies/FuzzySearchStrategy';
 
 describe('FuzzySearchStrategy', () => {
@@ -37,5 +37,14 @@ describe('FuzzySearchStrategy', () => {
     expect(FuzzySearchStrategy.matches('hello world', 'hlowrd')).toBe(true);
     expect(FuzzySearchStrategy.matches('hello world', 'wrld')).toBe(true);
     expect(FuzzySearchStrategy.matches('hello world', 'wh')).toBe(false);
+  });
+
+  it('does not match when character frequency in the pattern exceeds the text', () => {
+    expect(FuzzySearchStrategy.matches('goggles', 'gggggggg')).toBe(false);
+    expect(FuzzySearchStrategy.matches('aab', 'aaaa')).toBe(false);
+  });
+
+  it('match ordered multiple words', () => {
+    expect(FuzzySearchStrategy.matches('Ola que tal', 'ola tal')).toBe(true);
   });
 }); 
