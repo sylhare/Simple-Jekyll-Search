@@ -1,6 +1,6 @@
 describe('Simple Jekyll Search', () => {
   it('Searching a Post', () => {
-    cy.visit('http://localhost:4000')
+    cy.visit('/')
 
     cy.get('#search-input')
       .type('This')
@@ -10,7 +10,7 @@ describe('Simple Jekyll Search', () => {
   })
 
   it('Searching a Post follows link with query', () => {
-    cy.visit('http://localhost:4000')
+    cy.visit('/')
 
     cy.get('#search-input')
       .type('This')
@@ -23,7 +23,7 @@ describe('Simple Jekyll Search', () => {
   })
 
   it('No results found', () => {
-    cy.visit('http://localhost:4000')
+    cy.visit('/')
 
     cy.get('#search-input')
       .type('random')
