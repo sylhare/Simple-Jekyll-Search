@@ -1,19 +1,23 @@
-import { exec } from 'child_process';
+import { spawn } from 'child_process';
 
 console.log('Starting Jekyll server in detached mode...');
 
-exec('cd docs && bundle exec jekyll serve --detach', (error, stdout, stderr) => {
-  if (error) {
-    console.error('Error starting Jekyll server:', error);
-    process.exit(1);
+const jekyllProcess = spawn('bundle', ['exec', 'jekyll', 'serve', '--detach'], {
+  cwd: 'docs',
+  stdio: 'inherit', // Ensures output is displayed in the terminal
+  shell: true, // Allows running shell commands
+});
+
+jekyllProcess.on('error', (error) => {
+  console.error('Error starting Jekyll server:', error.message);
+  process.exit(1);
+});
+
+jekyllProcess.on('close', (code) => {
+  if (code === 0) {
+    console.log('Jekyll server started successfully!');
+  } else {
+    console.error(`Jekyll server exited with code ${code}`);
   }
-
-  console.log('Jekyll server started successfully!');
-  console.log(stdout);
-
-  if (stderr) {
-    console.error('Jekyll warnings:', stderr);
-  }
-
-  process.exit(0);
+  process.exit(code);
 });
