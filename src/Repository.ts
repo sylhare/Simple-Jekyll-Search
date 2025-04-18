@@ -1,5 +1,6 @@
-import { FuzzySearchStrategy, SearchStrategy } from './SearchStrategies/FuzzySearchStrategy';
+import { FuzzySearchStrategy } from './SearchStrategies/FuzzySearchStrategy';
 import { LiteralSearchStrategy } from './SearchStrategies/LiteralSearchStrategy';
+import { SearchStrategy } from './SearchStrategies/types';
 
 interface RepositoryOptions {
   fuzzy?: boolean;

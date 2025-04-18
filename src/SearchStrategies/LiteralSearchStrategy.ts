@@ -1,4 +1,4 @@
-import { SearchStrategy } from './FuzzySearchStrategy';
+import { SearchStrategy } from './types';
 
 export class LiteralSearchStrategy implements SearchStrategy {
   public matches(text: string | null, criteria: string): boolean {

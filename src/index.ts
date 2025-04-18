@@ -100,7 +100,7 @@ window.SimpleJekyllSearch = function(_options: SearchOptions): SimpleJekyllSearc
     throwError(`Missing required options: ${REQUIRED_OPTIONS.join(', ')}`);
   }
 
-  options = merge(options, _options) as SearchOptions;
+  options = merge<SearchOptions>(options, _options);
 
   setTemplaterOptions({
     template: options.searchResultTemplate,
