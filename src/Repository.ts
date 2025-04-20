@@ -1,6 +1,7 @@
 import { FuzzySearchStrategy } from './SearchStrategies/FuzzySearchStrategy';
 import { LiteralSearchStrategy } from './SearchStrategies/LiteralSearchStrategy';
 import { SearchStrategy } from './SearchStrategies/types';
+import { NoSort } from './utils';
 
 interface RepositoryOptions {
   fuzzy?: boolean;
@@ -12,10 +13,6 @@ interface RepositoryOptions {
 
 interface RepositoryData {
   [key: string]: any;
-}
-
-function NoSort(): number {
-  return 0;
 }
 
 const data: RepositoryData[] = [];

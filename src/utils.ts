@@ -9,4 +9,8 @@ export function isJSON(json: any): boolean {
   } catch (_err) {
     return false;
   }
-} 
+}
+
+export function NoSort(): number {
+  return 0;
+}
