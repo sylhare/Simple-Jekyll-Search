@@ -25,6 +25,7 @@ export interface SearchOptions {
   sortMiddleware?: (a: SearchResult, b: SearchResult) => number;
   noResultsText?: string;
   limit?: number;
+  /** @deprecated Use strategy instead */
   fuzzy?: boolean;
   debounceTime?: number | null;
   exclude?: string[];

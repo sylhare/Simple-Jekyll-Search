@@ -1,16 +1,5 @@
-interface Params {
-  [key: string]: any;
-}
-
-export function merge(defaultParams: Params, mergeParams: Params): Params {
-  const mergedOptions: Params = {};
-  for (const option in defaultParams) {
-    mergedOptions[option] = defaultParams[option];
-    if (typeof mergeParams[option] !== 'undefined') {
-      mergedOptions[option] = mergeParams[option];
-    }
-  }
-  return mergedOptions;
+export function merge<T>(target: T, source: Partial<T>): T {
+  return { ...target, ...source } as T;
 }
 
 export function isJSON(json: any): boolean {
@@ -20,4 +9,12 @@ export function isJSON(json: any): boolean {
   } catch (_err) {
     return false;
   }
-} 
+}
+
+export function NoSort(): number {
+  return 0;
+}
+
+export function isObject(obj: any): obj is RepositoryData {
+  return Boolean(obj) && Object.prototype.toString.call(obj) === '[object Object]';
+}

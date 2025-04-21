@@ -1,8 +1,5 @@
 import { fuzzySearch } from '../utils/fuzzySearch';
-
-export interface SearchStrategy {
-  matches(text: string | null, criteria: string): boolean;
-}
+import { SearchStrategy } from './types';
 
 export class FuzzySearchStrategy implements SearchStrategy {
   public matches(text: string | null, criteria: string): boolean {
