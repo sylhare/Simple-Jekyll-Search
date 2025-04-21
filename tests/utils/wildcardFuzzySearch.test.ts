@@ -7,31 +7,38 @@ describe('wildcardFuzzySearch', () => {
   });
 
   it('should return true for matches with wildcards', () => {
-    expect(wildcardFuzzySearch('he*o', 'hello')).toBe(true);
-    expect(wildcardFuzzySearch('he*o*', 'hello')).toBe(true);
-    expect(wildcardFuzzySearch('te*t', 'test')).toBe(true);
-    expect(wildcardFuzzySearch('te*t', 'text')).toBe(true);
+    expect(wildcardFuzzySearch('hello', 'he*o')).toBe(true);
+    expect(wildcardFuzzySearch('hello', 'he*o*')).toBe(true);
+    expect(wildcardFuzzySearch('test', 'te*t')).toBe(true);
+    expect(wildcardFuzzySearch('text', 'te*t')).toBe(true);
+  });
+
+  it('should match multiple words with wildcards', () => {
+    expect(wildcardFuzzySearch('hello amazing world', 'hello*world')).toBe(true);
+    expect(wildcardFuzzySearch('hello world', 'hello*world')).toBe(true);
+    expect(wildcardFuzzySearch('hello world', 'hello*')).toBe(true);
+    expect(wildcardFuzzySearch('hello', 'hello*world')).toBe(false);
   });
 
   it('should return true for fuzzy matches with high similarity', () => {
-    expect(wildcardFuzzySearch('helo', 'hello')).toBe(true); // 80% similarity
-    expect(wildcardFuzzySearch('hell', 'hello')).toBe(true); // 80% similarity
+    expect(wildcardFuzzySearch('hello', 'helo')).toBe(true); // 80% similarity
+    expect(wildcardFuzzySearch('hello', 'hell')).toBe(true); // 80% similarity
   });
 
   it('should return false for matches below the similarity threshold', () => {
-    expect(wildcardFuzzySearch('h*o', 'world')).toBe(false);
-    expect(wildcardFuzzySearch('abc', 'xyz')).toBe(false);
+    expect(wildcardFuzzySearch('world', 'h*o')).toBe(false);
+    expect(wildcardFuzzySearch('xyz', 'abc')).toBe(false);
   });
 
   it('should handle empty strings correctly', () => {
-    expect(wildcardFuzzySearch('', 'hello')).toBe(false);
     expect(wildcardFuzzySearch('hello', '')).toBe(false);
+    expect(wildcardFuzzySearch('', 'hello')).toBe(false);
     expect(wildcardFuzzySearch('', '')).toBe(false);
   });
 
   it('should handle single-character patterns and texts', () => {
     expect(wildcardFuzzySearch('a', 'a')).toBe(true);
-    expect(wildcardFuzzySearch('a', 'b')).toBe(false);
-    expect(wildcardFuzzySearch('*', 'a')).toBe(true);
+    expect(wildcardFuzzySearch('b', 'a')).toBe(false);
+    expect(wildcardFuzzySearch('a', '*')).toBe(true);
   });
 });

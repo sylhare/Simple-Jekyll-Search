@@ -9,7 +9,7 @@ export class FuzzySearchStrategy implements SearchStrategy {
     if (text === null) {
       return false;
     }
-    return fuzzySearch(criteria, text);
+    return fuzzySearch(text, criteria);
   }
 }
 

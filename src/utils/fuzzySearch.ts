@@ -6,12 +6,12 @@
  * - Ignores trailing spaces in the pattern.
  * - Empty text matches nothing (unless pattern is also empty)
  * - Empty pattern matches everything
- * 
+ *
  * @param pattern - The pattern to search for
  * @param text - The text to search in
  * @returns true if all characters in pattern appear in order in text
  */
-export function fuzzySearch(pattern: string, text: string): boolean {
+export function fuzzySearch(text: string, pattern: string): boolean {
   pattern = pattern.trimEnd();
   
   if (pattern.length === 0) return true;
