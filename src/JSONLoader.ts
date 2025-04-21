@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* globals ActiveXObject:false */
-
 interface XHR extends XMLHttpRequest {
   readyState: number;
   status: number;

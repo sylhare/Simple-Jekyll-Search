@@ -7,7 +7,7 @@ interface ValidatorOptions {
 }
 
 export class OptionsValidator {
-  private requiredOptions: string[];
+  private readonly requiredOptions: string[];
 
   constructor(params: ValidatorParams) {
     if (!this.validateParams(params)) {
