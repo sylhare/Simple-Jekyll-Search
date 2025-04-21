@@ -1,5 +1,5 @@
 import { describe, it, beforeEach, afterEach, expect } from 'vitest';
-import * as repository from '../src/Repository';
+import { Repository } from '../src/Repository';
 
 interface TestElement {
   title: string;
@@ -13,7 +13,10 @@ const loremElement: TestElement = { title: 'lorem', content: 'lorem ipsum' };
 const data: TestElement[] = [barElement, almostBarElement, loremElement];
 
 describe('Repository', () => {
+  let repository: Repository;
+
   beforeEach(() => {
+    repository = new Repository();
     repository.put(data);
   });
 
@@ -58,4 +61,4 @@ describe('Repository', () => {
     });
     expect(repository.search('r')).toEqual([almostBarElement, barElement, loremElement]);
   });
-}); 
+});

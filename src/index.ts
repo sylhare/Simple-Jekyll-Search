@@ -1,6 +1,6 @@
+import { Repository } from './Repository';
 import { load as loadJSON } from './JSONLoader';
 import { OptionsValidator } from './OptionsValidator';
-import { put, search as repositorySearch, setOptions as setRepositoryOptions } from './Repository';
 import { compile as compileTemplate, setOptions as setTemplaterOptions } from './Templater';
 import { isJSON, merge } from './utils';
 import { DEFAULT_OPTIONS, REQUIRED_OPTIONS, WHITELISTED_KEYS } from './utils/default';
@@ -9,6 +9,7 @@ import { SearchData, SearchOptions, SearchResult, SimpleJekyllSearchInstance } f
 let options: SearchOptions = { ...DEFAULT_OPTIONS };
 let debounceTimerHandle: NodeJS.Timeout;
 
+const repository = new Repository();
 const optionsValidator = new OptionsValidator({
   required: REQUIRED_OPTIONS
 });
@@ -43,7 +44,7 @@ const isWhitelistedKey = (key: number): boolean => {
 };
 
 const initWithJSON = (json: SearchData[]): void => {
-  put(json);
+  repository.put(json);
   registerInput();
 };
 
@@ -61,8 +62,8 @@ const registerInput = (): void => {
     const inputEvent = e as KeyboardEvent;
     if (isWhitelistedKey(inputEvent.which)) {
       emptyResultsContainer();
-      debounce(() => { 
-        search((e.target as HTMLInputElement).value); 
+      debounce(() => {
+        search((e.target as HTMLInputElement).value);
       }, options.debounceTime ?? null);
     }
   });
@@ -71,7 +72,7 @@ const registerInput = (): void => {
 const search = (query: string): void => {
   if (isValidQuery(query)) {
     emptyResultsContainer();
-    const results = repositorySearch(query);
+    const results = repository.search(query);
     render(results as SearchResult[], query);
     options.onSearch?.();
   }
@@ -90,7 +91,7 @@ const render = (results: SearchResult[], query: string): void => {
     li.innerHTML = compileTemplate(result);
     fragment.appendChild(li);
   });
-  
+
   options.resultsContainer.appendChild(fragment);
 };
 
@@ -107,7 +108,7 @@ window.SimpleJekyllSearch = function(_options: SearchOptions): SimpleJekyllSearc
     middleware: options.templateMiddleware
   });
 
-  setRepositoryOptions({
+  repository.setOptions({
     fuzzy: options.fuzzy,
     limit: options.limit,
     sort: options.sortMiddleware,
@@ -126,4 +127,4 @@ window.SimpleJekyllSearch = function(_options: SearchOptions): SimpleJekyllSearc
 
   options.success?.call(rv);
   return rv;
-}; 
+};
