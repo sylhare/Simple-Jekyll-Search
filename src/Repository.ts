@@ -1,7 +1,7 @@
 import { FuzzySearchStrategy } from './SearchStrategies/FuzzySearchStrategy';
 import { LiteralSearchStrategy } from './SearchStrategies/LiteralSearchStrategy';
 import { SearchStrategy } from './SearchStrategies/types';
-import { NoSort } from './utils';
+import { isObject, NoSort } from './utils';
 
 interface RepositoryOptions {
   fuzzy?: boolean;
@@ -28,7 +28,7 @@ export function put(input: RepositoryData | RepositoryData[]): RepositoryData[] 
   if (isObject(input)) {
     return addObject(input);
   }
-  if (isArray(input)) {
+  if (Array.isArray(input)) {
     return addArray(input);
   }
   return undefined;
@@ -37,14 +37,6 @@ export function put(input: RepositoryData | RepositoryData[]): RepositoryData[] 
 export function clear(): RepositoryData[] {
   data.length = 0;
   return data;
-}
-
-function isObject(obj: any): obj is RepositoryData {
-  return Boolean(obj) && Object.prototype.toString.call(obj) === '[object Object]';
-}
-
-function isArray(obj: any): obj is RepositoryData[] {
-  return Boolean(obj) && Object.prototype.toString.call(obj) === '[object Array]';
 }
 
 function addObject(_data: RepositoryData): RepositoryData[] {

@@ -14,3 +14,7 @@ export function isJSON(json: any): boolean {
 export function NoSort(): number {
   return 0;
 }
+
+export function isObject(obj: any): obj is RepositoryData {
+  return Boolean(obj) && Object.prototype.toString.call(obj) === '[object Object]';
+}
