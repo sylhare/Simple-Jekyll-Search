@@ -111,7 +111,7 @@ window.SimpleJekyllSearch = function(_options: SearchOptions): SimpleJekyllSearc
   repository.setOptions({
     fuzzy: options.fuzzy,
     limit: options.limit,
-    sort: options.sortMiddleware,
+    sortMiddleware: options.sortMiddleware,
     exclude: options.exclude
   });
 

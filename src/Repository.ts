@@ -1,15 +1,7 @@
 import { FuzzySearchStrategy } from './SearchStrategies/FuzzySearchStrategy';
 import { LiteralSearchStrategy } from './SearchStrategies/LiteralSearchStrategy';
-import { SearchStrategy } from './SearchStrategies/types';
 import { isObject, NoSort } from './utils';
-
-interface RepositoryOptions {
-  fuzzy?: boolean;
-  limit?: number;
-  searchStrategy?: SearchStrategy;
-  sort?: (a: any, b: any) => number;
-  exclude?: string[];
-}
+import { RepositoryOptions } from './utils/types';
 
 interface RepositoryData {
   [key: string]: any;
@@ -24,7 +16,7 @@ export class Repository {
       fuzzy: initialOptions.fuzzy || false,
       limit: initialOptions.limit || 10,
       searchStrategy: initialOptions.fuzzy ? new FuzzySearchStrategy() : new LiteralSearchStrategy(),
-      sort: initialOptions.sort || NoSort,
+      sortMiddleware: initialOptions.sortMiddleware,
       exclude: initialOptions.exclude || [],
     };
   }
@@ -48,7 +40,7 @@ export class Repository {
     if (!criteria) {
       return [];
     }
-    return this.findMatches(this.data, criteria).sort(this.options.sort);
+    return this.findMatches(this.data, criteria).sort(this.options.sortMiddleware);
   }
 
   public setOptions(newOptions: RepositoryOptions): void {
@@ -56,7 +48,7 @@ export class Repository {
       fuzzy: newOptions.fuzzy || false,
       limit: newOptions.limit || 10,
       searchStrategy: newOptions.fuzzy ? new FuzzySearchStrategy() : new LiteralSearchStrategy(),
-      sort: newOptions.sort || NoSort,
+      sortMiddleware: newOptions.sortMiddleware || NoSort,
       exclude: newOptions.exclude || [],
     };
   }

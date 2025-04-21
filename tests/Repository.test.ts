@@ -55,7 +55,7 @@ describe('Repository', () => {
 
   it('excludes items from search #2', () => {
     repository.setOptions({
-      sort: (a: TestElement, b: TestElement) => {
+      sortMiddleware: (a: TestElement, b: TestElement) => {
         return a.title.localeCompare(b.title);
       }
     });
