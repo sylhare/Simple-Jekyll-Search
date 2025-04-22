@@ -40,6 +40,8 @@ describe('Repository', () => {
   it('finds a fuzzy string', () => {
     repository.setOptions({ fuzzy: true });
     expect(repository.search('lrm ism')).toEqual([loremElement]);
+    repository.setOptions({ strategy: 'fuzzy' });
+    expect(repository.search('lrm ism')).toEqual([loremElement]);
   });
 
   it('returns empty search results when an empty criteria is provided', () => {
