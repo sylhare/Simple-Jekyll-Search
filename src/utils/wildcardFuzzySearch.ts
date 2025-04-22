@@ -1,7 +1,7 @@
 import { levenshtein } from './levenshtein';
 
 /**
- * Matches a pattern with wildcards (*) against a text with a high degree of certainty (80% or above)
+ * Matches a pattern with wildcards (*) against a text with a set degree of certainty
  * using the levenshtein distance.
  *
  * @param text - The text to search in
@@ -19,5 +19,5 @@ export function wildcardFuzzySearch(text: string, pattern: string): boolean {
   const distance = levenshtein(pattern.replace(/\*/g, ''), text);
   const similarity = 1 - distance / Math.max(pattern.length, text.length);
 
-  return similarity >= 0.8;
+  return similarity >= 0.3;
 }

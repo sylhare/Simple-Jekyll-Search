@@ -112,6 +112,7 @@ window.SimpleJekyllSearch = function(_options: SearchOptions): SimpleJekyllSearc
     fuzzy: options.fuzzy,
     limit: options.limit,
     sortMiddleware: options.sortMiddleware,
+    strategy: options.strategy,
     exclude: options.exclude
   });
 

@@ -47,6 +47,12 @@ describe('Repository', () => {
     expect(repository.search('lrm ism')).toEqual([loremElement]);
   });
 
+  it('finds items using a wildcard pattern', () => {
+    repository.setOptions({ strategy: 'wildcard' });
+    expect(repository.search('* ispum')).toEqual([loremElement]);
+    expect(repository.search('*bar')).toEqual([barElement, almostBarElement]);
+  });
+
   it('returns empty search results when an empty criteria is provided', () => {
     expect(repository.search('')).toEqual([]);
   });
