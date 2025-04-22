@@ -1,103 +1,94 @@
-import { FuzzySearchStrategy } from './SearchStrategies/FuzzySearchStrategy';
-import { LiteralSearchStrategy } from './SearchStrategies/LiteralSearchStrategy';
-import { SearchStrategy } from './SearchStrategies/types';
-import { isObject, NoSort } from './utils';
-
-interface RepositoryOptions {
-  fuzzy?: boolean;
-  limit?: number;
-  searchStrategy?: SearchStrategy;
-  sort?: (a: any, b: any) => number;
-  exclude?: string[];
-}
+import { isObject } from './utils';
+import { RepositoryOptions } from './utils/types';
+import { strategyFactory } from './SearchStrategies/types';
+import { DEFAULT_OPTIONS } from './utils/default';
 
 interface RepositoryData {
   [key: string]: any;
 }
 
-const data: RepositoryData[] = [];
-let opt: RepositoryOptions & { fuzzy: boolean; limit: number; searchStrategy: SearchStrategy; sort: (a: any, b: any) => number; exclude: string[] } = {
-  fuzzy: false,
-  limit: 10,
-  searchStrategy: new FuzzySearchStrategy(),
-  sort: NoSort,
-  exclude: []
-};
+export class Repository {
+  private data: RepositoryData[] = [];
+  private options: Required<RepositoryOptions>;
 
-export function put(input: RepositoryData | RepositoryData[]): RepositoryData[] | undefined {
-  if (isObject(input)) {
-    return addObject(input);
+  constructor(initialOptions: RepositoryOptions = {}) {
+    this.setOptions(initialOptions);
   }
-  if (Array.isArray(input)) {
-    return addArray(input);
-  }
-  return undefined;
-}
 
-export function clear(): RepositoryData[] {
-  data.length = 0;
-  return data;
-}
-
-function addObject(_data: RepositoryData): RepositoryData[] {
-  data.push(_data);
-  return data;
-}
-
-function addArray(_data: RepositoryData[]): RepositoryData[] {
-  const added: RepositoryData[] = [];
-  clear();
-  for (let i = 0, len = _data.length; i < len; i++) {
-    if (isObject(_data[i])) {
-      added.push(addObject(_data[i])[0]);
+  public put(input: RepositoryData | RepositoryData[]): RepositoryData[] | undefined {
+    if (isObject(input)) {
+      return this.addObject(input);
     }
-  }
-  return added;
-}
-
-export function search(criteria: string): RepositoryData[] {
-  if (!criteria) {
-    return [];
-  }
-  return findMatches(data, criteria, opt.searchStrategy, opt).sort(opt.sort);
-}
-
-export function setOptions(_opt: RepositoryOptions): void {
-  opt = {
-    fuzzy: _opt.fuzzy || false,
-    limit: _opt.limit || 10,
-    searchStrategy: _opt.fuzzy ? new FuzzySearchStrategy() : new LiteralSearchStrategy(),
-    sort: _opt.sort || NoSort,
-    exclude: _opt.exclude || []
-  };
-}
-
-function findMatches(data: RepositoryData[], criteria: string, strategy: SearchStrategy, opt: RepositoryOptions): RepositoryData[] {
-  const matches: RepositoryData[] = [];
-  for (let i = 0; i < data.length && matches.length < opt.limit!; i++) {
-    const match = findMatchesInObject(data[i], criteria, strategy, opt);
-    if (match) {
-      matches.push(match);
+    if (Array.isArray(input)) {
+      return this.addArray(input);
     }
+    return undefined;
   }
-  return matches;
-}
 
-function findMatchesInObject(obj: RepositoryData, criteria: string, strategy: SearchStrategy, opt: RepositoryOptions): RepositoryData | undefined {
-  for (const key in obj) {
-    if (!isExcluded(obj[key], opt.exclude!) && strategy.matches(obj[key], criteria)) {
-      return obj;
-    }
+  public clear(): RepositoryData[] {
+    this.data.length = 0;
+    return this.data;
   }
-  return undefined;
-}
 
-function isExcluded(term: any, excludedTerms: string[]): boolean {
-  for (let i = 0, len = excludedTerms.length; i < len; i++) {
-    const excludedTerm = excludedTerms[i];
-    if (new RegExp(excludedTerm).test(String(term))) {
-      return true;
+  public search(criteria: string): RepositoryData[] {
+    if (!criteria) {
+      return [];
     }
+    return this.findMatches(this.data, criteria).sort(this.options.sortMiddleware);
   }
-  return false;
-} 
+
+  public setOptions(newOptions: RepositoryOptions): void {
+    this.options = {
+      fuzzy: newOptions?.fuzzy || false,
+      limit: newOptions?.limit || DEFAULT_OPTIONS.limit,
+      searchStrategy: strategyFactory(newOptions?.strategy || newOptions.fuzzy && 'fuzzy'),
+      sortMiddleware: newOptions?.sortMiddleware || DEFAULT_OPTIONS.sortMiddleware,
+      exclude: newOptions?.exclude || DEFAULT_OPTIONS.exclude,
+    };
+  }
+
+  private addObject(obj: RepositoryData): RepositoryData[] {
+    this.data.push(obj);
+    return this.data;
+  }
+
+  private addArray(arr: RepositoryData[]): RepositoryData[] {
+    const added: RepositoryData[] = [];
+    this.clear();
+    for (const item of arr) {
+      if (isObject(item)) {
+        added.push(this.addObject(item)[0]);
+      }
+    }
+    return added;
+  }
+
+  private findMatches(data: RepositoryData[], criteria: string): RepositoryData[] {
+    const matches: RepositoryData[] = [];
+    for (let i = 0; i < data.length && matches.length < this.options.limit; i++) {
+      const match = this.findMatchesInObject(data[i], criteria);
+      if (match) {
+        matches.push(match);
+      }
+    }
+    return matches;
+  }
+
+  private findMatchesInObject(obj: RepositoryData, criteria: string): RepositoryData | undefined {
+    for (const key in obj) {
+      if (!this.isExcluded(obj[key]) && this.options.searchStrategy.matches(obj[key], criteria)) {
+        return obj;
+      }
+    }
+    return undefined;
+  }
+
+  private isExcluded(term: any): boolean {
+    for (const excludedTerm of this.options.exclude) {
+      if (new RegExp(excludedTerm).test(String(term))) {
+        return true;
+      }
+    }
+    return false;
+  }
+}

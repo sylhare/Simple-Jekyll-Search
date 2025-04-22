@@ -1,4 +1,5 @@
 import { SearchOptions } from './types';
+import { NoSort } from '../utils';
 
 export const DEFAULT_OPTIONS: SearchOptions = {
   searchInput: null!,
@@ -7,7 +8,7 @@ export const DEFAULT_OPTIONS: SearchOptions = {
   success: function(this: { search: (query: string) => void }) {},
   searchResultTemplate: '<li><a href="{url}" title="{desc}">{title}</a></li>',
   templateMiddleware: (_prop: string, _value: string, _template: string) => undefined,
-  sortMiddleware: () => 0,
+  sortMiddleware: NoSort,
   noResultsText: 'No results found',
   limit: 10,
   fuzzy: false,

@@ -1,5 +1,5 @@
 import { describe, it, beforeEach, afterEach, expect } from 'vitest';
-import * as repository from '../src/Repository';
+import { Repository } from '../src/Repository';
 
 interface TestElement {
   title: string;
@@ -13,7 +13,10 @@ const loremElement: TestElement = { title: 'lorem', content: 'lorem ipsum' };
 const data: TestElement[] = [barElement, almostBarElement, loremElement];
 
 describe('Repository', () => {
+  let repository: Repository;
+
   beforeEach(() => {
+    repository = new Repository();
     repository.put(data);
   });
 
@@ -37,6 +40,8 @@ describe('Repository', () => {
   it('finds a fuzzy string', () => {
     repository.setOptions({ fuzzy: true });
     expect(repository.search('lrm ism')).toEqual([loremElement]);
+    repository.setOptions({ strategy: 'fuzzy' });
+    expect(repository.search('lrm ism')).toEqual([loremElement]);
   });
 
   it('returns empty search results when an empty criteria is provided', () => {
@@ -52,10 +57,10 @@ describe('Repository', () => {
 
   it('excludes items from search #2', () => {
     repository.setOptions({
-      sort: (a: TestElement, b: TestElement) => {
+      sortMiddleware: (a: TestElement, b: TestElement) => {
         return a.title.localeCompare(b.title);
       }
     });
     expect(repository.search('r')).toEqual([almostBarElement, barElement, loremElement]);
   });
-}); 
+});

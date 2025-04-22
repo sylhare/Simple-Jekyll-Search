@@ -1,3 +1,5 @@
+import { SearchStrategy } from '../SearchStrategies/types';
+
 export interface SearchResult {
   url: string;
   desc: string;
@@ -15,20 +17,25 @@ export interface SearchData {
   [key: string]: string | undefined;
 }
 
-export interface SearchOptions {
+export interface RepositoryOptions {
+  /** @deprecated Use strategy instead (e.g. `strategy: 'fuzzy'`) */
+  fuzzy?: boolean;
+  strategy?: 'literal' | 'fuzzy' | 'wildcard';
+  limit?: number;
+  searchStrategy?: SearchStrategy;
+  sortMiddleware?: (a: any, b: any) => number;
+  exclude?: string[];
+}
+
+export interface SearchOptions extends Omit<RepositoryOptions, 'searchStrategy'> {
   searchInput: HTMLInputElement;
   resultsContainer: HTMLElement;
   json: SearchData[] | string;
   success?: (this: { search: (query: string) => void }) => void;
   searchResultTemplate?: string;
   templateMiddleware?: (prop: string, value: string, template: string) => string | undefined;
-  sortMiddleware?: (a: SearchResult, b: SearchResult) => number;
   noResultsText?: string;
-  limit?: number;
-  /** @deprecated Use strategy instead */
-  fuzzy?: boolean;
   debounceTime?: number | null;
-  exclude?: string[];
   onSearch?: () => void;
 }
 
