@@ -1,20 +1,15 @@
-import FuzzySearchStrategy from './FuzzySearchStrategy';
-import LiteralSearchStrategy from './LiteralSearchStrategy';
-import WildcardSearchStrategy from './WildcardSearchStrategy';
-
 export interface SearchStrategy {
   matches(text: string | null, criteria: string): boolean;
 }
 
-export function strategyFactory(
-  strategy: 'literal' | 'fuzzy' | 'wildcard',
-): SearchStrategy {
-  switch (strategy) {
-    case 'fuzzy':
-      return FuzzySearchStrategy;
-    case 'wildcard':
-      return WildcardSearchStrategy;
-    default:
-      return LiteralSearchStrategy;
+export abstract class AbstractSearchStrategy implements SearchStrategy {
+  abstract doMatch(text: string | null, criteria: string): boolean;
+
+  matches(text: string | null, criteria: string): boolean {
+    if (text === null || text.trim() === '' || !criteria) {
+      return false;
+    }
+
+    return this.doMatch(text, criteria);
   }
 }

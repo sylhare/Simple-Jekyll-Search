@@ -1,7 +1,10 @@
 import { isObject } from './utils';
 import { RepositoryOptions } from './utils/types';
-import { strategyFactory } from './SearchStrategies/types';
 import { DEFAULT_OPTIONS } from './utils/default';
+import { SearchStrategy } from './SearchStrategies/types';
+import FuzzySearchStrategy from './SearchStrategies/FuzzySearchStrategy';
+import LiteralSearchStrategy from './SearchStrategies/LiteralSearchStrategy';
+import WildcardSearchStrategy from './SearchStrategies/WildcardSearchStrategy';
 
 interface RepositoryData {
   [key: string]: any;
@@ -41,7 +44,7 @@ export class Repository {
     this.options = {
       fuzzy: newOptions?.fuzzy || false,
       limit: newOptions?.limit || DEFAULT_OPTIONS.limit,
-      searchStrategy: strategyFactory(newOptions?.strategy || newOptions.fuzzy && 'fuzzy'),
+      searchStrategy: this.searchStrategy(newOptions?.strategy || newOptions.fuzzy && 'fuzzy'),
       sortMiddleware: newOptions?.sortMiddleware || DEFAULT_OPTIONS.sortMiddleware,
       exclude: newOptions?.exclude || DEFAULT_OPTIONS.exclude,
     };
@@ -90,5 +93,18 @@ export class Repository {
       }
     }
     return false;
+  }
+
+  private searchStrategy(
+    strategy: 'literal' | 'fuzzy' | 'wildcard',
+  ): SearchStrategy {
+    switch (strategy) {
+      case 'fuzzy':
+        return FuzzySearchStrategy;
+      case 'wildcard':
+        return WildcardSearchStrategy;
+      default:
+        return LiteralSearchStrategy;
+    }
   }
 }
