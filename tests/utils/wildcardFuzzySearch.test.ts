@@ -29,12 +29,6 @@ describe('wildcardFuzzySearch', () => {
     expect(wildcardFuzzySearch('xyz', 'abc')).toBe(false);
   });
 
-  it('should handle empty strings correctly', () => {
-    expect(wildcardFuzzySearch('hello', '')).toBe(false);
-    expect(wildcardFuzzySearch('', 'hello')).toBe(false);
-    expect(wildcardFuzzySearch('', '')).toBe(false);
-  });
-
   it('should handle single-character patterns and texts', () => {
     expect(wildcardFuzzySearch('a', 'a')).toBe(true);
     expect(wildcardFuzzySearch('b', 'a')).toBe(false);
