@@ -1,4 +1,4 @@
-import { SearchStrategy } from '../SearchStrategies/types';
+import { Matcher } from '../SearchStrategies/types';
 
 export interface SearchResult {
   url: string;
@@ -22,7 +22,7 @@ export interface RepositoryOptions {
   fuzzy?: boolean;
   strategy?: 'literal' | 'fuzzy' | 'wildcard';
   limit?: number;
-  searchStrategy?: SearchStrategy;
+  searchStrategy?: Matcher;
   sortMiddleware?: (a: any, b: any) => number;
   exclude?: string[];
 }

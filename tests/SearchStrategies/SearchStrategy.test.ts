@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import LiteralSearchStrategy from '../../src/SearchStrategies/LiteralSearchStrategy';
-import WildcardSearchStrategy from '../../src/SearchStrategies/WildcardSearchStrategy';
-import FuzzySearchStrategy from '../../src/SearchStrategies/FuzzySearchStrategy';
+import {
+  FuzzySearchStrategy,
+  LiteralSearchStrategy,
+  WildcardSearchStrategy,
+} from '../../src/SearchStrategies/SearchStrategy';
 
 describe.each([
   { name: 'LiteralSearchStrategy', strategy: LiteralSearchStrategy },

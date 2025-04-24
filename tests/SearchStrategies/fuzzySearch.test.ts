@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { fuzzySearch } from '../../src/utils/fuzzySearch';
+import { describe, expect, it } from 'vitest';
+import { fuzzySearch } from '../../src/SearchStrategies/search/fuzzySearch';
 
 describe('fuzzySearch', () => {
   it('matches exact strings', () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { literalSearch } from '../../src/SearchStrategies/LiteralSearchStrategy';
+import { literalSearch } from '../../src/SearchStrategies/search/literalSearch';
 
 describe('literalSearch', () => {
 

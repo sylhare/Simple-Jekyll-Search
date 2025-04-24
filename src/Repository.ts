@@ -1,10 +1,8 @@
 import { isObject } from './utils';
 import { RepositoryOptions } from './utils/types';
 import { DEFAULT_OPTIONS } from './utils/default';
-import { SearchStrategy } from './SearchStrategies/types';
-import FuzzySearchStrategy from './SearchStrategies/FuzzySearchStrategy';
-import LiteralSearchStrategy from './SearchStrategies/LiteralSearchStrategy';
-import WildcardSearchStrategy from './SearchStrategies/WildcardSearchStrategy';
+import { Matcher } from './SearchStrategies/types';
+import { FuzzySearchStrategy, LiteralSearchStrategy, WildcardSearchStrategy } from './SearchStrategies/SearchStrategy';
 
 interface RepositoryData {
   [key: string]: any;
@@ -97,7 +95,7 @@ export class Repository {
 
   private searchStrategy(
     strategy: 'literal' | 'fuzzy' | 'wildcard',
-  ): SearchStrategy {
+  ): Matcher {
     switch (strategy) {
       case 'fuzzy':
         return FuzzySearchStrategy;

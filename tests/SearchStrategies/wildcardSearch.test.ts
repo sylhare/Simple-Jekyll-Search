@@ -1,5 +1,5 @@
-import { wildcardSearch } from '../../src/utils/wildcardSearch';
 import { describe, expect, it } from 'vitest';
+import { wildcardSearch } from '../../src/SearchStrategies/search/wildcardSearch';
 
 describe('wildcardFuzzySearch', () => {
   it('should return true for exact matches', () => {
