@@ -1,13 +1,10 @@
-import { SearchStrategy } from './types';
+import { AbstractSearchStrategy } from './types';
 import { wildcardFuzzySearch } from '../utils/wildcardFuzzySearch';
+import { literalSearch } from './LiteralSearchStrategy';
 
-export class WildcardSearchStrategy implements SearchStrategy {
-  public matches(text: string | null, criteria: string): boolean {
-    if (text === null) {
-      return false;
-    }
-
-    return wildcardFuzzySearch(text, criteria);
+export class WildcardSearchStrategy extends AbstractSearchStrategy {
+  doMatch(text: string | null, criteria: string): boolean {
+    return wildcardFuzzySearch(text, criteria) || literalSearch(text, criteria);
   }
 }
 
