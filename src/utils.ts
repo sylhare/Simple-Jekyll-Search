@@ -18,3 +18,22 @@ export function NoSort(): number {
 export function isObject(obj: any): obj is RepositoryData {
   return Boolean(obj) && Object.prototype.toString.call(obj) === '[object Object]';
 }
+
+export function clone<T>(input: T): T {
+  if (input === null || typeof input !== 'object') {
+    return input;
+  }
+
+  if (Array.isArray(input)) {
+    return input.map(item => clone(item)) as unknown as T;
+  }
+
+  const output: Record<string, any> = {};
+  for (const key in input) {
+    if (Object.prototype.hasOwnProperty.call(input, key)) {
+      output[key] = clone((input as Record<string, any>)[key]);
+    }
+  }
+
+  return output as T;
+}

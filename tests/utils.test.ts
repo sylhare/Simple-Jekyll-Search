@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isJSON, isObject, merge, NoSort } from '../src/utils';
+import { clone, isJSON, isObject, merge, NoSort } from '../src/utils';
 
 describe('utils', () => {
 
@@ -82,6 +82,46 @@ describe('utils', () => {
       expect(isObject('string')).toBe(false);
       expect(isObject(true)).toBe(false);
       expect(isObject(undefined)).toBe(false);
+    });
+  });
+
+  describe('clone', () => {
+    it('creates a deep clone of an object', () => {
+      const obj = { foo: 'bar', nested: { key: 'value' } };
+      const clonedObj = clone(obj);
+
+      expect(clonedObj).toEqual(obj);
+      expect(clonedObj).not.toBe(obj);
+      expect(clonedObj.nested).not.toBe(obj.nested);
+    });
+
+    it('creates a deep clone of an array', () => {
+      const arr = [{ foo: 'bar' }, { key: 'value' }];
+      const clonedArr = clone(arr);
+
+      expect(clonedArr).toEqual(arr);
+      expect(clonedArr).not.toBe(arr);
+      expect(clonedArr[0]).not.toBe(arr[0]);
+    });
+
+    it('returns primitive values as is', () => {
+      expect(clone(42)).toBe(42);
+      expect(clone('string')).toBe('string');
+      expect(clone(null)).toBe(null);
+      expect(clone(undefined)).toBe(undefined);
+    });
+
+    it('handles empty objects and arrays', () => {
+      expect(clone({})).toEqual({});
+      expect(clone([])).toEqual([]);
+    });
+
+    it('does not modify the original object', () => {
+      const obj = { foo: 'bar', nested: { key: 'value' } };
+      const clonedObj = clone(obj);
+
+      clonedObj.nested.key = 'modified';
+      expect(obj.nested.key).toBe('value');
     });
   });
 });
