@@ -13,9 +13,7 @@
  */
 export function fuzzySearch(text: string, pattern: string): boolean {
   pattern = pattern.trimEnd();
-  
   if (pattern.length === 0) return true;
-  if (text.length === 0) return false;
 
   pattern = pattern.toLowerCase();
   text = text.toLowerCase();

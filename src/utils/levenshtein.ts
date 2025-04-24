@@ -37,3 +37,17 @@ export function levenshtein(a: string, b: string): number {
   // Return the distance between the two strings
   return distanceMatrix[lenA][lenB];
 }
+
+/**
+ * Matches a pattern against a text with a set degree of certainty
+ * using the levenshtein distance.
+ *
+ * @param text - The text to search in
+ * @param pattern - The pattern to search for
+ */
+export function levenshteinSearch(text: string, pattern: string): boolean {
+  const distance = levenshtein(pattern, text);
+  const similarity = 1 - distance / Math.max(pattern.length, text.length);
+
+  return similarity >= 0.3;
+}
