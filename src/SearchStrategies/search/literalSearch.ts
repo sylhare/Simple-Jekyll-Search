@@ -1,6 +1,6 @@
-import { AbstractSearchStrategy } from './types';
+import { SearchStrategy } from './types';
 
-export class LiteralSearchStrategy extends AbstractSearchStrategy {
+export class LiteralSearchStrategy extends SearchStrategy {
   doMatch(text: string | null, criteria: string): boolean {
     return literalSearch(text, criteria);
   }
