@@ -1,4 +1,4 @@
-import { describe, it, beforeEach, afterEach, expect } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Repository } from '../src/Repository';
 
 interface TestElement {
@@ -37,11 +37,20 @@ describe('Repository', () => {
     expect(repository.search('lorem ipsum')).toEqual([loremElement]);
   });
 
-  it('finds a fuzzy string', () => {
+  it('[deprecated] finds a fuzzy string', () => {
     repository.setOptions({ fuzzy: true });
     expect(repository.search('lrm ism')).toEqual([loremElement]);
+  });
+
+  it('finds a fuzzy string', () => {
     repository.setOptions({ strategy: 'fuzzy' });
     expect(repository.search('lrm ism')).toEqual([loremElement]);
+  });
+
+  it('finds items using a wildcard pattern', () => {
+    repository.setOptions({ strategy: 'wildcard' });
+    expect(repository.search('* ispum')).toEqual([loremElement]);
+    expect(repository.search('*bar')).toEqual([barElement, almostBarElement]);
   });
 
   it('returns empty search results when an empty criteria is provided', () => {
@@ -50,7 +59,7 @@ describe('Repository', () => {
 
   it('excludes items from search #1', () => {
     repository.setOptions({
-      exclude: ['almostbar']
+      exclude: ['almostbar'],
     });
     expect(repository.search('almostbar')).toEqual([]);
   });
@@ -59,7 +68,7 @@ describe('Repository', () => {
     repository.setOptions({
       sortMiddleware: (a: TestElement, b: TestElement) => {
         return a.title.localeCompare(b.title);
-      }
+      },
     });
     expect(repository.search('r')).toEqual([almostBarElement, barElement, loremElement]);
   });

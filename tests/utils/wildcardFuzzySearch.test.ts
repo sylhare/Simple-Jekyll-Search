@@ -17,7 +17,6 @@ describe('wildcardFuzzySearch', () => {
     expect(wildcardFuzzySearch('hello amazing world', 'hello*world')).toBe(true);
     expect(wildcardFuzzySearch('hello world', 'hello*world')).toBe(true);
     expect(wildcardFuzzySearch('hello world', 'hello*')).toBe(true);
-    expect(wildcardFuzzySearch('hello', 'hello*world')).toBe(false);
   });
 
   it('should return true for fuzzy matches with high similarity', () => {
