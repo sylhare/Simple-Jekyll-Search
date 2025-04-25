@@ -34,4 +34,9 @@ describe('wildcardFuzzySearch', () => {
     expect(wildcardSearch('b', 'a')).toBe(false);
     expect(wildcardSearch('a', '*')).toBe(true);
   });
+
+  it('should return false for a word not present in the text', () => {
+    expect(wildcardSearch('hello world', 'missing')).toBe(false);
+    expect(wildcardSearch('hello world', 'miss*')).toBe(false);
+  });
 });

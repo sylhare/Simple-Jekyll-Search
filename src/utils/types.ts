@@ -2,19 +2,17 @@ import { Matcher } from '../SearchStrategies/types';
 
 export interface SearchResult {
   url: string;
-  desc: string;
   title: string;
+  desc: string;
   query?: string;
-  [key: string]: string | undefined;
 }
 
 export interface SearchData {
+  url: string;
   title: string;
   category?: string;
   tags?: string;
-  url: string;
   date?: string;
-  [key: string]: string | undefined;
 }
 
 export interface RepositoryOptions {

@@ -26,10 +26,6 @@ describe.each([
     expect(strategy.matches('hello world test search text', 'hello world ')).toBe(true);
   });
 
-  it.skip('does not match multiple words if not exact words with space in the search criteria', () => {
-    expect(strategy.matches('hello world test search text', 'hello text world ')).toBe(false);
-  });
-
   it('matches a word that is partially contained in the search criteria', () => {
     expect(strategy.matches('this tasty tester text', 'test')).toBe(true);
   });
