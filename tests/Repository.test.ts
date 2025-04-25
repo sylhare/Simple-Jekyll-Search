@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Repository } from '../src/Repository';
+import { SearchResult } from '../src/utils/types';
 
 interface TestElement {
   title: string;
@@ -71,5 +72,23 @@ describe('Repository', () => {
       },
     });
     expect(repository.search('r')).toEqual([almostBarElement, barElement, loremElement]);
+  });
+
+  it('search results should be a clone and not a reference to repository data', () => {
+    const query = 'Developer';
+    repository.put(
+      { name: 'Alice', role: 'Developer' },
+      { name: 'Bob', role: 'Designer' },
+    );
+
+    const results = repository.search(query);
+    expect(results).toEqual([{ name: 'Alice', role: 'Developer' }]);
+
+    (results as SearchResult[]).forEach(result => {
+      result.role = 'Modified Role';
+    });
+
+    const originalData = repository.search(query);
+    expect(originalData).toEqual([{ name: 'Alice', role: 'Developer' }]);
   });
 });

@@ -1,20 +1,18 @@
-import { SearchStrategy } from '../SearchStrategies/types';
+import { Matcher } from '../SearchStrategies/types';
 
 export interface SearchResult {
   url: string;
-  desc: string;
   title: string;
+  desc: string;
   query?: string;
-  [key: string]: string | undefined;
 }
 
 export interface SearchData {
+  url: string;
   title: string;
   category?: string;
   tags?: string;
-  url: string;
   date?: string;
-  [key: string]: string | undefined;
 }
 
 export interface RepositoryOptions {
@@ -22,7 +20,7 @@ export interface RepositoryOptions {
   fuzzy?: boolean;
   strategy?: 'literal' | 'fuzzy' | 'wildcard';
   limit?: number;
-  searchStrategy?: SearchStrategy;
+  searchStrategy?: Matcher;
   sortMiddleware?: (a: any, b: any) => number;
   exclude?: string[];
 }

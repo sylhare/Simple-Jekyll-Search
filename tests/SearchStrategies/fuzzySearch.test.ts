@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { fuzzySearch } from '../../src/utils/fuzzySearch';
+import { describe, expect, it } from 'vitest';
+import { fuzzySearch } from '../../src/SearchStrategies/search/fuzzySearch';
 
 describe('fuzzySearch', () => {
   it('matches exact strings', () => {
@@ -10,6 +10,9 @@ describe('fuzzySearch', () => {
   it('matches substrings', () => {
     expect(fuzzySearch('hello', 'hlo')).toBe(true);
     expect(fuzzySearch('test', 'tst')).toBe(true);
+    expect(fuzzySearch('fuzzy', 'fzy')).toBe(true);
+    expect(fuzzySearch('react', 'rct')).toBe(true);
+    expect(fuzzySearch('what the heck', 'wth')).toBe(true);
   });
 
   it('matches characters in sequence', () => {
@@ -22,16 +25,20 @@ describe('fuzzySearch', () => {
     expect(fuzzySearch('abcd', 'dc')).toBe(false);
   });
 
+  it('does not match words that don\'t contain the search criteria', () => {
+    expect(fuzzySearch('fuzzy', 'fzyyy')).toBe(false);
+    expect(fuzzySearch('react', 'angular')).toBe(false);
+    expect(fuzzySearch('what the heck', 'wth?')).toBe(false);
+  });
+
   it('is case insensitive', () => {
     expect(fuzzySearch('HELLO', 'hello')).toBe(true);
     expect(fuzzySearch('world', 'WORLD')).toBe(true);
     expect(fuzzySearch('hEllO', 'HeLLo')).toBe(true);
-  });
-
-  it('handles empty strings', () => {
-    expect(fuzzySearch('', '')).toBe(true);
-    expect(fuzzySearch('text', '')).toBe(true);
-    expect(fuzzySearch('', 'pattern')).toBe(false);
+    expect(fuzzySearch('Different Cases', 'dc')).toBe(true);
+    expect(fuzzySearch('UPPERCASE', 'upprcs')).toBe(true);
+    expect(fuzzySearch('lowercase', 'lc')).toBe(true);
+    expect(fuzzySearch('DiFfErENt cASeS', 'dc')).toBe(true);
   });
 
   it('handles special characters', () => {
@@ -43,6 +50,23 @@ describe('fuzzySearch', () => {
     expect(fuzzySearch('hello world', 'hw')).toBe(true);
     expect(fuzzySearch('hello world', 'h w')).toBe(true);
     expect(fuzzySearch('hello world', 'hw ')).toBe(true);
+  });
+
+  it('matches characters in sequence', () => {
+    expect(fuzzySearch('hello world', 'hlo wld')).toBe(true);
+    expect(fuzzySearch('hello world', 'hw')).toBe(true);
+    expect(fuzzySearch('hello world', 'hlowrd')).toBe(true);
+    expect(fuzzySearch('hello world', 'wrld')).toBe(true);
+    expect(fuzzySearch('hello world', 'wh')).toBe(false);
+  });
+
+  it('does not match when character frequency in the pattern exceeds the text', () => {
+    expect(fuzzySearch('goggles', 'gggggggg')).toBe(false);
+    expect(fuzzySearch('aab', 'aaaa')).toBe(false);
+  });
+
+  it('match ordered multiple words', () => {
+    expect(fuzzySearch('Ola que tal', 'ola tal')).toBe(true);
   });
 
   describe('original fuzzysearch test cases', () => {

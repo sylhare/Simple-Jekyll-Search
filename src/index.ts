@@ -72,8 +72,7 @@ const registerInput = (): void => {
 const search = (query: string): void => {
   if (isValidQuery(query)) {
     emptyResultsContainer();
-    const results = repository.search(query);
-    render(results as SearchResult[], query);
+    render(repository.search(query), query);
     options.onSearch?.();
   }
 };

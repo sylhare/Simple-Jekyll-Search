@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { levenshtein } from '../../src/utils/levenshtein';
+import { levenshtein } from '../../src/SearchStrategies/search/levenshtein';
+
 
 describe('levenshtein', () => {
 

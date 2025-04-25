@@ -1,7 +1,8 @@
-import { isObject } from './utils';
+import { clone, isObject } from './utils';
 import { RepositoryOptions } from './utils/types';
-import { strategyFactory } from './SearchStrategies/types';
 import { DEFAULT_OPTIONS } from './utils/default';
+import { Matcher } from './SearchStrategies/types';
+import { FuzzySearchStrategy, LiteralSearchStrategy, WildcardSearchStrategy } from './SearchStrategies/SearchStrategy';
 
 interface RepositoryData {
   [key: string]: any;
@@ -34,14 +35,14 @@ export class Repository {
     if (!criteria) {
       return [];
     }
-    return this.findMatches(this.data, criteria).sort(this.options.sortMiddleware);
+    return clone(this.findMatches(this.data, criteria).sort(this.options.sortMiddleware));
   }
 
   public setOptions(newOptions: RepositoryOptions): void {
     this.options = {
       fuzzy: newOptions?.fuzzy || false,
       limit: newOptions?.limit || DEFAULT_OPTIONS.limit,
-      searchStrategy: strategyFactory(newOptions?.strategy || newOptions.fuzzy && 'fuzzy'),
+      searchStrategy: this.searchStrategy(newOptions?.strategy || newOptions.fuzzy && 'fuzzy'),
       sortMiddleware: newOptions?.sortMiddleware || DEFAULT_OPTIONS.sortMiddleware,
       exclude: newOptions?.exclude || DEFAULT_OPTIONS.exclude,
     };
@@ -90,5 +91,18 @@ export class Repository {
       }
     }
     return false;
+  }
+
+  private searchStrategy(
+    strategy: 'literal' | 'fuzzy' | 'wildcard',
+  ): Matcher {
+    switch (strategy) {
+      case 'fuzzy':
+        return FuzzySearchStrategy;
+      case 'wildcard':
+        return WildcardSearchStrategy;
+      default:
+        return LiteralSearchStrategy;
+    }
   }
 }
