@@ -1,5 +1,5 @@
-import { SearchOptions } from './types';
 import { NoSort } from '../utils';
+import { SearchOptions } from './types';
 
 export const DEFAULT_OPTIONS: SearchOptions = {
   searchInput: null!,
@@ -19,4 +19,6 @@ export const DEFAULT_OPTIONS: SearchOptions = {
 
 export const REQUIRED_OPTIONS = ['searchInput', 'resultsContainer', 'json'];
 
-export const WHITELISTED_KEYS = new Set([13, 16, 20, 37, 38, 39, 40, 91]); 
+export const WHITELISTED_KEYS = new Set([
+  'Enter', 'Shift', 'CapsLock', 'ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown', 'Meta',
+]);
