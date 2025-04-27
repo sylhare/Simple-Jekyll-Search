@@ -1,6 +1,6 @@
-import { Repository } from './Repository';
 import { load as loadJSON } from './JSONLoader';
 import { OptionsValidator } from './OptionsValidator';
+import { Repository } from './Repository';
 import { compile as compileTemplate, setOptions as setTemplaterOptions } from './Templater';
 import { isJSON, merge } from './utils';
 import { DEFAULT_OPTIONS, REQUIRED_OPTIONS, WHITELISTED_KEYS } from './utils/default';
@@ -39,7 +39,7 @@ const isValidQuery = (query: string): boolean => {
   return Boolean(query?.trim());
 };
 
-const isWhitelistedKey = (key: number): boolean => {
+const isWhitelistedKey = (key: string): boolean => {
   return !WHITELISTED_KEYS.has(key);
 };
 
@@ -60,7 +60,7 @@ const initWithURL = (url: string): void => {
 const registerInput = (): void => {
   options.searchInput.addEventListener('input', (e: Event) => {
     const inputEvent = e as KeyboardEvent;
-    if (isWhitelistedKey(inputEvent.which)) {
+    if (isWhitelistedKey(inputEvent.key)) {
       emptyResultsContainer();
       debounce(() => {
         search((e.target as HTMLInputElement).value);
@@ -72,7 +72,7 @@ const registerInput = (): void => {
 const search = (query: string): void => {
   if (isValidQuery(query)) {
     emptyResultsContainer();
-    render(repository.search(query), query);
+    render(repository.search(query) as SearchResult[], query);
     options.onSearch?.();
   }
 };
