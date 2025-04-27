@@ -10,3 +10,4 @@ cypress/screenshots/
 .idea
 package-lock.json
 .jekyll-cache
+coverage/**

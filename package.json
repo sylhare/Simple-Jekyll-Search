@@ -15,7 +15,7 @@
     "build": "vite build && terser dest/simple-jekyll-search.js -o dest/simple-jekyll-search.min.js",
     "prebuild": "yarn run test",
     "postbuild": "node scripts/stamp.js < dest/simple-jekyll-search.min.js > dest/simple-jekyll-search.min.js.tmp && mv dest/simple-jekyll-search.min.js.tmp dest/simple-jekyll-search.min.js && yarn run copy-example-code",
-    "test": "vitest run",
+    "test": "vitest run --coverage",
     "test:watch": "vitest",
     "start": "cd docs; jekyll serve",
     "copy-example-code": "cp dest/simple-jekyll-search.min.js docs/assets/js/",
@@ -39,13 +39,14 @@
     "@types/node": "^20.11.24",
     "@typescript-eslint/eslint-plugin": "^8.29.0",
     "@typescript-eslint/parser": "^8.29.0",
+    "@vitest/coverage-v8": "^3.1.2",
     "cypress": "^14.1.0",
     "eslint": "^9.24.0",
     "terser": "^5.39.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3",
     "vite": "^6.2.4",
-    "vitest": "^3.1.1"
+    "vitest": "^3.1.2"
   },
   "ts-node": {
     "esm": true,
