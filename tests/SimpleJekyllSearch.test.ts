@@ -110,7 +110,7 @@ describe('SimpleJekyllSearch', () => {
       expect(input.value).toBe('Test');
     });
 
-    it.skip('should not trigger search on whitelisted key input', async () => {
+    it('should not trigger search on whitelisted key input', async () => {
       const input = mockOptions.searchInput;
       const event = new dom.window.KeyboardEvent('input', { key: 'Enter' });
       input.value = 'Test';

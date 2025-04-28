@@ -39,18 +39,6 @@ class SimpleJekyllSearch {
     this.options.resultsContainer.innerHTML = '';
   }
 
-  private appendToResultsContainer(text: string): void {
-    this.options.resultsContainer.insertAdjacentHTML('beforeend', text);
-  }
-
-  private isValidQuery(query: string): boolean {
-    return Boolean(query?.trim());
-  }
-
-  private isWhitelistedKey(key: number): boolean {
-    return !WHITELISTED_KEYS.has(key);
-  }
-
   private initWithJSON(json: SearchData[]): void {
     this.repository.put(json);
     this.registerInput();
@@ -68,7 +56,7 @@ class SimpleJekyllSearch {
   private registerInput(): void {
     this.options.searchInput.addEventListener('input', (e: Event) => {
       const inputEvent = e as KeyboardEvent;
-      if (this.isWhitelistedKey(inputEvent.which)) {
+      if (!WHITELISTED_KEYS.has(inputEvent.key)) {
         this.emptyResultsContainer();
         this.debounce(() => {
           this.search((e.target as HTMLInputElement).value);
@@ -78,7 +66,7 @@ class SimpleJekyllSearch {
   }
 
   public search(query: string): void {
-    if (this.isValidQuery(query)) {
+    if (query?.trim().length > 0) {
       this.emptyResultsContainer();
       const results = this.repository.search(query) as SearchResult[];
       this.render(results, query);
@@ -88,7 +76,7 @@ class SimpleJekyllSearch {
 
   private render(results: SearchResult[], query: string): void {
     if (results.length === 0) {
-      this.appendToResultsContainer(this.options.noResultsText!);
+      this.options.resultsContainer.insertAdjacentHTML('beforeend', this.options.noResultsText!);
       return;
     }
 
