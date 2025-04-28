@@ -3,9 +3,9 @@ export interface Matcher {
 }
 
 export class SearchStrategy implements Matcher {
-  private readonly matchFunction: (text: string | null, criteria: string) => boolean;
+  private readonly matchFunction: (text: string, criteria: string) => boolean;
 
-  constructor(matchFunction: (text: string | null, criteria: string) => boolean) {
+  constructor(matchFunction: (text: string, criteria: string) => boolean) {
     this.matchFunction = matchFunction;
   }
 

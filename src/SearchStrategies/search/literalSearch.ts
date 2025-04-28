@@ -5,7 +5,7 @@
  * @param text
  * @param criteria
  */
-export function literalSearch(text: string | null, criteria: string): boolean {
+export function literalSearch(text: string, criteria: string): boolean {
   text = text.trim().toLowerCase();
   const pattern = criteria.endsWith(' ') ? [criteria.toLowerCase()] : criteria.trim().toLowerCase().split(' ');
 
