@@ -1,16 +1,12 @@
-import { clone, isObject } from './utils';
-import { RepositoryOptions } from './utils/types';
-import { DEFAULT_OPTIONS } from './utils/default';
-import { Matcher } from './SearchStrategies/types';
 import { FuzzySearchStrategy, LiteralSearchStrategy, WildcardSearchStrategy } from './SearchStrategies/SearchStrategy';
-
-interface RepositoryData {
-  [key: string]: any;
-}
+import { Matcher } from './SearchStrategies/types';
+import { clone, isObject } from './utils';
+import { DEFAULT_OPTIONS } from './utils/default';
+import { RepositoryData, RepositoryOptions } from './utils/types';
 
 export class Repository {
   private data: RepositoryData[] = [];
-  private options: Required<RepositoryOptions>;
+  private options!: Required<RepositoryOptions>;
 
   constructor(initialOptions: RepositoryOptions = {}) {
     this.setOptions(initialOptions);
@@ -40,11 +36,12 @@ export class Repository {
 
   public setOptions(newOptions: RepositoryOptions): void {
     this.options = {
-      fuzzy: newOptions?.fuzzy || false,
+      fuzzy: newOptions?.fuzzy || DEFAULT_OPTIONS.fuzzy,
       limit: newOptions?.limit || DEFAULT_OPTIONS.limit,
-      searchStrategy: this.searchStrategy(newOptions?.strategy || newOptions.fuzzy && 'fuzzy'),
+      searchStrategy: this.searchStrategy(newOptions?.strategy || (newOptions.fuzzy && 'fuzzy') || DEFAULT_OPTIONS.strategy),
       sortMiddleware: newOptions?.sortMiddleware || DEFAULT_OPTIONS.sortMiddleware,
       exclude: newOptions?.exclude || DEFAULT_OPTIONS.exclude,
+      strategy: newOptions?.strategy || DEFAULT_OPTIONS.strategy,
     };
   }
 

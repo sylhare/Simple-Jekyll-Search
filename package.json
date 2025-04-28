@@ -12,7 +12,7 @@
     "postcypress:run": "node scripts/kill-jekyll.js",
     "lint": "eslint . --ext .ts",
     "pretest": "yarn run lint",
-    "build": "vite build && terser dest/simple-jekyll-search.js -o dest/simple-jekyll-search.min.js",
+    "build": "tsc && vite build && terser dest/simple-jekyll-search.js -o dest/simple-jekyll-search.min.js",
     "prebuild": "yarn run test",
     "postbuild": "node scripts/stamp.js < dest/simple-jekyll-search.min.js > dest/simple-jekyll-search.min.js.tmp && mv dest/simple-jekyll-search.min.js.tmp dest/simple-jekyll-search.min.js && yarn run copy-example-code",
     "test": "vitest run --coverage",

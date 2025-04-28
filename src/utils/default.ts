@@ -1,7 +1,7 @@
 import { NoSort } from '../utils';
 import { SearchOptions } from './types';
 
-export const DEFAULT_OPTIONS: SearchOptions = {
+export const DEFAULT_OPTIONS: Required<SearchOptions> = {
   searchInput: null!,
   resultsContainer: null!,
   json: [],
@@ -12,6 +12,7 @@ export const DEFAULT_OPTIONS: SearchOptions = {
   noResultsText: 'No results found',
   limit: 10,
   fuzzy: false,
+  strategy: 'literal',
   debounceTime: null,
   exclude: [],
   onSearch: () => {}

@@ -25,6 +25,10 @@ export interface RepositoryOptions {
   exclude?: string[];
 }
 
+export interface RepositoryData {
+  [key: string]: any;
+}
+
 export interface SearchOptions extends Omit<RepositoryOptions, 'searchStrategy'> {
   searchInput: HTMLInputElement;
   resultsContainer: HTMLElement;
