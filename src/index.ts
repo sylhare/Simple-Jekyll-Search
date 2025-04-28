@@ -7,3 +7,8 @@ function SimpleJekyllSearch(options: SearchOptions): SimpleJekyllSearchInstance 
 }
 
 export default SimpleJekyllSearch;
+
+// Add to window if in browser environment
+if (typeof window !== 'undefined') {
+  (window as any).SimpleJekyllSearch = SimpleJekyllSearch;
+}
