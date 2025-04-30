@@ -1,6 +1,7 @@
 # Contributing to Simple-Jekyll-Search
 
-This is fork from Christian Lei's Simple-Jekyll-Search project which was archived on March 2022.
+This is fork from Christian Lei's [Simple-Jekyll-Search](https://github.com/christian-fei/Simple-Jekyll-Search) repository,
+which was archived on March 2022.
 I wanted to keep the project alive since I use it for my own theme [Type-on-strap](https://github.com/sylhare/Type-on-Strap)
 
 Thank you for considering contributing to Simple-Jekyll-Search! 
