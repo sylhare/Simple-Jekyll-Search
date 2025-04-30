@@ -1,6 +1,6 @@
 {
   "name": "simple-jekyll-search",
-  "version": "1.14.0",
+  "version": "1.15.0",
   "description": "Fork of Simple Jekyll Search from https://github.com/christian-fei/Simple-Jekyll-Search",
   "main": "dest/simple-jekyll-search.js",
   "type": "module",
@@ -32,9 +32,9 @@
     "src"
   ],
   "bugs": {
-    "url": "https://github.com/christian-fei/Simple-Jekyll-Search/issues"
+    "url": "https://github.com/sylhare/Simple-Jekyll-Search/issues"
   },
-  "homepage": "https://github.com/christian-fei/Simple-Jekyll-Search",
+  "homepage": "https://github.com/sylhare/Simple-Jekyll-Search",
   "devDependencies": {
     "@types/jsdom": "^21.1.7",
     "@types/node": "^20.11.24",
@@ -47,7 +47,7 @@
     "terser": "^5.39.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3",
-    "vite": "^6.2.4",
+    "vite": "6.2.6",
     "vitest": "^3.1.2"
   },
   "ts-node": {
