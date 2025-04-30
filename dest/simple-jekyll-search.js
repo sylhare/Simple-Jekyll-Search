@@ -1,7 +1,124 @@
-(function(factory) {
-  typeof define === "function" && define.amd ? define(factory) : factory();
-})(function() {
+(function(global, factory) {
+  typeof exports === "object" && typeof module !== "undefined" ? factory(exports) : typeof define === "function" && define.amd ? define(["exports"], factory) : (global = typeof globalThis !== "undefined" ? globalThis : global || self, factory(global.SimpleJekyllSearch = {}));
+})(this, function(exports2) {
   "use strict";
+  function load(location, callback) {
+    const xhr = getXHR();
+    xhr.open("GET", location, true);
+    xhr.onreadystatechange = createStateChangeListener(xhr, callback);
+    xhr.send();
+  }
+  function createStateChangeListener(xhr, callback) {
+    return function() {
+      if (xhr.readyState === 4 && xhr.status === 200) {
+        try {
+          callback(null, JSON.parse(xhr.responseText));
+        } catch (err) {
+          callback(err instanceof Error ? err : new Error(String(err)), null);
+        }
+      }
+    };
+  }
+  function getXHR() {
+    return window.XMLHttpRequest ? new window.XMLHttpRequest() : new window.ActiveXObject("Microsoft.XMLHTTP");
+  }
+  class OptionsValidator {
+    constructor(params) {
+      if (!this.validateParams(params)) {
+        throw new Error("-- OptionsValidator: required options missing");
+      }
+      this.requiredOptions = params.required;
+    }
+    getRequiredOptions() {
+      return this.requiredOptions;
+    }
+    validate(parameters) {
+      const errors = [];
+      this.requiredOptions.forEach((requiredOptionName) => {
+        if (typeof parameters[requiredOptionName] === "undefined") {
+          errors.push(requiredOptionName);
+        }
+      });
+      return errors;
+    }
+    validateParams(params) {
+      if (!params) {
+        return false;
+      }
+      return typeof params.required !== "undefined" && Array.isArray(params.required);
+    }
+  }
+  function fuzzySearch(text, pattern) {
+    pattern = pattern.trimEnd();
+    if (pattern.length === 0) return true;
+    pattern = pattern.toLowerCase();
+    text = text.toLowerCase();
+    let remainingText = text, currentIndex = -1;
+    for (const char of pattern) {
+      const nextIndex = remainingText.indexOf(char);
+      if (nextIndex === -1 || currentIndex !== -1 && remainingText.slice(0, nextIndex).split(" ").length - 1 > 2) {
+        return false;
+      }
+      currentIndex = nextIndex;
+      remainingText = remainingText.slice(nextIndex + 1);
+    }
+    return true;
+  }
+  function literalSearch(text, criteria) {
+    text = text.trim().toLowerCase();
+    const pattern = criteria.endsWith(" ") ? [criteria.toLowerCase()] : criteria.trim().toLowerCase().split(" ");
+    return pattern.filter((word) => text.indexOf(word) >= 0).length === pattern.length;
+  }
+  function levenshtein(a, b) {
+    const lenA = a.length;
+    const lenB = b.length;
+    const distanceMatrix = Array.from({ length: lenA + 1 }, () => Array(lenB + 1).fill(0));
+    for (let i = 0; i <= lenA; i++) distanceMatrix[i][0] = i;
+    for (let j = 0; j <= lenB; j++) distanceMatrix[0][j] = j;
+    for (let i = 1; i <= lenA; i++) {
+      for (let j = 1; j <= lenB; j++) {
+        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+        distanceMatrix[i][j] = Math.min(
+          distanceMatrix[i - 1][j] + 1,
+          // Removing a character from one string
+          distanceMatrix[i][j - 1] + 1,
+          // Adding a character to one string to make it closer to the other string.
+          distanceMatrix[i - 1][j - 1] + cost
+          // Replacing one character in a string with another
+        );
+      }
+    }
+    return distanceMatrix[lenA][lenB];
+  }
+  function levenshteinSearch(text, pattern) {
+    const distance = levenshtein(pattern, text);
+    const similarity = 1 - distance / Math.max(pattern.length, text.length);
+    return similarity >= 0.3;
+  }
+  function wildcardSearch(text, pattern) {
+    const regexPattern = pattern.replace(/\*/g, ".*");
+    const regex = new RegExp(`^${regexPattern}$`, "i");
+    if (regex.test(text)) return true;
+    return levenshteinSearch(text, pattern);
+  }
+  class SearchStrategy {
+    constructor(matchFunction) {
+      this.matchFunction = matchFunction;
+    }
+    matches(text, criteria) {
+      if (text === null || text.trim() === "" || !criteria) {
+        return false;
+      }
+      return this.matchFunction(text, criteria);
+    }
+  }
+  const LiteralSearchStrategy = new SearchStrategy(literalSearch);
+  const FuzzySearchStrategy = new SearchStrategy((text, criteria) => {
+    return fuzzySearch(text, criteria) || literalSearch(text, criteria);
+  });
+  const WildcardSearchStrategy = new SearchStrategy((text, criteria) => {
+    return wildcardSearch(text, criteria) || literalSearch(text, criteria);
+  });
   function merge(target, source) {
     return { ...target, ...source };
   }
@@ -45,84 +162,23 @@
     noResultsText: "No results found",
     limit: 10,
     fuzzy: false,
+    strategy: "literal",
     debounceTime: null,
     exclude: [],
     onSearch: () => {
     }
   };
   const REQUIRED_OPTIONS = ["searchInput", "resultsContainer", "json"];
-  const WHITELISTED_KEYS = /* @__PURE__ */ new Set([13, 16, 20, 37, 38, 39, 40, 91]);
-  class SearchStrategy {
-    constructor(matchFunction) {
-      this.matchFunction = matchFunction;
-    }
-    matches(text, criteria) {
-      if (text === null || text.trim() === "" || !criteria) {
-        return false;
-      }
-      return this.matchFunction(text, criteria);
-    }
-  }
-  function literalSearch(text, criteria) {
-    text = text.trim().toLowerCase();
-    const pattern = criteria.endsWith(" ") ? [criteria.toLowerCase()] : criteria.trim().toLowerCase().split(" ");
-    return pattern.filter((word) => text.indexOf(word) >= 0).length === pattern.length;
-  }
-  function levenshtein(a, b) {
-    const lenA = a.length;
-    const lenB = b.length;
-    const distanceMatrix = Array.from({ length: lenA + 1 }, () => Array(lenB + 1).fill(0));
-    for (let i = 0; i <= lenA; i++) distanceMatrix[i][0] = i;
-    for (let j = 0; j <= lenB; j++) distanceMatrix[0][j] = j;
-    for (let i = 1; i <= lenA; i++) {
-      for (let j = 1; j <= lenB; j++) {
-        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-        distanceMatrix[i][j] = Math.min(
-          distanceMatrix[i - 1][j] + 1,
-          // Removing a character from one string
-          distanceMatrix[i][j - 1] + 1,
-          // Adding a character to one string to make it closer to the other string.
-          distanceMatrix[i - 1][j - 1] + cost
-          // Replacing one character in a string with another
-        );
-      }
-    }
-    return distanceMatrix[lenA][lenB];
-  }
-  function levenshteinSearch(text, pattern) {
-    const distance = levenshtein(pattern, text);
-    const similarity = 1 - distance / Math.max(pattern.length, text.length);
-    return similarity >= 0.3;
-  }
-  function wildcardSearch(text, pattern) {
-    const regexPattern = pattern.replace(/\*/g, ".*");
-    const regex = new RegExp(`^${regexPattern}$`, "i");
-    if (regex.test(text)) return true;
-    return levenshteinSearch(text, pattern);
-  }
-  function fuzzySearch(text, pattern) {
-    pattern = pattern.trimEnd();
-    if (pattern.length === 0) return true;
-    pattern = pattern.toLowerCase();
-    text = text.toLowerCase();
-    let remainingText = text, currentIndex = -1;
-    for (const char of pattern) {
-      const nextIndex = remainingText.indexOf(char);
-      if (nextIndex === -1 || currentIndex !== -1 && remainingText.slice(0, nextIndex).split(" ").length - 1 > 2) {
-        return false;
-      }
-      currentIndex = nextIndex;
-      remainingText = remainingText.slice(nextIndex + 1);
-    }
-    return true;
-  }
-  const LiteralSearchStrategy = new SearchStrategy(literalSearch);
-  const FuzzySearchStrategy = new SearchStrategy((text, criteria) => {
-    return fuzzySearch(text, criteria) || literalSearch(text, criteria);
-  });
-  const WildcardSearchStrategy = new SearchStrategy((text, criteria) => {
-    return wildcardSearch(text, criteria) || literalSearch(text, criteria);
-  });
+  const WHITELISTED_KEYS = /* @__PURE__ */ new Set([
+    "Enter",
+    "Shift",
+    "CapsLock",
+    "ArrowLeft",
+    "ArrowUp",
+    "ArrowRight",
+    "ArrowDown",
+    "Meta"
+  ]);
   class Repository {
     constructor(initialOptions = {}) {
       this.data = [];
@@ -149,11 +205,12 @@
     }
     setOptions(newOptions) {
       this.options = {
-        fuzzy: (newOptions == null ? void 0 : newOptions.fuzzy) || false,
+        fuzzy: (newOptions == null ? void 0 : newOptions.fuzzy) || DEFAULT_OPTIONS.fuzzy,
         limit: (newOptions == null ? void 0 : newOptions.limit) || DEFAULT_OPTIONS.limit,
-        searchStrategy: this.searchStrategy((newOptions == null ? void 0 : newOptions.strategy) || newOptions.fuzzy && "fuzzy"),
+        searchStrategy: this.searchStrategy((newOptions == null ? void 0 : newOptions.strategy) || newOptions.fuzzy && "fuzzy" || DEFAULT_OPTIONS.strategy),
         sortMiddleware: (newOptions == null ? void 0 : newOptions.sortMiddleware) || DEFAULT_OPTIONS.sortMiddleware,
-        exclude: (newOptions == null ? void 0 : newOptions.exclude) || DEFAULT_OPTIONS.exclude
+        exclude: (newOptions == null ? void 0 : newOptions.exclude) || DEFAULT_OPTIONS.exclude,
+        strategy: (newOptions == null ? void 0 : newOptions.strategy) || DEFAULT_OPTIONS.strategy
       };
     }
     addObject(obj) {
@@ -207,53 +264,7 @@
       }
     }
   }
-  function load(location, callback) {
-    const xhr = getXHR();
-    xhr.open("GET", location, true);
-    xhr.onreadystatechange = createStateChangeListener(xhr, callback);
-    xhr.send();
-  }
-  function createStateChangeListener(xhr, callback) {
-    return function() {
-      if (xhr.readyState === 4 && xhr.status === 200) {
-        try {
-          callback(null, JSON.parse(xhr.responseText));
-        } catch (err) {
-          callback(err instanceof Error ? err : new Error(String(err)), null);
-        }
-      }
-    };
-  }
-  function getXHR() {
-    return window.XMLHttpRequest ? new window.XMLHttpRequest() : new window.ActiveXObject("Microsoft.XMLHTTP");
-  }
-  class OptionsValidator {
-    constructor(params) {
-      if (!this.validateParams(params)) {
-        throw new Error("-- OptionsValidator: required options missing");
-      }
-      this.requiredOptions = params.required;
-    }
-    getRequiredOptions() {
-      return this.requiredOptions;
-    }
-    validate(parameters) {
-      const errors = [];
-      this.requiredOptions.forEach((requiredOptionName) => {
-        if (typeof parameters[requiredOptionName] === "undefined") {
-          errors.push(requiredOptionName);
-        }
-      });
-      return errors;
-    }
-    validateParams(params) {
-      if (!params) {
-        return false;
-      }
-      return typeof params.required !== "undefined" && Array.isArray(params.required);
-    }
-  }
-  const options$1 = {
+  const options = {
     pattern: /\{(.*?)\}/g,
     template: "",
     middleware: function() {
@@ -262,125 +273,132 @@
   };
   function setOptions(_options) {
     if (_options.pattern) {
-      options$1.pattern = _options.pattern;
+      options.pattern = _options.pattern;
     }
     if (_options.template) {
-      options$1.template = _options.template;
+      options.template = _options.template;
     }
     if (typeof _options.middleware === "function") {
-      options$1.middleware = _options.middleware;
+      options.middleware = _options.middleware;
     }
   }
   function compile(data) {
-    return options$1.template.replace(options$1.pattern, function(match, prop) {
-      const value = options$1.middleware(prop, data[prop], options$1.template);
+    return options.template.replace(options.pattern, function(match, prop) {
+      const value = options.middleware(prop, data[prop], options.template);
       if (typeof value !== "undefined") {
         return value;
       }
       return data[prop] || match;
     });
   }
-  let options = { ...DEFAULT_OPTIONS };
-  let debounceTimerHandle;
-  const repository = new Repository();
-  const optionsValidator = new OptionsValidator({
-    required: REQUIRED_OPTIONS
-  });
-  const debounce = (func, delayMillis) => {
-    if (delayMillis) {
-      clearTimeout(debounceTimerHandle);
-      debounceTimerHandle = setTimeout(func, delayMillis);
-    } else {
-      func();
+  let SimpleJekyllSearch$1 = class SimpleJekyllSearch {
+    constructor() {
+      this.debounceTimerHandle = null;
+      this.options = { ...DEFAULT_OPTIONS };
+      this.repository = new Repository();
+      this.optionsValidator = new OptionsValidator({
+        required: REQUIRED_OPTIONS
+      });
     }
-  };
-  const throwError = (message) => {
-    throw new Error(`SimpleJekyllSearch --- ${message}`);
-  };
-  const emptyResultsContainer = () => {
-    options.resultsContainer.innerHTML = "";
-  };
-  const appendToResultsContainer = (text) => {
-    options.resultsContainer.insertAdjacentHTML("beforeend", text);
-  };
-  const isValidQuery = (query) => {
-    return Boolean(query == null ? void 0 : query.trim());
-  };
-  const isWhitelistedKey = (key) => {
-    return !WHITELISTED_KEYS.has(key);
-  };
-  const initWithJSON = (json) => {
-    repository.put(json);
-    registerInput();
-  };
-  const initWithURL = (url) => {
-    load(url, (err, json) => {
-      if (err) {
-        throwError(`Failed to load JSON from ${url}: ${err.message}`);
+    debounce(func, delayMillis) {
+      if (delayMillis) {
+        if (this.debounceTimerHandle) {
+          clearTimeout(this.debounceTimerHandle);
+        }
+        this.debounceTimerHandle = setTimeout(func, delayMillis);
+      } else {
+        func();
       }
-      initWithJSON(json);
-    });
-  };
-  const registerInput = () => {
-    options.searchInput.addEventListener("input", (e) => {
-      const inputEvent = e;
-      if (isWhitelistedKey(inputEvent.which)) {
-        emptyResultsContainer();
-        debounce(() => {
-          search(e.target.value);
-        }, options.debounceTime ?? null);
+    }
+    throwError(message) {
+      throw new Error(`SimpleJekyllSearch --- ${message}`);
+    }
+    emptyResultsContainer() {
+      this.options.resultsContainer.innerHTML = "";
+    }
+    initWithJSON(json) {
+      this.repository.put(json);
+      this.registerInput();
+    }
+    initWithURL(url) {
+      load(url, (err, json) => {
+        if (err) {
+          this.throwError(`Failed to load JSON from ${url}: ${err.message}`);
+        }
+        this.initWithJSON(json);
+      });
+    }
+    registerInput() {
+      this.options.searchInput.addEventListener("input", (e) => {
+        const inputEvent = e;
+        if (!WHITELISTED_KEYS.has(inputEvent.key)) {
+          this.emptyResultsContainer();
+          this.debounce(() => {
+            this.search(e.target.value);
+          }, this.options.debounceTime ?? null);
+        }
+      });
+    }
+    search(query) {
+      var _a, _b;
+      if ((query == null ? void 0 : query.trim().length) > 0) {
+        this.emptyResultsContainer();
+        const results = this.repository.search(query);
+        this.render(results, query);
+        (_b = (_a = this.options).onSearch) == null ? void 0 : _b.call(_a);
       }
-    });
-  };
-  const search = (query) => {
-    var _a;
-    if (isValidQuery(query)) {
-      emptyResultsContainer();
-      render(repository.search(query), query);
-      (_a = options.onSearch) == null ? void 0 : _a.call(options);
+    }
+    render(results, query) {
+      if (results.length === 0) {
+        this.options.resultsContainer.insertAdjacentHTML("beforeend", this.options.noResultsText);
+        return;
+      }
+      const fragment = document.createDocumentFragment();
+      results.forEach((result) => {
+        result.query = query;
+        const li = document.createElement("li");
+        li.innerHTML = compile(result);
+        fragment.appendChild(li);
+      });
+      this.options.resultsContainer.appendChild(fragment);
+    }
+    init(_options) {
+      var _a;
+      const errors = this.optionsValidator.validate(_options);
+      if (errors.length > 0) {
+        this.throwError(`Missing required options: ${REQUIRED_OPTIONS.join(", ")}`);
+      }
+      this.options = merge(this.options, _options);
+      setOptions({
+        template: this.options.searchResultTemplate,
+        middleware: this.options.templateMiddleware
+      });
+      this.repository.setOptions({
+        fuzzy: this.options.fuzzy,
+        limit: this.options.limit,
+        sortMiddleware: this.options.sortMiddleware,
+        strategy: this.options.strategy,
+        exclude: this.options.exclude
+      });
+      if (isJSON(this.options.json)) {
+        this.initWithJSON(this.options.json);
+      } else {
+        this.initWithURL(this.options.json);
+      }
+      const rv = {
+        search: this.search.bind(this)
+      };
+      (_a = this.options.success) == null ? void 0 : _a.call(rv);
+      return rv;
     }
   };
-  const render = (results, query) => {
-    if (results.length === 0) {
-      appendToResultsContainer(options.noResultsText);
-      return;
-    }
-    const fragment = document.createDocumentFragment();
-    results.forEach((result) => {
-      result.query = query;
-      const li = document.createElement("li");
-      li.innerHTML = compile(result);
-      fragment.appendChild(li);
-    });
-    options.resultsContainer.appendChild(fragment);
-  };
-  window.SimpleJekyllSearch = function(_options) {
-    var _a;
-    const errors = optionsValidator.validate(_options);
-    if (errors.length > 0) {
-      throwError(`Missing required options: ${REQUIRED_OPTIONS.join(", ")}`);
-    }
-    options = merge(options, _options);
-    setOptions({
-      template: options.searchResultTemplate,
-      middleware: options.templateMiddleware
-    });
-    repository.setOptions({
-      fuzzy: options.fuzzy,
-      limit: options.limit,
-      sortMiddleware: options.sortMiddleware,
-      strategy: options.strategy,
-      exclude: options.exclude
-    });
-    if (isJSON(options.json)) {
-      initWithJSON(options.json);
-    } else {
-      initWithURL(options.json);
-    }
-    const rv = {
-      search
-    };
-    (_a = options.success) == null ? void 0 : _a.call(rv);
-    return rv;
-  };
+  function SimpleJekyllSearch(options2) {
+    const instance = new SimpleJekyllSearch$1();
+    return instance.init(options2);
+  }
+  if (typeof window !== "undefined") {
+    window.SimpleJekyllSearch = SimpleJekyllSearch;
+  }
+  exports2.default = SimpleJekyllSearch;
+  Object.defineProperties(exports2, { __esModule: { value: true }, [Symbol.toStringTag]: { value: "Module" } });
 });
