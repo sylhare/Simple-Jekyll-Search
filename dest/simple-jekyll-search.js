@@ -356,9 +356,9 @@
       const fragment = document.createDocumentFragment();
       results.forEach((result) => {
         result.query = query;
-        const li = document.createElement("li");
-        li.innerHTML = compile(result);
-        fragment.appendChild(li);
+        const div = document.createElement("div");
+        div.innerHTML = compile(result);
+        fragment.appendChild(div);
       });
       this.options.resultsContainer.appendChild(fragment);
     }
