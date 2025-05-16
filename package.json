@@ -15,10 +15,10 @@
     "build": "tsc && vite build && terser dest/simple-jekyll-search.js -o dest/simple-jekyll-search.min.js",
     "prebuild": "yarn run test",
     "postbuild": "node scripts/stamp.js < dest/simple-jekyll-search.min.js > dest/simple-jekyll-search.min.js.tmp && mv dest/simple-jekyll-search.min.js.tmp dest/simple-jekyll-search.min.js && yarn run copy-example-code",
+    "copy-example-code": "cp dest/simple-jekyll-search.min.js docs/assets/js/",
     "test": "vitest run --coverage",
     "test:watch": "vitest",
     "start": "cd docs; jekyll serve",
-    "copy-example-code": "cp dest/simple-jekyll-search.min.js docs/assets/js/",
     "start:docs": "cd docs && bundle exec jekyll serve"
   },
   "repository": {

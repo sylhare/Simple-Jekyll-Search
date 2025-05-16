@@ -7,7 +7,7 @@ export default defineConfig({
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
       name: 'SimpleJekyllSearch',
-      fileName: (format) => `simple-jekyll-search${format === 'es' ? '.mjs' : '.js'}`,
+      fileName: (_format) => 'simple-jekyll-search.js',
       formats: ['umd'],
     },
     minify: false,
