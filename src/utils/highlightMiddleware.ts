@@ -43,10 +43,7 @@ export function createHighlightMiddleware(options: HighlightOptions = {}): (resu
       return result;
     }
 
-    // Create a copy of the result to avoid modifying the original
     const highlightedResult = { ...result };
-
-    // Process each text field in the result
     const textFields = ['title', 'desc', 'content', 'excerpt'];
     
     for (const field of textFields) {
@@ -99,7 +96,6 @@ export function highlightText(
     return { highlightedText: text, matchCount: 0 };
   }
 
-  // Find all matches with their positions
   const matches: Array<{ start: number; end: number; term: string }> = [];
   
   for (const term of searchTerms) {
@@ -122,26 +118,21 @@ export function highlightText(
     return { highlightedText: text, matchCount: 0 };
   }
 
-  // Sort matches by position
   matches.sort((a, b) => a.start - b.start);
 
-  // Merge overlapping matches
   const mergedMatches: Array<{ start: number; end: number; term: string }> = [];
   for (const match of matches) {
     if (mergedMatches.length === 0 || mergedMatches[mergedMatches.length - 1].end < match.start) {
       mergedMatches.push(match);
     } else {
-      // Extend the previous match
       const lastMatch = mergedMatches[mergedMatches.length - 1];
       lastMatch.end = Math.max(lastMatch.end, match.end);
       lastMatch.term = text.substring(lastMatch.start, lastMatch.end);
     }
   }
 
-  // If the text is short enough, just highlight all matches without context
   if (text.length <= maxLength) {
     let highlightedText = text;
-    // Process matches in reverse order to maintain positions
     for (let i = mergedMatches.length - 1; i >= 0; i--) {
       const match = mergedMatches[i];
       const before = highlightedText.substring(0, match.start);
@@ -152,7 +143,6 @@ export function highlightText(
     return { highlightedText, matchCount: mergedMatches.length };
   }
 
-  // Build highlighted text with context for longer texts
   let highlightedText = '';
   let totalLength = 0;
   let lastEnd = 0;
@@ -160,29 +150,24 @@ export function highlightText(
   for (let i = 0; i < mergedMatches.length; i++) {
     const match = mergedMatches[i];
     
-    // Calculate context boundaries for this match
     const contextStart = Math.max(lastEnd, match.start - contextBefore);
     const contextEnd = Math.min(text.length, match.end + contextAfter);
     
-    // Add ellipsis if there's a gap between matches
     if (contextStart > lastEnd && lastEnd > 0) {
       highlightedText += ellipsis;
       totalLength += ellipsis.length;
     }
     
-    // Add text before the match
     if (contextStart < match.start) {
       const beforeText = text.substring(contextStart, match.start);
       highlightedText += beforeText;
       totalLength += beforeText.length;
     }
     
-    // Add the highlighted match
     const matchText = text.substring(match.start, match.end);
     highlightedText += `<span class="${highlightClass}">${matchText}</span>`;
     totalLength += matchText.length;
     
-    // Add text after the match
     if (match.end < contextEnd) {
       const afterText = text.substring(match.end, contextEnd);
       highlightedText += afterText;
@@ -191,9 +176,7 @@ export function highlightText(
     
     lastEnd = contextEnd;
     
-    // Check if we've exceeded the max length
     if (totalLength >= maxLength) {
-      // Add ellipsis at the end if we're not at the end of the original text
       if (contextEnd < text.length) {
         highlightedText += ellipsis;
       }
@@ -225,13 +208,11 @@ function findFuzzyMatches(text: string, pattern: string): Array<{ start: number;
   
   if (lowerPattern.length === 0) return matches;
   
-  // Split pattern into words for multi-word fuzzy matching
   const patternWords = lowerPattern.split(/\s+/);
   
   for (const word of patternWords) {
     if (word.length === 0) continue;
     
-    // Find fuzzy matches for each word
     const wordMatches = findFuzzyWordMatches(lowerText, word);
     matches.push(...wordMatches);
   }
@@ -245,7 +226,6 @@ function findFuzzyMatches(text: string, pattern: string): Array<{ start: number;
 function findFuzzyWordMatches(text: string, word: string): Array<{ start: number; end: number; text: string }> {
   const matches: Array<{ start: number; end: number; text: string }> = [];
   
-  // First try to find exact word matches
   const exactRegex = new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
   let match;
   while ((match = exactRegex.exec(text)) !== null) {
@@ -256,9 +236,7 @@ function findFuzzyWordMatches(text: string, word: string): Array<{ start: number
     });
   }
   
-  // If no exact matches, try fuzzy matching
   if (matches.length === 0) {
-    // Simple fuzzy matching: find characters in sequence
     for (let i = 0; i < text.length; i++) {
       const fuzzyMatch = findFuzzySequenceMatch(text, word, i);
       if (fuzzyMatch) {
@@ -278,7 +256,7 @@ function findFuzzySequenceMatch(text: string, pattern: string, startPos: number)
   let textIndex = startPos;
   let patternIndex = 0;
   let matchStart = -1;
-  let maxGap = 3; // Maximum characters between pattern characters
+  let maxGap = 3;
   const matchedPositions: number[] = [];
   
   while (textIndex < text.length && patternIndex < pattern.length) {
@@ -289,7 +267,6 @@ function findFuzzySequenceMatch(text: string, pattern: string, startPos: number)
       matchedPositions.push(textIndex);
       patternIndex++;
     } else if (matchStart !== -1) {
-      // Check if we've gone too far from the last match
       if (textIndex - matchStart > maxGap * pattern.length) {
         return null;
       }
@@ -297,7 +274,6 @@ function findFuzzySequenceMatch(text: string, pattern: string, startPos: number)
     textIndex++;
   }
   
-  // If we found a complete match, return only the actual matched characters
   if (patternIndex === pattern.length && matchStart !== -1 && matchedPositions.length > 0) {
     const actualStart = matchedPositions[0];
     const actualEnd = matchedPositions[matchedPositions.length - 1] + 1;
@@ -328,14 +304,10 @@ export function createHighlightTemplateMiddleware(options: HighlightOptions = {}
   };
 
   return function(prop: string, value: string, _template: string, query?: string): string | undefined {
-    // Only highlight content and desc fields
     if ((prop === 'content' || prop === 'desc') && query && typeof value === 'string') {
-      // For fuzzy search, we need to find the actual matched characters
-      // First try exact matching (for literal and wildcard searches)
       let highlightedText = value;
       let hasMatches = false;
       
-      // Try exact word matching first
       const searchTerms = query.trim().split(/\s+/).filter(term => term.length > 0);
       for (const term of searchTerms) {
         const regex = new RegExp(`\\b(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})\\b`, 'gi');
@@ -345,11 +317,9 @@ export function createHighlightTemplateMiddleware(options: HighlightOptions = {}
         }
       }
       
-      // If no exact matches found, try fuzzy matching
       if (!hasMatches) {
         const fuzzyMatches = findFuzzyMatches(value, query);
         if (fuzzyMatches.length > 0) {
-          // Sort matches by position (reverse order to maintain positions when replacing)
           fuzzyMatches.sort((a, b) => b.start - a.start);
           
           for (const match of fuzzyMatches) {
@@ -362,7 +332,6 @@ export function createHighlightTemplateMiddleware(options: HighlightOptions = {}
         }
       }
       
-      // If we have matches, return the highlighted text
       if (hasMatches) {
         return highlightedText;
       }

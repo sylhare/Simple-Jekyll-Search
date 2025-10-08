@@ -49,9 +49,7 @@ describe('highlightText', () => {
     const result = highlightText(text, query, options);
     
     expect(result.highlightedText).toContain('<span class="sjs-highlight">search</span>');
-    // The text is long enough to trigger context mode
     expect(result.matchCount).toBe(1);
-    // Should show context around the match
     expect(result.highlightedText.length).toBeLessThan(text.length);
   });
 
@@ -63,9 +61,7 @@ describe('highlightText', () => {
     };
     const result = highlightText(text, query, options);
     
-    // The result should be truncated
     expect(result.highlightedText).toContain('<span class="sjs-highlight">search</span>');
-    // The result should be significantly shorter than the original text
     expect(result.highlightedText.length).toBeLessThan(text.length);
   });
 
@@ -103,7 +99,6 @@ describe('highlightText', () => {
     const query = 'search';
     const result = highlightText(text, query);
     
-    // Should merge the overlapping "search" matches
     expect(result.highlightedText).toBe('<span class="sjs-highlight">search</span>ing for <span class="sjs-highlight">search</span>');
     expect(result.matchCount).toBe(2);
   });
@@ -249,7 +244,6 @@ describe('createHighlightTemplateMiddleware', () => {
     const middleware = createHighlightTemplateMiddleware();
     const result = middleware('content', 'This is a testing result', '<div>{content}</div>', 'test');
     
-    // Should highlight the fuzzy match span that contains "test"
     expect(result).toContain('<span class="sjs-highlight">');
     expect(result).toContain('test');
   });
@@ -258,7 +252,6 @@ describe('createHighlightTemplateMiddleware', () => {
     const middleware = createHighlightTemplateMiddleware();
     const result = middleware('content', 'This is a tst result', '<div>{content}</div>', 'test');
     
-    // Should highlight the fuzzy match span that contains "tst"
     expect(result).toContain('<span class="sjs-highlight">');
     expect(result).toContain('tst');
   });
@@ -267,7 +260,6 @@ describe('createHighlightTemplateMiddleware', () => {
     const middleware = createHighlightTemplateMiddleware();
     const result = middleware('content', 'This is a test and testing result', '<div>{content}</div>', 'test');
     
-    // Should highlight exact "test" word, not fuzzy match in "testing"
     expect(result).toContain('<span class="sjs-highlight">test</span>');
     expect(result).not.toContain('<span class="sjs-highlight">testing</span>');
   });
@@ -276,13 +268,11 @@ describe('createHighlightTemplateMiddleware', () => {
     const middleware = createHighlightTemplateMiddleware();
     const result = middleware('content', 'This is a tst srch result', '<div>{content}</div>', 'test search');
     
-    // Should highlight fuzzy matches
     expect(result).toContain('<span class="sjs-highlight">');
   });
 
   describe('Search Strategy Compatibility', () => {
     const testCases = [
-      // Literal Search Test Cases
       {
         strategy: 'literal',
         description: 'should highlight exact word matches for literal search',
@@ -316,7 +306,6 @@ describe('createHighlightTemplateMiddleware', () => {
         shouldNotContain: []
       },
       
-      // Fuzzy Search Test Cases
       {
         strategy: 'fuzzy',
         description: 'should highlight exact matches when available for fuzzy search',
@@ -366,7 +355,6 @@ describe('createHighlightTemplateMiddleware', () => {
         shouldNotContain: []
       },
       
-      // Wildcard Search Test Cases
       {
         strategy: 'wildcard',
         description: 'should highlight exact matches for wildcard search',
@@ -400,7 +388,6 @@ describe('createHighlightTemplateMiddleware', () => {
         shouldNotContain: []
       },
       
-      // Levenshtein Search Test Cases (fallback for wildcard)
       {
         strategy: 'levenshtein',
         description: 'should highlight similar words using levenshtein distance',
@@ -426,7 +413,6 @@ describe('createHighlightTemplateMiddleware', () => {
         shouldNotContain: []
       },
       
-      // Edge Cases
       {
         strategy: 'all',
         description: 'should handle empty query',

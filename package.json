@@ -9,6 +9,7 @@
     "cypress:ci": "node scripts/start-jekyll.js & sleep 5 && cypress run",
     "cypress:run": "node scripts/start-jekyll.js & sleep 5 && cypress run && node scripts/kill-jekyll.js",
     "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
     "pretest": "yarn run lint",
     "build": "tsc && vite build && terser dest/simple-jekyll-search.js -o dest/simple-jekyll-search.min.js",
     "prebuild": "yarn run test",

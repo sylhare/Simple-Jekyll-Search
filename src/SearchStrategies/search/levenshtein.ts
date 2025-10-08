@@ -18,23 +18,20 @@ export function levenshtein(a: string, b: string): number {
   const lenB = b.length;
   const distanceMatrix: number[][] = Array.from({ length: lenA + 1 }, () => Array(lenB + 1).fill(0));
 
-  // Initialize the first row and column
   for (let i = 0; i <= lenA; i++) distanceMatrix[i][0] = i;
   for (let j = 0; j <= lenB; j++) distanceMatrix[0][j] = j;
 
   for (let i = 1; i <= lenA; i++) {
     for (let j = 1; j <= lenB; j++) {
       const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      // Calculate the minimum cost of the three possible operations to make it closer to the other string
       distanceMatrix[i][j] = Math.min(
-        distanceMatrix[i - 1][j] + 1,        // Removing a character from one string
-        distanceMatrix[i][j - 1] + 1,        // Adding a character to one string to make it closer to the other string.
-        distanceMatrix[i - 1][j - 1] + cost  // Replacing one character in a string with another
+        distanceMatrix[i - 1][j] + 1,
+        distanceMatrix[i][j - 1] + 1,
+        distanceMatrix[i - 1][j - 1] + cost
       );
     }
   }
 
-  // Return the distance between the two strings
   return distanceMatrix[lenA][lenB];
 }
 

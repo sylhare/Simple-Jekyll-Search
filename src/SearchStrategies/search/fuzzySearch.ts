@@ -20,12 +20,9 @@ export function fuzzySearch(text: string, pattern: string): boolean {
 
   let remainingText = text, currentIndex = -1;
   
-  // For each character in the pattern
   for (const char of pattern) {
-    // Find the next occurrence of this character in the remaining text
     const nextIndex = remainingText.indexOf(char);
 
-    // If the character is not found or is too far from the current character
     if (nextIndex === -1 || (currentIndex !== -1 && remainingText.slice(0, nextIndex).split(' ').length - 1 > 2)) {
       return false;
     }
