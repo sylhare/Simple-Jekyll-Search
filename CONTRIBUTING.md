@@ -9,6 +9,21 @@ We welcome contributions of all kinds, including bug fixes, feature requests, do
 
 ## Developer Setup
 
+### Prerequisites
+
+This project uses Yarn v4 as the package manager. Install Yarn v4 if you haven't already:
+
+```bash
+# Install Yarn v4 globally
+npm install -g yarn@4
+
+# Or using corepack (recommended)
+corepack enable
+corepack prepare yarn@4 --activate
+```
+
+### Install Dependencies
+
 Install the dependencies and build the project:
 
 ```bash
