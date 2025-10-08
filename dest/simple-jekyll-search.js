@@ -150,6 +150,128 @@
     }
     return output;
   }
+  function createHighlightMiddleware(options2 = {}) {
+    const {
+      highlightClass = "sjs-highlight",
+      contextBefore = 50,
+      contextAfter = 50,
+      maxLength = 250,
+      ellipsis = "..."
+    } = options2;
+    return function(result, query) {
+      if (!query || !result) {
+        return result;
+      }
+      const highlightedResult = { ...result };
+      const textFields = ["title", "desc", "content", "excerpt"];
+      for (const field of textFields) {
+        if (highlightedResult[field] && typeof highlightedResult[field] === "string") {
+          const highlighted = highlightText(
+            highlightedResult[field],
+            query,
+            { highlightClass, contextBefore, contextAfter, maxLength, ellipsis }
+          );
+          if (highlighted.highlightedText !== highlightedResult[field]) {
+            highlightedResult[field] = highlighted.highlightedText;
+          }
+        }
+      }
+      return highlightedResult;
+    };
+  }
+  function highlightText(text, query, options2 = {}) {
+    const {
+      highlightClass = "sjs-highlight",
+      contextBefore = 50,
+      contextAfter = 50,
+      maxLength = 250,
+      ellipsis = "..."
+    } = options2;
+    if (!text || !query) {
+      return { highlightedText: text, matchCount: 0 };
+    }
+    const originalText = text;
+    const searchTerms = query.trim().toLowerCase().split(/\s+/).filter((term) => term.length > 0);
+    if (searchTerms.length === 0) {
+      return { highlightedText: text, matchCount: 0 };
+    }
+    const matches = [];
+    for (const term of searchTerms) {
+      let index = 0;
+      while (index < text.length) {
+        const found = text.toLowerCase().indexOf(term, index);
+        if (found === -1) break;
+        matches.push({
+          start: found,
+          end: found + term.length,
+          term: text.substring(found, found + term.length)
+        });
+        index = found + 1;
+      }
+    }
+    if (matches.length === 0) {
+      return { highlightedText: text, matchCount: 0 };
+    }
+    matches.sort((a, b) => a.start - b.start);
+    const mergedMatches = [];
+    for (const match of matches) {
+      if (mergedMatches.length === 0 || mergedMatches[mergedMatches.length - 1].end < match.start) {
+        mergedMatches.push(match);
+      } else {
+        const lastMatch = mergedMatches[mergedMatches.length - 1];
+        lastMatch.end = Math.max(lastMatch.end, match.end);
+        lastMatch.term = text.substring(lastMatch.start, lastMatch.end);
+      }
+    }
+    if (text.length <= maxLength) {
+      let highlightedText2 = text;
+      for (let i = mergedMatches.length - 1; i >= 0; i--) {
+        const match = mergedMatches[i];
+        const before = highlightedText2.substring(0, match.start);
+        const after = highlightedText2.substring(match.end);
+        const matchText = highlightedText2.substring(match.start, match.end);
+        highlightedText2 = before + `<span class="${highlightClass}">${matchText}</span>` + after;
+      }
+      return { highlightedText: highlightedText2, matchCount: mergedMatches.length };
+    }
+    let highlightedText = "";
+    let totalLength = 0;
+    let lastEnd = 0;
+    for (let i = 0; i < mergedMatches.length; i++) {
+      const match = mergedMatches[i];
+      const contextStart = Math.max(lastEnd, match.start - contextBefore);
+      const contextEnd = Math.min(text.length, match.end + contextAfter);
+      if (contextStart > lastEnd && lastEnd > 0) {
+        highlightedText += ellipsis;
+        totalLength += ellipsis.length;
+      }
+      if (contextStart < match.start) {
+        const beforeText = text.substring(contextStart, match.start);
+        highlightedText += beforeText;
+        totalLength += beforeText.length;
+      }
+      const matchText = text.substring(match.start, match.end);
+      highlightedText += `<span class="${highlightClass}">${matchText}</span>`;
+      totalLength += matchText.length;
+      if (match.end < contextEnd) {
+        const afterText = text.substring(match.end, contextEnd);
+        highlightedText += afterText;
+        totalLength += afterText.length;
+      }
+      lastEnd = contextEnd;
+      if (totalLength >= maxLength) {
+        if (contextEnd < text.length) {
+          highlightedText += ellipsis;
+        }
+        break;
+      }
+    }
+    return {
+      highlightedText: highlightedText || originalText,
+      matchCount: mergedMatches.length
+    };
+  }
+  const defaultHighlightMiddleware = createHighlightMiddleware();
   const DEFAULT_OPTIONS = {
     searchInput: null,
     resultsContainer: null,
@@ -158,6 +280,7 @@
     },
     searchResultTemplate: '<li><a href="{url}" title="{desc}">{title}</a></li>',
     templateMiddleware: (_prop, _value, _template) => void 0,
+    highlightMiddleware: defaultHighlightMiddleware,
     sortMiddleware: NoSort,
     noResultsText: "No results found",
     limit: 10,
@@ -356,8 +479,9 @@
       const fragment = document.createDocumentFragment();
       results.forEach((result) => {
         result.query = query;
+        const highlightedResult = this.options.highlightMiddleware ? this.options.highlightMiddleware(result, query) : result;
         const div = document.createElement("div");
-        div.innerHTML = compile(result);
+        div.innerHTML = compile(highlightedResult);
         fragment.appendChild(div);
       });
       this.options.resultsContainer.appendChild(fragment);
@@ -399,6 +523,9 @@
   if (typeof window !== "undefined") {
     window.SimpleJekyllSearch = SimpleJekyllSearch;
   }
+  exports2.createHighlightMiddleware = createHighlightMiddleware;
   exports2.default = SimpleJekyllSearch;
+  exports2.defaultHighlightMiddleware = defaultHighlightMiddleware;
+  exports2.highlightText = highlightText;
   Object.defineProperties(exports2, { __esModule: { value: true }, [Symbol.toStringTag]: { value: "Module" } });
 });

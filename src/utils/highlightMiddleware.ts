@@ -211,3 +211,164 @@ export function highlightText(
  * Default highlight middleware with standard options
  */
 export const defaultHighlightMiddleware = createHighlightMiddleware();
+
+/**
+ * Finds fuzzy match positions in text for highlighting
+ * @param text - The text to search in
+ * @param pattern - The search pattern
+ * @returns Array of match positions
+ */
+function findFuzzyMatches(text: string, pattern: string): Array<{ start: number; end: number; text: string }> {
+  const matches: Array<{ start: number; end: number; text: string }> = [];
+  const lowerText = text.toLowerCase();
+  const lowerPattern = pattern.toLowerCase().trim();
+  
+  if (lowerPattern.length === 0) return matches;
+  
+  // Split pattern into words for multi-word fuzzy matching
+  const patternWords = lowerPattern.split(/\s+/);
+  
+  for (const word of patternWords) {
+    if (word.length === 0) continue;
+    
+    // Find fuzzy matches for each word
+    const wordMatches = findFuzzyWordMatches(lowerText, word);
+    matches.push(...wordMatches);
+  }
+  
+  return matches;
+}
+
+/**
+ * Finds fuzzy matches for a single word
+ */
+function findFuzzyWordMatches(text: string, word: string): Array<{ start: number; end: number; text: string }> {
+  const matches: Array<{ start: number; end: number; text: string }> = [];
+  
+  // First try to find exact word matches
+  const exactRegex = new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+  let match;
+  while ((match = exactRegex.exec(text)) !== null) {
+    matches.push({
+      start: match.index,
+      end: match.index + match[0].length,
+      text: match[0]
+    });
+  }
+  
+  // If no exact matches, try fuzzy matching
+  if (matches.length === 0) {
+    // Simple fuzzy matching: find characters in sequence
+    for (let i = 0; i < text.length; i++) {
+      const fuzzyMatch = findFuzzySequenceMatch(text, word, i);
+      if (fuzzyMatch) {
+        matches.push(fuzzyMatch);
+        i = fuzzyMatch.end - 1; // Skip to end of match
+      }
+    }
+  }
+  
+  return matches;
+}
+
+/**
+ * Finds a fuzzy sequence match starting from a given position
+ */
+function findFuzzySequenceMatch(text: string, pattern: string, startPos: number): { start: number; end: number; text: string } | null {
+  let textIndex = startPos;
+  let patternIndex = 0;
+  let matchStart = -1;
+  let maxGap = 3; // Maximum characters between pattern characters
+  const matchedPositions: number[] = [];
+  
+  while (textIndex < text.length && patternIndex < pattern.length) {
+    if (text[textIndex] === pattern[patternIndex]) {
+      if (matchStart === -1) {
+        matchStart = textIndex;
+      }
+      matchedPositions.push(textIndex);
+      patternIndex++;
+    } else if (matchStart !== -1) {
+      // Check if we've gone too far from the last match
+      if (textIndex - matchStart > maxGap * pattern.length) {
+        return null;
+      }
+    }
+    textIndex++;
+  }
+  
+  // If we found a complete match, return only the actual matched characters
+  if (patternIndex === pattern.length && matchStart !== -1 && matchedPositions.length > 0) {
+    const actualStart = matchedPositions[0];
+    const actualEnd = matchedPositions[matchedPositions.length - 1] + 1;
+    
+    return {
+      start: actualStart,
+      end: actualEnd,
+      text: text.substring(actualStart, actualEnd)
+    };
+  }
+  
+  return null;
+}
+
+/**
+ * Creates a templateMiddleware that includes highlighting functionality
+ * @param options - Highlighting options
+ * @returns A templateMiddleware function that can highlight text
+ */
+export function createHighlightTemplateMiddleware(options: HighlightOptions = {}) {
+  const highlightOptions = {
+    highlightClass: 'sjs-highlight',
+    contextBefore: 50,
+    contextAfter: 50,
+    maxLength: 250,
+    ellipsis: '...',
+    ...options
+  };
+
+  return function(prop: string, value: string, _template: string, query?: string): string | undefined {
+    // Only highlight content and desc fields
+    if ((prop === 'content' || prop === 'desc') && query && typeof value === 'string') {
+      // For fuzzy search, we need to find the actual matched characters
+      // First try exact matching (for literal and wildcard searches)
+      let highlightedText = value;
+      let hasMatches = false;
+      
+      // Try exact word matching first
+      const searchTerms = query.trim().split(/\s+/).filter(term => term.length > 0);
+      for (const term of searchTerms) {
+        const regex = new RegExp(`\\b(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})\\b`, 'gi');
+        if (regex.test(highlightedText)) {
+          highlightedText = highlightedText.replace(regex, `<span class="${highlightOptions.highlightClass}">$1</span>`);
+          hasMatches = true;
+        }
+      }
+      
+      // If no exact matches found, try fuzzy matching
+      if (!hasMatches) {
+        const fuzzyMatches = findFuzzyMatches(value, query);
+        if (fuzzyMatches.length > 0) {
+          // Sort matches by position (reverse order to maintain positions when replacing)
+          fuzzyMatches.sort((a, b) => b.start - a.start);
+          
+          for (const match of fuzzyMatches) {
+            const before = highlightedText.substring(0, match.start);
+            const after = highlightedText.substring(match.end);
+            const matchText = highlightedText.substring(match.start, match.end);
+            highlightedText = before + `<span class="${highlightOptions.highlightClass}">${matchText}</span>` + after;
+          }
+          hasMatches = true;
+        }
+      }
+      
+      // If we have matches, return the highlighted text
+      if (hasMatches) {
+        return highlightedText;
+      }
+    }
+    return undefined;
+  };
+}
+
+export const defaultHighlightTemplateMiddleware = createHighlightTemplateMiddleware();

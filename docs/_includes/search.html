@@ -7,53 +7,77 @@
   <script src="{{ '/assets/js/simple-jekyll-search.min.js' | relative_url }}"></script>
 
   <script>
-    // Custom highlight middleware with shorter context for search snippets
-    function createSearchSnippetMiddleware() {
-      return function(result, query) {
-        if (!query || !result) return result;
-        
-        const highlightedResult = { ...result };
-        
-        // Process content field with shorter context
-        if (highlightedResult.content && typeof highlightedResult.content === 'string') {
-          const text = highlightedResult.content;
+    // Custom template middleware with fuzzy-aware highlighting for search snippets
+    function createSearchSnippetTemplateMiddleware() {
+      return function(prop, value, template, query) {
+        // Only process content field with shorter context
+        if (prop === 'content' && query && typeof value === 'string') {
+          const text = value;
           const searchTerms = query.trim().toLowerCase().split(/\s+/).filter(term => term.length > 0);
           
           if (searchTerms.length > 0) {
-            // Find first match
-            let firstMatch = -1;
+            let highlightedText = text;
+            let hasMatches = false;
+            
+            // Try exact word matching first
             for (const term of searchTerms) {
-              const found = text.toLowerCase().indexOf(term);
-              if (found !== -1 && (firstMatch === -1 || found < firstMatch)) {
-                firstMatch = found;
+              const regex = new RegExp(`\\b(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})\\b`, 'gi');
+              if (regex.test(highlightedText)) {
+                highlightedText = highlightedText.replace(regex, '<span class="sjs-highlight">$1</span>');
+                hasMatches = true;
               }
             }
             
-            if (firstMatch !== -1) {
-              // Show 30 characters before and after the first match
-              const contextBefore = 30;
-              const contextAfter = 30;
-              const start = Math.max(0, firstMatch - contextBefore);
-              const end = Math.min(text.length, firstMatch + searchTerms[0].length + contextAfter);
-              
-              let snippet = text.substring(start, end);
-              
-              // Add ellipsis if we're not at the beginning/end
-              if (start > 0) snippet = '...' + snippet;
-              if (end < text.length) snippet = snippet + '...';
-              
-              // Highlight search terms
+            // If no exact matches, try fuzzy matching
+            if (!hasMatches) {
               for (const term of searchTerms) {
-                const regex = new RegExp(`(${term})`, 'gi');
-                snippet = snippet.replace(regex, '<span class="sjs-highlight">$1</span>');
+                // Simple fuzzy matching - find characters in order
+                const lowerText = highlightedText.toLowerCase();
+                const lowerTerm = term.toLowerCase();
+                let textIndex = 0;
+                let termIndex = 0;
+                let matchStart = -1;
+                
+                while (textIndex < lowerText.length && termIndex < lowerTerm.length) {
+                  if (lowerText[textIndex] === lowerTerm[termIndex]) {
+                    if (matchStart === -1) matchStart = textIndex;
+                    termIndex++;
+                  }
+                  textIndex++;
+                }
+                
+                if (termIndex === lowerTerm.length && matchStart !== -1) {
+                  const matchEnd = textIndex;
+                  const before = highlightedText.substring(0, matchStart);
+                  const after = highlightedText.substring(matchEnd);
+                  const matchText = highlightedText.substring(matchStart, matchEnd);
+                  highlightedText = before + '<span class="sjs-highlight">' + matchText + '</span>' + after;
+                  hasMatches = true;
+                }
               }
-              
-              highlightedResult.content = snippet;
+            }
+            
+            if (hasMatches) {
+              // Find first highlighted match for context
+              const firstHighlight = highlightedText.indexOf('<span class="sjs-highlight">');
+              if (firstHighlight !== -1) {
+                const contextBefore = 30;
+                const contextAfter = 30;
+                const start = Math.max(0, firstHighlight - contextBefore);
+                const end = Math.min(highlightedText.length, firstHighlight + 100 + contextAfter);
+                
+                let snippet = highlightedText.substring(start, end);
+                
+                // Add ellipsis if we're not at the beginning/end
+                if (start > 0) snippet = '...' + snippet;
+                if (end < highlightedText.length) snippet = snippet + '...';
+                
+                return snippet;
+              }
             }
           }
         }
-        
-        return highlightedResult;
+        return undefined;
       };
     }
 
@@ -62,7 +86,7 @@
       resultsContainer: document.getElementById('results-container'),
       json: '{{ "/assets/data/search.json" | relative_url }}',
       searchResultTemplate: '<li><a href="{url}?query={query}">{title}</a><div class="search-snippet">{content}</div></li>',
-      highlightMiddleware: createSearchSnippetMiddleware(),
+      templateMiddleware: createSearchSnippetTemplateMiddleware(),
       noResultsText: 'No results found',
       limit: 10,
       strategy: 'wildcard',

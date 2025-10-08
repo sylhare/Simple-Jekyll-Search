@@ -1,6 +1,12 @@
 import SimpleJekyllSearchClass from './SimpleJekyllSearch';
 import { SearchOptions, SimpleJekyllSearchInstance } from './utils/types';
-export { createHighlightMiddleware, highlightText, defaultHighlightMiddleware } from './utils/highlightMiddleware';
+export { 
+  createHighlightMiddleware, 
+  createHighlightTemplateMiddleware,
+  highlightText, 
+  defaultHighlightMiddleware,
+  defaultHighlightTemplateMiddleware
+} from './utils/highlightMiddleware';
 export type { HighlightOptions, HighlightResult } from './utils/highlightMiddleware';
 
 function SimpleJekyllSearch(options: SearchOptions): SimpleJekyllSearchInstance {
