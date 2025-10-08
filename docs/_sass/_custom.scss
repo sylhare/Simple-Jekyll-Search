@@ -63,3 +63,26 @@ $on-laptop:        800px;
 .info-text {
   margin-top: 20px;
 }
+
+// Highlight middleware styles
+.sjs-highlight {
+  text-decoration: underline;
+  text-decoration-color: #ffeb3b;
+  text-decoration-thickness: 3px;
+  text-underline-offset: 2px;
+  font-weight: bold;
+}
+
+.search-snippet {
+  font-size: 0.9em;
+  color: #666;
+  margin-top: 5px;
+  line-height: 1.4;
+  max-height: 3em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  word-wrap: break-word;
+}

@@ -7,11 +7,62 @@
   <script src="{{ '/assets/js/simple-jekyll-search.min.js' | relative_url }}"></script>
 
   <script>
+    // Custom highlight middleware with shorter context for search snippets
+    function createSearchSnippetMiddleware() {
+      return function(result, query) {
+        if (!query || !result) return result;
+        
+        const highlightedResult = { ...result };
+        
+        // Process content field with shorter context
+        if (highlightedResult.content && typeof highlightedResult.content === 'string') {
+          const text = highlightedResult.content;
+          const searchTerms = query.trim().toLowerCase().split(/\s+/).filter(term => term.length > 0);
+          
+          if (searchTerms.length > 0) {
+            // Find first match
+            let firstMatch = -1;
+            for (const term of searchTerms) {
+              const found = text.toLowerCase().indexOf(term);
+              if (found !== -1 && (firstMatch === -1 || found < firstMatch)) {
+                firstMatch = found;
+              }
+            }
+            
+            if (firstMatch !== -1) {
+              // Show 30 characters before and after the first match
+              const contextBefore = 30;
+              const contextAfter = 30;
+              const start = Math.max(0, firstMatch - contextBefore);
+              const end = Math.min(text.length, firstMatch + searchTerms[0].length + contextAfter);
+              
+              let snippet = text.substring(start, end);
+              
+              // Add ellipsis if we're not at the beginning/end
+              if (start > 0) snippet = '...' + snippet;
+              if (end < text.length) snippet = snippet + '...';
+              
+              // Highlight search terms
+              for (const term of searchTerms) {
+                const regex = new RegExp(`(${term})`, 'gi');
+                snippet = snippet.replace(regex, '<span class="sjs-highlight">$1</span>');
+              }
+              
+              highlightedResult.content = snippet;
+            }
+          }
+        }
+        
+        return highlightedResult;
+      };
+    }
+
     window.simpleJekyllSearch = new SimpleJekyllSearch({
       searchInput: document.getElementById('search-input'),
       resultsContainer: document.getElementById('results-container'),
       json: '{{ "/assets/data/search.json" | relative_url }}',
-      searchResultTemplate: '<li><a href="{url}?query={query}" title="{desc}">{title}</a></li>',
+      searchResultTemplate: '<li><a href="{url}?query={query}">{title}</a><div class="search-snippet">{content}</div></li>',
+      highlightMiddleware: createSearchSnippetMiddleware(),
       noResultsText: 'No results found',
       limit: 10,
       strategy: 'wildcard',

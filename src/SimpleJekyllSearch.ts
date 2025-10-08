@@ -83,8 +83,14 @@ class SimpleJekyllSearch {
     const fragment = document.createDocumentFragment();
     results.forEach(result => {
       result.query = query;
+      
+      // Apply highlight middleware if available
+      const highlightedResult = this.options.highlightMiddleware 
+        ? this.options.highlightMiddleware(result, query)
+        : result;
+      
       const div = document.createElement('div');
-      div.innerHTML = compileTemplate(result);
+      div.innerHTML = compileTemplate(highlightedResult);
       fragment.appendChild(div);
     });
 

@@ -1,13 +1,14 @@
 import { NoSort } from '../utils';
 import { SearchOptions } from './types';
 
-export const DEFAULT_OPTIONS: Required<SearchOptions> = {
+export const DEFAULT_OPTIONS: Required<Omit<SearchOptions, 'highlightMiddleware'>> & Pick<SearchOptions, 'highlightMiddleware'> = {
   searchInput: null!,
   resultsContainer: null!,
   json: [],
   success: function(this: { search: (query: string) => void }) {},
   searchResultTemplate: '<li><a href="{url}" title="{desc}">{title}</a></li>',
   templateMiddleware: (_prop: string, _value: string, _template: string) => undefined,
+  highlightMiddleware: undefined,
   sortMiddleware: NoSort,
   noResultsText: 'No results found',
   limit: 10,

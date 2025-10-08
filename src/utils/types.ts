@@ -36,6 +36,7 @@ export interface SearchOptions extends Omit<RepositoryOptions, 'searchStrategy'>
   success?: (this: { search: (query: string) => void }) => void;
   searchResultTemplate?: string;
   templateMiddleware?: (prop: string, value: string, template: string) => string | undefined;
+  highlightMiddleware?: (result: any, query: string) => any;
   noResultsText?: string;
   debounceTime?: number | null;
   onSearch?: () => void;
