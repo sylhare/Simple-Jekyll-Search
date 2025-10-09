@@ -30,15 +30,20 @@ export function setOptions(_options: TemplaterOptions): void {
 
 export function compile(data: Data, query?: string): string {
   return options.template.replace(options.pattern, function(match: string, prop: string) {
-    // Check if middleware supports matchInfo parameter (5 parameters including matchInfo)
-    if (options.middleware.length >= 5 && data._matchInfo && data._matchInfo[prop]) {
-      const value = (options.middleware as any)(prop, data[prop], options.template, query, data._matchInfo[prop]);
-      if (typeof value !== 'undefined') {
-        return value;
+    // Check if middleware supports matchInfo parameter and we have match info for this property
+    if (data._matchInfo && data._matchInfo[prop] && data._matchInfo[prop].length > 0) {
+      // Try calling with matchInfo parameter first
+      try {
+        const value = (options.middleware as any)(prop, data[prop], options.template, query, data._matchInfo[prop]);
+        if (typeof value !== 'undefined') {
+          return value;
+        }
+      } catch (_e) {
+        // If the middleware doesn't support 5 parameters, fall back to 4
       }
     }
     
-    // Fallback to current behavior
+    // Fallback to current behavior (4 parameters)
     const value = options.middleware(prop, data[prop], options.template, query);
     if (typeof value !== 'undefined') {
       return value;

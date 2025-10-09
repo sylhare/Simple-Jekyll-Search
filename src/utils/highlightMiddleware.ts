@@ -1,3 +1,5 @@
+import { MatchInfo } from '../SearchStrategies/types';
+
 /**
  * Highlight middleware that wraps search matches with HTML spans
  * and provides context around matches with a configurable character limit
@@ -289,6 +291,60 @@ function findFuzzySequenceMatch(text: string, pattern: string, startPos: number)
 }
 
 /**
+ * Highlights text using provided match information (faster, more accurate)
+ */
+function highlightWithMatchInfo(text: string, matchInfo: MatchInfo[], options: Required<HighlightOptions>): string {
+  if (matchInfo.length === 0) return text;
+  
+  // Sort matches by position (reverse order to avoid index shifting)
+  const sortedMatches = [...matchInfo].sort((a, b) => b.start - a.start);
+  
+  let highlightedText = text;
+  for (const match of sortedMatches) {
+    const before = highlightedText.substring(0, match.start);
+    const after = highlightedText.substring(match.end);
+    const matchText = highlightedText.substring(match.start, match.end);
+    highlightedText = before + `<span class="${options.highlightClass}">${matchText}</span>` + after;
+  }
+  
+  return highlightedText;
+}
+
+/**
+ * Highlights text using query-based search (fallback for backward compatibility)
+ */
+function highlightWithQuery(text: string, query: string, options: Required<HighlightOptions>): string {
+  let highlightedText = text;
+  let hasMatches = false;
+  
+  const searchTerms = query.trim().split(/\s+/).filter(term => term.length > 0);
+  for (const term of searchTerms) {
+    const regex = new RegExp(`\\b(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})\\b`, 'gi');
+    if (regex.test(highlightedText)) {
+      highlightedText = highlightedText.replace(regex, `<span class="${options.highlightClass}">$1</span>`);
+      hasMatches = true;
+    }
+  }
+  
+  if (!hasMatches) {
+    const fuzzyMatches = findFuzzyMatches(text, query);
+    if (fuzzyMatches.length > 0) {
+      fuzzyMatches.sort((a, b) => b.start - a.start);
+      
+      for (const match of fuzzyMatches) {
+        const before = highlightedText.substring(0, match.start);
+        const after = highlightedText.substring(match.end);
+        const matchText = highlightedText.substring(match.start, match.end);
+        highlightedText = before + `<span class="${options.highlightClass}">${matchText}</span>` + after;
+      }
+      hasMatches = true;
+    }
+  }
+  
+  return highlightedText;
+}
+
+/**
  * Creates a templateMiddleware that includes highlighting functionality
  * @param options - Highlighting options
  * @returns A templateMiddleware function that can highlight text
@@ -303,38 +359,18 @@ export function createHighlightTemplateMiddleware(options: HighlightOptions = {}
     ...options
   };
 
-  return function(prop: string, value: string, _template: string, query?: string): string | undefined {
+  return function(prop: string, value: string, _template: string, query?: string, matchInfo?: MatchInfo[]): string | undefined {
     if ((prop === 'content' || prop === 'desc') && query && typeof value === 'string') {
-      let highlightedText = value;
-      let hasMatches = false;
-      
-      const searchTerms = query.trim().split(/\s+/).filter(term => term.length > 0);
-      for (const term of searchTerms) {
-        const regex = new RegExp(`\\b(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})\\b`, 'gi');
-        if (regex.test(highlightedText)) {
-          highlightedText = highlightedText.replace(regex, `<span class="${highlightOptions.highlightClass}">$1</span>`);
-          hasMatches = true;
-        }
+      // Use provided match info if available (faster, more accurate - NO DUPLICATE SEARCH)
+      if (matchInfo && matchInfo.length > 0) {
+        const highlighted = highlightWithMatchInfo(value, matchInfo, highlightOptions);
+        return highlighted !== value ? highlighted : undefined;
       }
       
-      if (!hasMatches) {
-        const fuzzyMatches = findFuzzyMatches(value, query);
-        if (fuzzyMatches.length > 0) {
-          fuzzyMatches.sort((a, b) => b.start - a.start);
-          
-          for (const match of fuzzyMatches) {
-            const before = highlightedText.substring(0, match.start);
-            const after = highlightedText.substring(match.end);
-            const matchText = highlightedText.substring(match.start, match.end);
-            highlightedText = before + `<span class="${highlightOptions.highlightClass}">${matchText}</span>` + after;
-          }
-          hasMatches = true;
-        }
-      }
-      
-      if (hasMatches) {
-        return highlightedText;
-      }
+      // Only fallback to query-based search if match info is not available
+      // This should rarely happen in the new architecture
+      const highlighted = highlightWithQuery(value, query, highlightOptions);
+      return highlighted !== value ? highlighted : undefined;
     }
     return undefined;
   };

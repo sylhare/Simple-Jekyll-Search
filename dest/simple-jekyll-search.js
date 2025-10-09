@@ -76,7 +76,7 @@
       const wordMatches = findFuzzyWordMatches$1(lowerText, word);
       matches.push(...wordMatches);
     }
-    return matches;
+    return mergeAndSortMatches$1(matches);
   }
   function findFuzzyWordMatches$1(text, word) {
     const matches = [];
@@ -131,6 +131,21 @@
       };
     }
     return null;
+  }
+  function mergeAndSortMatches$1(matches) {
+    if (matches.length === 0) return [];
+    const sortedMatches = matches.sort((a, b) => a.start - b.start);
+    const merged = [];
+    for (const match of sortedMatches) {
+      const lastMerged = merged[merged.length - 1];
+      if (lastMerged && match.start <= lastMerged.end) {
+        lastMerged.end = Math.max(lastMerged.end, match.end);
+        lastMerged.text = lastMerged.text + match.text.slice(lastMerged.end - match.start);
+      } else {
+        merged.push({ ...match });
+      }
+    }
+    return merged;
   }
   function literalSearch(text, criteria) {
     text = text.trim().toLowerCase();
@@ -209,9 +224,10 @@
     if (!text || !pattern) return [];
     const wildcardMatches = findWildcardPatternMatches(text, pattern);
     if (wildcardMatches.length > 0) {
-      return wildcardMatches;
+      return mergeAndSortMatches(wildcardMatches);
     }
-    return findLevenshteinMatches(text, pattern);
+    const levenshteinMatches = findLevenshteinMatches(text, pattern);
+    return mergeAndSortMatches(levenshteinMatches);
   }
   function findWildcardPatternMatches(text, pattern) {
     const matches = [];
@@ -227,6 +243,21 @@
       });
     }
     return matches;
+  }
+  function mergeAndSortMatches(matches) {
+    if (matches.length === 0) return [];
+    const sortedMatches = matches.sort((a, b) => a.start - b.start);
+    const merged = [];
+    for (const match of sortedMatches) {
+      const lastMerged = merged[merged.length - 1];
+      if (lastMerged && match.start <= lastMerged.end) {
+        lastMerged.end = Math.max(lastMerged.end, match.end);
+        lastMerged.text = lastMerged.text + match.text.slice(lastMerged.end - match.start);
+      } else {
+        merged.push({ ...match });
+      }
+    }
+    return merged;
   }
   class SearchStrategy {
     constructor(matchFunction, findMatchesFunction) {
@@ -744,39 +775,57 @@
     }
     return null;
   }
+  function highlightWithMatchInfo(text, matchInfo, options2) {
+    if (matchInfo.length === 0) return text;
+    const sortedMatches = [...matchInfo].sort((a, b) => b.start - a.start);
+    let highlightedText = text;
+    for (const match of sortedMatches) {
+      const before = highlightedText.substring(0, match.start);
+      const after = highlightedText.substring(match.end);
+      const matchText = highlightedText.substring(match.start, match.end);
+      highlightedText = before + `<span class="${options2.highlightClass}">${matchText}</span>` + after;
+    }
+    return highlightedText;
+  }
+  function highlightWithQuery(text, query, options2) {
+    let highlightedText = text;
+    let hasMatches = false;
+    const searchTerms = query.trim().split(/\s+/).filter((term) => term.length > 0);
+    for (const term of searchTerms) {
+      const regex = new RegExp(`\\b(${term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})\\b`, "gi");
+      if (regex.test(highlightedText)) {
+        highlightedText = highlightedText.replace(regex, `<span class="${options2.highlightClass}">$1</span>`);
+        hasMatches = true;
+      }
+    }
+    if (!hasMatches) {
+      const fuzzyMatches = findFuzzyMatches(text, query);
+      if (fuzzyMatches.length > 0) {
+        fuzzyMatches.sort((a, b) => b.start - a.start);
+        for (const match of fuzzyMatches) {
+          const before = highlightedText.substring(0, match.start);
+          const after = highlightedText.substring(match.end);
+          const matchText = highlightedText.substring(match.start, match.end);
+          highlightedText = before + `<span class="${options2.highlightClass}">${matchText}</span>` + after;
+        }
+        hasMatches = true;
+      }
+    }
+    return highlightedText;
+  }
   function createHighlightTemplateMiddleware(options2 = {}) {
     const highlightOptions = {
       highlightClass: "sjs-highlight",
       ...options2
     };
-    return function(prop, value, _template, query) {
+    return function(prop, value, _template, query, matchInfo) {
       if ((prop === "content" || prop === "desc") && query && typeof value === "string") {
-        let highlightedText = value;
-        let hasMatches = false;
-        const searchTerms = query.trim().split(/\s+/).filter((term) => term.length > 0);
-        for (const term of searchTerms) {
-          const regex = new RegExp(`\\b(${term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})\\b`, "gi");
-          if (regex.test(highlightedText)) {
-            highlightedText = highlightedText.replace(regex, `<span class="${highlightOptions.highlightClass}">$1</span>`);
-            hasMatches = true;
-          }
+        if (matchInfo && matchInfo.length > 0) {
+          const highlighted2 = highlightWithMatchInfo(value, matchInfo, highlightOptions);
+          return highlighted2 !== value ? highlighted2 : void 0;
         }
-        if (!hasMatches) {
-          const fuzzyMatches = findFuzzyMatches(value, query);
-          if (fuzzyMatches.length > 0) {
-            fuzzyMatches.sort((a, b) => b.start - a.start);
-            for (const match of fuzzyMatches) {
-              const before = highlightedText.substring(0, match.start);
-              const after = highlightedText.substring(match.end);
-              const matchText = highlightedText.substring(match.start, match.end);
-              highlightedText = before + `<span class="${highlightOptions.highlightClass}">${matchText}</span>` + after;
-            }
-            hasMatches = true;
-          }
-        }
-        if (hasMatches) {
-          return highlightedText;
-        }
+        const highlighted = highlightWithQuery(value, query, highlightOptions);
+        return highlighted !== value ? highlighted : void 0;
       }
       return void 0;
     };
