@@ -1,3 +1,5 @@
+import { MatchInfo } from '../types';
+
 /**
  * Calculates the Levenshtein distance between two strings.
  *
@@ -47,4 +49,32 @@ export function levenshteinSearch(text: string, pattern: string): boolean {
   const similarity = 1 - distance / Math.max(pattern.length, text.length);
 
   return similarity >= 0.3;
+}
+
+/**
+ * Finds levenshtein matches in text and returns their positions
+ * @param text The text to search in
+ * @param pattern The search pattern
+ * @returns Array of match information
+ */
+export function findLevenshteinMatches(text: string, pattern: string): MatchInfo[] {
+  if (!text || !pattern) return [];
+  
+  const matches: MatchInfo[] = [];
+  const words = text.split(/\s+/);
+  
+  for (let i = 0; i < words.length; i++) {
+    const word = words[i];
+    if (levenshteinSearch(word, pattern)) {
+      const start = text.indexOf(word);
+      matches.push({
+        start: start,
+        end: start + word.length,
+        text: word,
+        type: 'wildcard'
+      });
+    }
+  }
+  
+  return matches;
 }

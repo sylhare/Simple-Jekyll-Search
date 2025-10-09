@@ -16,6 +16,7 @@ export {
   defaultHighlightTemplateMiddleware
 };
 export type { HighlightOptions, HighlightResult } from './utils/highlightMiddleware';
+export type { MatchInfo } from './SearchStrategies/types';
 
 function SimpleJekyllSearch(options: SearchOptions): SimpleJekyllSearchInstance {
   const instance = new SimpleJekyllSearchClass();

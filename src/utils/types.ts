@@ -1,4 +1,4 @@
-import { Matcher } from '../SearchStrategies/types';
+import { Matcher, MatchInfo } from '../SearchStrategies/types';
 
 export interface SearchResult {
   url: string;
@@ -35,7 +35,7 @@ export interface SearchOptions extends Omit<RepositoryOptions, 'searchStrategy'>
   json: SearchData[] | string;
   success?: (this: { search: (query: string) => void }) => void;
   searchResultTemplate?: string;
-  templateMiddleware?: (prop: string, value: string, template: string, query?: string) => string | undefined;
+  templateMiddleware?: (prop: string, value: string, template: string, query?: string, matchInfo?: MatchInfo[]) => string | undefined;
   noResultsText?: string;
   debounceTime?: number | null;
   onSearch?: () => void;

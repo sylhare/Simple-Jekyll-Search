@@ -64,10 +64,99 @@
     }
     return true;
   }
+  function findFuzzyMatches$1(text, pattern) {
+    if (!text || !pattern) return [];
+    const lowerText = text.toLowerCase();
+    const lowerPattern = pattern.toLowerCase().trim();
+    if (lowerPattern.length === 0) return [];
+    const patternWords = lowerPattern.split(/\s+/);
+    const matches = [];
+    for (const word of patternWords) {
+      if (word.length === 0) continue;
+      const wordMatches = findFuzzyWordMatches$1(lowerText, word);
+      matches.push(...wordMatches);
+    }
+    return matches;
+  }
+  function findFuzzyWordMatches$1(text, word) {
+    const matches = [];
+    const exactRegex = new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "gi");
+    let match;
+    while ((match = exactRegex.exec(text)) !== null) {
+      matches.push({
+        start: match.index,
+        end: match.index + match[0].length,
+        text: match[0],
+        type: "exact"
+      });
+    }
+    if (matches.length === 0) {
+      for (let i = 0; i < text.length; i++) {
+        const fuzzyMatch = findFuzzySequenceMatch$1(text, word, i);
+        if (fuzzyMatch) {
+          matches.push({ ...fuzzyMatch, type: "fuzzy" });
+          i = fuzzyMatch.end - 1;
+        }
+      }
+    }
+    return matches;
+  }
+  function findFuzzySequenceMatch$1(text, pattern, startPos) {
+    let textIndex = startPos;
+    let patternIndex = 0;
+    let matchStart = -1;
+    let maxGap = 3;
+    const matchedPositions = [];
+    while (textIndex < text.length && patternIndex < pattern.length) {
+      if (text[textIndex] === pattern[patternIndex]) {
+        if (matchStart === -1) {
+          matchStart = textIndex;
+        }
+        matchedPositions.push(textIndex);
+        patternIndex++;
+      } else if (matchStart !== -1) {
+        if (textIndex - matchStart > maxGap * pattern.length) {
+          return null;
+        }
+      }
+      textIndex++;
+    }
+    if (patternIndex === pattern.length && matchStart !== -1 && matchedPositions.length > 0) {
+      const actualStart = matchedPositions[0];
+      const actualEnd = matchedPositions[matchedPositions.length - 1] + 1;
+      return {
+        start: actualStart,
+        end: actualEnd,
+        text: text.substring(actualStart, actualEnd)
+      };
+    }
+    return null;
+  }
   function literalSearch(text, criteria) {
     text = text.trim().toLowerCase();
     const pattern = criteria.endsWith(" ") ? [criteria.toLowerCase()] : criteria.trim().toLowerCase().split(" ");
     return pattern.filter((word) => text.indexOf(word) >= 0).length === pattern.length;
+  }
+  function findLiteralMatches(text, criteria) {
+    if (!text || !criteria) return [];
+    const lowerText = text.toLowerCase();
+    const words = criteria.trim().toLowerCase().split(/\s+/);
+    const matches = [];
+    let textIndex = 0;
+    for (const word of words) {
+      if (word.length === 0) continue;
+      const wordIndex = lowerText.indexOf(word, textIndex);
+      if (wordIndex !== -1) {
+        matches.push({
+          start: wordIndex,
+          end: wordIndex + word.length,
+          text: text.substring(wordIndex, wordIndex + word.length),
+          type: "exact"
+        });
+        textIndex = wordIndex + word.length;
+      }
+    }
+    return matches;
   }
   function levenshtein(a, b) {
     const lenA = a.length;
@@ -92,15 +181,57 @@
     const similarity = 1 - distance / Math.max(pattern.length, text.length);
     return similarity >= 0.3;
   }
+  function findLevenshteinMatches(text, pattern) {
+    if (!text || !pattern) return [];
+    const matches = [];
+    const words = text.split(/\s+/);
+    for (let i = 0; i < words.length; i++) {
+      const word = words[i];
+      if (levenshteinSearch(word, pattern)) {
+        const start = text.indexOf(word);
+        matches.push({
+          start,
+          end: start + word.length,
+          text: word,
+          type: "wildcard"
+        });
+      }
+    }
+    return matches;
+  }
   function wildcardSearch(text, pattern) {
     const regexPattern = pattern.replace(/\*/g, ".*");
     const regex = new RegExp(`^${regexPattern}$`, "i");
     if (regex.test(text)) return true;
     return levenshteinSearch(text, pattern);
   }
+  function findWildcardMatches(text, pattern) {
+    if (!text || !pattern) return [];
+    const wildcardMatches = findWildcardPatternMatches(text, pattern);
+    if (wildcardMatches.length > 0) {
+      return wildcardMatches;
+    }
+    return findLevenshteinMatches(text, pattern);
+  }
+  function findWildcardPatternMatches(text, pattern) {
+    const matches = [];
+    const regexPattern = pattern.replace(/\*/g, ".*");
+    const regex = new RegExp(regexPattern, "gi");
+    let match;
+    while ((match = regex.exec(text)) !== null) {
+      matches.push({
+        start: match.index,
+        end: match.index + match[0].length,
+        text: match[0],
+        type: "wildcard"
+      });
+    }
+    return matches;
+  }
   class SearchStrategy {
-    constructor(matchFunction) {
+    constructor(matchFunction, findMatchesFunction) {
       this.matchFunction = matchFunction;
+      this.findMatchesFunction = findMatchesFunction;
     }
     matches(text, criteria) {
       if (text === null || text.trim() === "" || !criteria) {
@@ -108,14 +239,38 @@
       }
       return this.matchFunction(text, criteria);
     }
+    findMatches(text, criteria) {
+      if (text === null || text.trim() === "" || !criteria || !this.findMatchesFunction) {
+        return [];
+      }
+      return this.findMatchesFunction(text, criteria);
+    }
   }
-  const LiteralSearchStrategy = new SearchStrategy(literalSearch);
-  const FuzzySearchStrategy = new SearchStrategy((text, criteria) => {
-    return fuzzySearch(text, criteria) || literalSearch(text, criteria);
-  });
-  const WildcardSearchStrategy = new SearchStrategy((text, criteria) => {
-    return wildcardSearch(text, criteria) || literalSearch(text, criteria);
-  });
+  const LiteralSearchStrategy = new SearchStrategy(literalSearch, findLiteralMatches);
+  const FuzzySearchStrategy = new SearchStrategy(
+    (text, criteria) => {
+      return fuzzySearch(text, criteria) || literalSearch(text, criteria);
+    },
+    (text, criteria) => {
+      const fuzzyMatches = findFuzzyMatches$1(text, criteria);
+      if (fuzzyMatches.length > 0) {
+        return fuzzyMatches;
+      }
+      return findLiteralMatches(text, criteria);
+    }
+  );
+  const WildcardSearchStrategy = new SearchStrategy(
+    (text, criteria) => {
+      return wildcardSearch(text, criteria) || literalSearch(text, criteria);
+    },
+    (text, criteria) => {
+      const wildcardMatches = findWildcardMatches(text, criteria);
+      if (wildcardMatches.length > 0) {
+        return wildcardMatches;
+      }
+      return findLiteralMatches(text, criteria);
+    }
+  );
   function merge(target, source) {
     return { ...target, ...source };
   }
@@ -235,9 +390,15 @@
       return matches;
     }
     findMatchesInObject(obj, criteria) {
+      var _a, _b;
       for (const key in obj) {
         if (!this.isExcluded(obj[key]) && this.options.searchStrategy.matches(obj[key], criteria)) {
-          return obj;
+          const matchInfo = (_b = (_a = this.options.searchStrategy).findMatches) == null ? void 0 : _b.call(_a, obj[key], criteria);
+          const result = { ...obj };
+          if (matchInfo && matchInfo.length > 0) {
+            result._matchInfo = { [key]: matchInfo };
+          }
+          return result;
         }
       }
       return void 0;
@@ -281,6 +442,12 @@
   }
   function compile(data, query) {
     return options.template.replace(options.pattern, function(match, prop) {
+      if (options.middleware.length >= 5 && data._matchInfo && data._matchInfo[prop]) {
+        const value2 = options.middleware(prop, data[prop], options.template, query, data._matchInfo[prop]);
+        if (typeof value2 !== "undefined") {
+          return value2;
+        }
+      }
       const value = options.middleware(prop, data[prop], options.template, query);
       if (typeof value !== "undefined") {
         return value;

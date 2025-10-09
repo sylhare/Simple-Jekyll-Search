@@ -75,7 +75,13 @@ export class Repository {
   private findMatchesInObject(obj: RepositoryData, criteria: string): RepositoryData | undefined {
     for (const key in obj) {
       if (!this.isExcluded(obj[key]) && this.options.searchStrategy.matches(obj[key], criteria)) {
-        return obj;
+        // Get match information if available
+        const matchInfo = this.options.searchStrategy.findMatches?.(obj[key], criteria);
+        const result = { ...obj };
+        if (matchInfo && matchInfo.length > 0) {
+          result._matchInfo = { [key]: matchInfo };
+        }
+        return result;
       }
     }
     return undefined;
