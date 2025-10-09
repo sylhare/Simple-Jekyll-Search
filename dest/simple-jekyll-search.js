@@ -422,17 +422,19 @@
     }
     findMatchesInObject(obj, criteria) {
       var _a, _b;
+      let hasMatch = false;
+      const result = { ...obj };
+      result._matchInfo = {};
       for (const key in obj) {
         if (!this.isExcluded(obj[key]) && this.options.searchStrategy.matches(obj[key], criteria)) {
+          hasMatch = true;
           const matchInfo = (_b = (_a = this.options.searchStrategy).findMatches) == null ? void 0 : _b.call(_a, obj[key], criteria);
-          const result = { ...obj };
           if (matchInfo && matchInfo.length > 0) {
-            result._matchInfo = { [key]: matchInfo };
+            result._matchInfo[key] = matchInfo;
           }
-          return result;
         }
       }
-      return void 0;
+      return hasMatch ? result : void 0;
     }
     isExcluded(term) {
       for (const excludedTerm of this.options.exclude) {
@@ -473,10 +475,13 @@
   }
   function compile(data, query) {
     return options.template.replace(options.pattern, function(match, prop) {
-      if (options.middleware.length >= 5 && data._matchInfo && data._matchInfo[prop]) {
-        const value2 = options.middleware(prop, data[prop], options.template, query, data._matchInfo[prop]);
-        if (typeof value2 !== "undefined") {
-          return value2;
+      if (data._matchInfo && data._matchInfo[prop] && data._matchInfo[prop].length > 0) {
+        try {
+          const value2 = options.middleware(prop, data[prop], options.template, query, data._matchInfo[prop]);
+          if (typeof value2 !== "undefined") {
+            return value2;
+          }
+        } catch (_e) {
         }
       }
       const value = options.middleware(prop, data[prop], options.template, query);

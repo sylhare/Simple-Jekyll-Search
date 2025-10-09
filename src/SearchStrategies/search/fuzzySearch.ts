@@ -1,4 +1,5 @@
 import { MatchInfo } from '../types';
+import { mergeAndSortMatches } from './utils';
 
 /**
  * A simple fuzzy search implementation that checks if characters in the pattern appear
@@ -134,28 +135,3 @@ function findFuzzySequenceMatch(text: string, pattern: string, startPos: number)
   
   return null;
 }
-
-/**
- * Merges overlapping matches and sorts them by position
- */
-function mergeAndSortMatches(matches: MatchInfo[]): MatchInfo[] {
-  if (matches.length === 0) return [];
-  
-  // Sort matches by start position
-  const sortedMatches = matches.sort((a, b) => a.start - b.start);
-  const merged: MatchInfo[] = [];
-  
-  for (const match of sortedMatches) {
-    const lastMerged = merged[merged.length - 1];
-    
-    // If this match overlaps with the last merged match, extend it
-    if (lastMerged && match.start <= lastMerged.end) {
-      lastMerged.end = Math.max(lastMerged.end, match.end);
-      lastMerged.text = lastMerged.text + match.text.slice(lastMerged.end - match.start);
-    } else {
-      merged.push({ ...match });
-    }
-  }
-  
-  return merged;
-} 
