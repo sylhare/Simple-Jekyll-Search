@@ -9,3 +9,13 @@ url: "https://sylhare.github.io"
 markdown: kramdown
 sass:
   style: compressed
+
+# Exclude from processing
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/
