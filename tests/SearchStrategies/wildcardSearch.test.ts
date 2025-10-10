@@ -1,42 +1,82 @@
 import { describe, expect, it } from 'vitest';
-import { wildcardSearch } from '../../src/SearchStrategies/search/wildcardSearch';
+import { findWildcardMatches } from '../../src/SearchStrategies/search/wildcardSearch';
 
-describe('wildcardFuzzySearch', () => {
-  it('should return true for exact matches', () => {
-    expect(wildcardSearch('hello', 'hello')).toBe(true);
+describe('findWildcardMatches', () => {
+  it('should find exact matches', () => {
+    const matches = findWildcardMatches('hello', 'hello');
+    expect(matches.length).toBeGreaterThan(0);
+    expect(matches[0].type).toBe('wildcard');
   });
 
-  it('should return true for matches with wildcards', () => {
-    expect(wildcardSearch('hello', 'he*o')).toBe(true);
-    expect(wildcardSearch('hello', 'he*o*')).toBe(true);
-    expect(wildcardSearch('test', 'te*t')).toBe(true);
-    expect(wildcardSearch('text', 'te*t')).toBe(true);
+  it('should find matches with wildcards', () => {
+    const matches1 = findWildcardMatches('hello', 'he*o');
+    expect(matches1.length).toBeGreaterThan(0);
+    expect(matches1[0].type).toBe('wildcard');
+    
+    const matches2 = findWildcardMatches('hello', 'he*o*');
+    expect(matches2.length).toBeGreaterThan(0);
+    expect(matches2[0].type).toBe('wildcard');
+    
+    const matches3 = findWildcardMatches('test', 'te*t');
+    expect(matches3.length).toBeGreaterThan(0);
+    expect(matches3[0].type).toBe('wildcard');
+    
+    const matches4 = findWildcardMatches('text', 'te*t');
+    expect(matches4.length).toBeGreaterThan(0);
+    expect(matches4[0].type).toBe('wildcard');
   });
 
   it('should match multiple words with wildcards', () => {
-    expect(wildcardSearch('hello amazing world', 'hello*world')).toBe(true);
-    expect(wildcardSearch('hello world', 'hello*world')).toBe(true);
-    expect(wildcardSearch('hello world', 'hello*')).toBe(true);
+    const matches1 = findWildcardMatches('hello amazing world', 'hello*world');
+    expect(matches1.length).toBeGreaterThan(0);
+    expect(matches1[0].type).toBe('wildcard');
+    
+    const matches2 = findWildcardMatches('hello world', 'hello*world');
+    expect(matches2.length).toBeGreaterThan(0);
+    expect(matches2[0].type).toBe('wildcard');
+    
+    const matches3 = findWildcardMatches('hello world', 'hello*');
+    expect(matches3.length).toBeGreaterThan(0);
+    expect(matches3[0].type).toBe('wildcard');
   });
 
-  it('should return true for fuzzy matches with high similarity', () => {
-    expect(wildcardSearch('hello', 'helo')).toBe(true); // 80% similarity
-    expect(wildcardSearch('hello', 'hell')).toBe(true); // 80% similarity
+  it('should find fuzzy matches with high similarity', () => {
+    const matches1 = findWildcardMatches('hello', 'helo'); // 80% similarity
+    expect(matches1.length).toBeGreaterThan(0);
+    expect(matches1[0].type).toBe('wildcard'); // Levenshtein fallback
+    
+    const matches2 = findWildcardMatches('hello', 'hell'); // 80% similarity
+    expect(matches2.length).toBeGreaterThan(0);
+    expect(matches2[0].type).toBe('wildcard'); // Levenshtein fallback
   });
 
-  it('should return false for matches below the similarity threshold', () => {
-    expect(wildcardSearch('world', 'h*o')).toBe(false);
-    expect(wildcardSearch('xyz', 'abc')).toBe(false);
+  it('should return empty array for matches below the similarity threshold', () => {
+    const matches1 = findWildcardMatches('world', 'h*o');
+    expect(matches1.length).toBe(0);
+    
+    const matches2 = findWildcardMatches('xyz', 'abc');
+    expect(matches2.length).toBe(0);
   });
 
   it('should handle single-character patterns and texts', () => {
-    expect(wildcardSearch('a', 'a')).toBe(true);
-    expect(wildcardSearch('b', 'a')).toBe(false);
-    expect(wildcardSearch('a', '*')).toBe(true);
+    const matches1 = findWildcardMatches('a', 'a');
+    expect(matches1.length).toBeGreaterThan(0);
+    expect(matches1[0].type).toBe('wildcard');
+    
+    const matches2 = findWildcardMatches('b', 'a');
+    expect(matches2.length).toBe(0);
+    
+    const matches3 = findWildcardMatches('a', '*');
+    expect(matches3.length).toBeGreaterThan(0);
+    expect(matches3[0].type).toBe('wildcard');
   });
 
-  it('should return false for a word not present in the text', () => {
-    expect(wildcardSearch('hello world', 'missing')).toBe(false);
-    expect(wildcardSearch('hello world', 'miss*')).toBe(false);
+  it('should return empty array for a word not present in the text', () => {
+    const matches1 = findWildcardMatches('hello world', 'missing');
+    expect(matches1.length).toBe(0);
+    
+    const matches2 = findWildcardMatches('hello world', 'miss*');
+    expect(matches2.length).toBe(0);
   });
+
 });

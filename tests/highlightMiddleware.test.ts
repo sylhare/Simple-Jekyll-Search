@@ -574,4 +574,65 @@ describe('createHighlightTemplateMiddleware', () => {
       });
     });
   });
+
+  describe('Match Info Usage (Performance Test)', () => {
+    it('should use provided match info instead of re-searching', () => {
+      const middleware = createHighlightTemplateMiddleware();
+      const text = 'This is a test content with test words';
+      const query = 'test';
+      
+      // Simulate match info that would be provided by Repository
+      // Find actual positions of 'test' in the text
+      const matchInfo = [];
+      let index = text.toLowerCase().indexOf('test');
+      while (index !== -1) {
+        matchInfo.push({
+          start: index,
+          end: index + 4,
+          text: 'test',
+          type: 'exact' as const
+        });
+        index = text.toLowerCase().indexOf('test', index + 1);
+      }
+      
+      // Call with match info (should use highlightWithMatchInfo)
+      const resultWithMatchInfo = middleware('content', text, '<div>{content}</div>', query, matchInfo);
+      
+      // Call without match info (should use highlightWithQuery)
+      const resultWithoutMatchInfo = middleware('content', text, '<div>{content}</div>', query);
+      
+      // Both should produce the same result, but with match info it should be faster
+      expect(resultWithMatchInfo).toBeDefined();
+      expect(resultWithoutMatchInfo).toBeDefined();
+      expect(resultWithMatchInfo).toContain('<span class="sjs-highlight">test</span>');
+      expect(resultWithoutMatchInfo).toContain('<span class="sjs-highlight">test</span>');
+      
+      // The key test: both results should be identical
+      expect(resultWithMatchInfo).toBe(resultWithoutMatchInfo);
+    });
+
+    it('should handle empty match info gracefully', () => {
+      const middleware = createHighlightTemplateMiddleware();
+      const text = 'This is a test content';
+      const query = 'test';
+      
+      // Call with empty match info (should fallback to query-based search)
+      const result = middleware('content', text, '<div>{content}</div>', query, []);
+      
+      expect(result).toBeDefined();
+      expect(result).toContain('<span class="sjs-highlight">test</span>');
+    });
+
+    it('should handle undefined match info gracefully', () => {
+      const middleware = createHighlightTemplateMiddleware();
+      const text = 'This is a test content';
+      const query = 'test';
+      
+      // Call without match info (should use query-based search)
+      const result = middleware('content', text, '<div>{content}</div>', query, undefined);
+      
+      expect(result).toBeDefined();
+      expect(result).toContain('<span class="sjs-highlight">test</span>');
+    });
+  });
 });

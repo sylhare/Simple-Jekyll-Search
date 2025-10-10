@@ -73,18 +73,22 @@ export class Repository {
   }
 
   private findMatchesInObject(obj: RepositoryData, criteria: string): RepositoryData | undefined {
+    let hasMatch = false;
+    const result = { ...obj };
+    result._matchInfo = {};
+    
     for (const key in obj) {
       if (!this.isExcluded(obj[key]) && this.options.searchStrategy.matches(obj[key], criteria)) {
-        // Get match information if available
+        hasMatch = true;
+        // Get match information for all matching fields
         const matchInfo = this.options.searchStrategy.findMatches?.(obj[key], criteria);
-        const result = { ...obj };
         if (matchInfo && matchInfo.length > 0) {
-          result._matchInfo = { [key]: matchInfo };
+          result._matchInfo[key] = matchInfo;
         }
-        return result;
       }
     }
-    return undefined;
+    
+    return hasMatch ? result : undefined;
   }
 
   private isExcluded(term: any): boolean {

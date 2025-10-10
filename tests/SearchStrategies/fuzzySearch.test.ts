@@ -1,93 +1,98 @@
 import { describe, expect, it } from 'vitest';
-import { fuzzySearch } from '../../src/SearchStrategies/search/fuzzySearch';
+import { findFuzzyMatches } from '../../src/SearchStrategies/search/fuzzySearch';
 
-describe('fuzzySearch', () => {
+describe('findFuzzyMatches', () => {
   it('matches exact strings', () => {
-    expect(fuzzySearch('hello', 'hello')).toBe(true);
-    expect(fuzzySearch('test', 'test')).toBe(true);
+    const matches1 = findFuzzyMatches('hello', 'hello');
+    expect(matches1.length).toBeGreaterThan(0);
+    expect(matches1[0].type).toBe('exact');
+    
+    const matches2 = findFuzzyMatches('test', 'test');
+    expect(matches2.length).toBeGreaterThan(0);
+    expect(matches2[0].type).toBe('exact');
   });
 
   it('matches substrings', () => {
-    expect(fuzzySearch('hello', 'hlo')).toBe(true);
-    expect(fuzzySearch('test', 'tst')).toBe(true);
-    expect(fuzzySearch('fuzzy', 'fzy')).toBe(true);
-    expect(fuzzySearch('react', 'rct')).toBe(true);
-    expect(fuzzySearch('what the heck', 'wth')).toBe(true);
+    expect(findFuzzyMatches('hello', 'hlo').length).toBeGreaterThan(0);
+    expect(findFuzzyMatches('test', 'tst').length).toBeGreaterThan(0);
+    expect(findFuzzyMatches('fuzzy', 'fzy').length).toBeGreaterThan(0);
+    expect(findFuzzyMatches('react', 'rct').length).toBeGreaterThan(0);
+    expect(findFuzzyMatches('what the heck', 'wth').length).toBeGreaterThan(0);
   });
 
   it('matches characters in sequence', () => {
-    expect(fuzzySearch('hello world', 'hw')).toBe(true);
-    expect(fuzzySearch('a1b2c3', 'abc')).toBe(true);
+    expect(findFuzzyMatches('hello world', 'hw').length).toBeGreaterThan(0);
+    expect(findFuzzyMatches('a1b2c3', 'abc').length).toBeGreaterThan(0);
   });
 
   it('does not match out-of-sequence characters', () => {
-    expect(fuzzySearch('abc', 'cba')).toBe(false);
-    expect(fuzzySearch('abcd', 'dc')).toBe(false);
+    expect(findFuzzyMatches('abc', 'cba').length).toBe(0);
+    expect(findFuzzyMatches('abcd', 'dc').length).toBe(0);
   });
 
   it('does not match words that don\'t contain the search criteria', () => {
-    expect(fuzzySearch('fuzzy', 'fzyyy')).toBe(false);
-    expect(fuzzySearch('react', 'angular')).toBe(false);
-    expect(fuzzySearch('what the heck', 'wth?')).toBe(false);
+    expect(findFuzzyMatches('fuzzy', 'fzyyy').length).toBe(0);
+    expect(findFuzzyMatches('react', 'angular').length).toBe(0);
+    expect(findFuzzyMatches('what the heck', 'wth?').length).toBe(0);
   });
 
   it('is case insensitive', () => {
-    expect(fuzzySearch('HELLO', 'hello')).toBe(true);
-    expect(fuzzySearch('world', 'WORLD')).toBe(true);
-    expect(fuzzySearch('hEllO', 'HeLLo')).toBe(true);
-    expect(fuzzySearch('Different Cases', 'dc')).toBe(true);
-    expect(fuzzySearch('UPPERCASE', 'upprcs')).toBe(true);
-    expect(fuzzySearch('lowercase', 'lc')).toBe(true);
-    expect(fuzzySearch('DiFfErENt cASeS', 'dc')).toBe(true);
+    expect(findFuzzyMatches('HELLO', 'hello').length).toBeGreaterThan(0);
+    expect(findFuzzyMatches('world', 'WORLD').length).toBeGreaterThan(0);
+    expect(findFuzzyMatches('hEllO', 'HeLLo').length).toBeGreaterThan(0);
+    expect(findFuzzyMatches('Different Cases', 'dc').length).toBeGreaterThan(0);
+    expect(findFuzzyMatches('UPPERCASE', 'upprcs').length).toBeGreaterThan(0);
+    expect(findFuzzyMatches('lowercase', 'lc').length).toBeGreaterThan(0);
+    expect(findFuzzyMatches('DiFfErENt cASeS', 'dc').length).toBeGreaterThan(0);
   });
 
   it('handles special characters', () => {
-    expect(fuzzySearch('hello!@#$', 'h!@#$')).toBe(true);
-    expect(fuzzySearch('abc123xyz', '123')).toBe(true);
+    expect(findFuzzyMatches('hello!@#$', 'h!@#$').length).toBeGreaterThan(0);
+    expect(findFuzzyMatches('abc123xyz', '123').length).toBeGreaterThan(0);
   });
 
   it('handles spaces correctly', () => {
-    expect(fuzzySearch('hello world', 'hw')).toBe(true);
-    expect(fuzzySearch('hello world', 'h w')).toBe(true);
-    expect(fuzzySearch('hello world', 'hw ')).toBe(true);
+    expect(findFuzzyMatches('hello world', 'hw').length).toBeGreaterThan(0);
+    expect(findFuzzyMatches('hello world', 'h w').length).toBeGreaterThan(0);
+    expect(findFuzzyMatches('hello world', 'hw ').length).toBeGreaterThan(0);
   });
 
   it('matches characters in sequence', () => {
-    expect(fuzzySearch('hello world', 'hlo wld')).toBe(true);
-    expect(fuzzySearch('hello world', 'hw')).toBe(true);
-    expect(fuzzySearch('hello world', 'hlowrd')).toBe(true);
-    expect(fuzzySearch('hello world', 'wrld')).toBe(true);
-    expect(fuzzySearch('hello world', 'wh')).toBe(false);
+    expect(findFuzzyMatches('hello world', 'hlo wld').length).toBeGreaterThan(0);
+    expect(findFuzzyMatches('hello world', 'hw').length).toBeGreaterThan(0);
+    expect(findFuzzyMatches('hello world', 'hlowrd').length).toBeGreaterThan(0);
+    expect(findFuzzyMatches('hello world', 'wrld').length).toBeGreaterThan(0);
+    expect(findFuzzyMatches('hello world', 'wh').length).toBe(0);
   });
 
   it('does not match when character frequency in the pattern exceeds the text', () => {
-    expect(fuzzySearch('goggles', 'gggggggg')).toBe(false);
-    expect(fuzzySearch('aab', 'aaaa')).toBe(false);
+    expect(findFuzzyMatches('goggles', 'gggggggg').length).toBe(0);
+    expect(findFuzzyMatches('aab', 'aaaa').length).toBe(0);
   });
 
   it('match ordered multiple words', () => {
-    expect(fuzzySearch('Ola que tal', 'ola tal')).toBe(true);
+    expect(findFuzzyMatches('Ola que tal', 'ola tal').length).toBeGreaterThan(0);
   });
 
   describe('original fuzzysearch test cases', () => {
     it('matches cartwheel test cases', () => {
-      expect(fuzzySearch('cartwheel', 'car')).toBe(true);
-      expect(fuzzySearch('cartwheel', 'cwhl')).toBe(true);
-      expect(fuzzySearch('cartwheel', 'cwheel')).toBe(true);
-      expect(fuzzySearch('cartwheel', 'cartwheel')).toBe(true);
-      expect(fuzzySearch('cartwheel', 'cwheeel')).toBe(false);
-      expect(fuzzySearch('cartwheel', 'lw')).toBe(false);
+      expect(findFuzzyMatches('cartwheel', 'car').length).toBeGreaterThan(0);
+      expect(findFuzzyMatches('cartwheel', 'cwhl').length).toBeGreaterThan(0);
+      expect(findFuzzyMatches('cartwheel', 'cwheel').length).toBeGreaterThan(0);
+      expect(findFuzzyMatches('cartwheel', 'cartwheel').length).toBeGreaterThan(0);
+      expect(findFuzzyMatches('cartwheel', 'cwheeel').length).toBe(0);
+      expect(findFuzzyMatches('cartwheel', 'lw').length).toBe(0);
     });
 
     it('matches Chinese Unicode test cases', () => {
-      expect(fuzzySearch('php语言', '语言')).toBe(true);
-      expect(fuzzySearch('php语言', 'hp语')).toBe(true);
-      expect(fuzzySearch('Python开发者', 'Py开发')).toBe(true);
-      expect(fuzzySearch('Python开发者', 'Py 开发')).toBe(false);
-      expect(fuzzySearch('爪哇开发进阶', '爪哇进阶')).toBe(true);
-      expect(fuzzySearch('非常简单的格式化工具', '格式工具')).toBe(true);
-      expect(fuzzySearch('学习正则表达式怎么学习', '正则')).toBe(true);
-      expect(fuzzySearch('正则表达式怎么学习', '学习正则')).toBe(false);
+      expect(findFuzzyMatches('php语言', '语言').length).toBeGreaterThan(0);
+      expect(findFuzzyMatches('php语言', 'hp语').length).toBeGreaterThan(0);
+      expect(findFuzzyMatches('Python开发者', 'Py开发').length).toBeGreaterThan(0);
+      expect(findFuzzyMatches('Python开发者', 'Py 开发').length).toBe(0);
+      expect(findFuzzyMatches('爪哇开发进阶', '爪哇进阶').length).toBeGreaterThan(0);
+      expect(findFuzzyMatches('非常简单的格式化工具', '格式工具').length).toBeGreaterThan(0);
+      expect(findFuzzyMatches('学习正则表达式怎么学习', '正则').length).toBeGreaterThan(0);
+      expect(findFuzzyMatches('正则表达式怎么学习', '学习正则').length).toBe(0);
     });
   });
 }); 

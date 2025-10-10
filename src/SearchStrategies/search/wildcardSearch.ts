@@ -1,22 +1,7 @@
-import { levenshteinSearch, findLevenshteinMatches } from './levenshtein';
+import { levenshteinSearch } from './levenshtein';
 import { MatchInfo } from '../types';
 import { mergeAndSortMatches } from './utils';
 
-/**
- * Matches a pattern with wildcards (*) against a text.
- *
- * @param text - The text to search in
- * @param pattern - The pattern to search for (supports * as a wildcard for unknown characters)
- * @returns true if matches, false otherwise
- */
-export function wildcardSearch(text: string, pattern: string): boolean {
-  const regexPattern = pattern.replace(/\*/g, '.*');
-  const regex = new RegExp(`^${regexPattern}$`, 'i');
-
-  if (regex.test(text)) return true;
-
-  return levenshteinSearch(text, pattern);
-}
 
 /**
  * Finds wildcard matches in text and returns their positions
@@ -33,9 +18,18 @@ export function findWildcardMatches(text: string, pattern: string): MatchInfo[] 
     return mergeAndSortMatches(wildcardMatches);
   }
   
-  // Fall back to levenshtein matching
-  const levenshteinMatches = findLevenshteinMatches(text, pattern);
-  return mergeAndSortMatches(levenshteinMatches);
+  // Fall back to levenshtein matching for fuzzy search
+  // This matches the original wildcardSearch behavior - full string matching
+  if (levenshteinSearch(text, pattern)) {
+    return [{
+      start: 0,
+      end: text.length,
+      text: text,
+      type: 'wildcard'
+    }];
+  }
+  
+  return [];
 }
 
 /**
@@ -46,14 +40,26 @@ function findWildcardPatternMatches(text: string, pattern: string): MatchInfo[] 
   const regexPattern = pattern.replace(/\*/g, '.*');
   const regex = new RegExp(regexPattern, 'gi');
   let match;
+  let lastIndex = 0;
   
   while ((match = regex.exec(text)) !== null) {
+    // Prevent infinite loop by checking if we're at the same position
+    if (match.index === lastIndex && match[0].length === 0) {
+      break;
+    }
+    lastIndex = match.index;
+    
     matches.push({
       start: match.index,
       end: match.index + match[0].length,
       text: match[0],
       type: 'wildcard'
     });
+    
+    // If the match is the entire string, break to prevent infinite loop
+    if (match[0].length === text.length) {
+      break;
+    }
   }
   
   return matches;
