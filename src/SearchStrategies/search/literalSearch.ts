@@ -21,12 +21,10 @@ export function findLiteralMatches(text: string, criteria: string): MatchInfo[] 
     
     let wordIndex = lowerText.indexOf(word, textIndex);
     
-    // If this is the last word and criteria has trailing space, ensure it's a complete word
     if (hasTrailingSpace && word === words[words.length - 1]) {
       while (wordIndex !== -1) {
         const nextChar = lowerText[wordIndex + word.length];
         if (!nextChar || !/\w/.test(nextChar)) {
-          // Found complete word match
           break;
         }
         wordIndex = lowerText.indexOf(word, wordIndex + 1);

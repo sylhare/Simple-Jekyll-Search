@@ -17,7 +17,6 @@ const loremElement: TestElement = { title: 'lorem', content: 'lorem ipsum' };
 
 const data: TestElement[] = [barElement, almostBarElement, loremElement];
 
-// Helper function to strip _matchInfo for backward compatibility testing
 function stripMatchInfo(results: any[]): any[] {
   return results.map(result => {
     const { _matchInfo, ...cleanResult } = result;

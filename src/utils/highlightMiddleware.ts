@@ -296,7 +296,6 @@ function findFuzzySequenceMatch(text: string, pattern: string, startPos: number)
 function highlightWithMatchInfo(text: string, matchInfo: MatchInfo[], options: Required<HighlightOptions>): string {
   if (matchInfo.length === 0) return text;
   
-  // Sort matches by position (reverse order to avoid index shifting)
   const sortedMatches = [...matchInfo].sort((a, b) => b.start - a.start);
   
   let highlightedText = text;
@@ -361,14 +360,10 @@ export function createHighlightTemplateMiddleware(options: HighlightOptions = {}
 
   return function(prop: string, value: string, _template: string, query?: string, matchInfo?: MatchInfo[]): string | undefined {
     if ((prop === 'content' || prop === 'desc') && query && typeof value === 'string') {
-      // Use provided match info if available (faster, more accurate - NO DUPLICATE SEARCH)
       if (matchInfo && matchInfo.length > 0) {
         const highlighted = highlightWithMatchInfo(value, matchInfo, highlightOptions);
         return highlighted !== value ? highlighted : undefined;
       }
-      
-      // Only fallback to query-based search if match info is not available
-      // This should rarely happen in the new architecture
       const highlighted = highlightWithQuery(value, query, highlightOptions);
       return highlighted !== value ? highlighted : undefined;
     }

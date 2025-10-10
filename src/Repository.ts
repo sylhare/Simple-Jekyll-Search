@@ -80,7 +80,6 @@ export class Repository {
     for (const key in obj) {
       if (!this.isExcluded(obj[key]) && this.options.searchStrategy.matches(obj[key], criteria)) {
         hasMatch = true;
-        // Get match information for all matching fields
         const matchInfo = this.options.searchStrategy.findMatches?.(obj[key], criteria);
         if (matchInfo && matchInfo.length > 0) {
           result._matchInfo[key] = matchInfo;

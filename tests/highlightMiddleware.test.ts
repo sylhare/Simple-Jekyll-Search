@@ -581,8 +581,6 @@ describe('createHighlightTemplateMiddleware', () => {
       const text = 'This is a test content with test words';
       const query = 'test';
       
-      // Simulate match info that would be provided by Repository
-      // Find actual positions of 'test' in the text
       const matchInfo = [];
       let index = text.toLowerCase().indexOf('test');
       while (index !== -1) {
@@ -595,19 +593,15 @@ describe('createHighlightTemplateMiddleware', () => {
         index = text.toLowerCase().indexOf('test', index + 1);
       }
       
-      // Call with match info (should use highlightWithMatchInfo)
       const resultWithMatchInfo = middleware('content', text, '<div>{content}</div>', query, matchInfo);
       
-      // Call without match info (should use highlightWithQuery)
       const resultWithoutMatchInfo = middleware('content', text, '<div>{content}</div>', query);
       
-      // Both should produce the same result, but with match info it should be faster
       expect(resultWithMatchInfo).toBeDefined();
       expect(resultWithoutMatchInfo).toBeDefined();
       expect(resultWithMatchInfo).toContain('<span class="sjs-highlight">test</span>');
       expect(resultWithoutMatchInfo).toContain('<span class="sjs-highlight">test</span>');
       
-      // The key test: both results should be identical
       expect(resultWithMatchInfo).toBe(resultWithoutMatchInfo);
     });
 
@@ -616,7 +610,6 @@ describe('createHighlightTemplateMiddleware', () => {
       const text = 'This is a test content';
       const query = 'test';
       
-      // Call with empty match info (should fallback to query-based search)
       const result = middleware('content', text, '<div>{content}</div>', query, []);
       
       expect(result).toBeDefined();
@@ -628,7 +621,6 @@ describe('createHighlightTemplateMiddleware', () => {
       const text = 'This is a test content';
       const query = 'test';
       
-      // Call without match info (should use query-based search)
       const result = middleware('content', text, '<div>{content}</div>', query, undefined);
       
       expect(result).toBeDefined();

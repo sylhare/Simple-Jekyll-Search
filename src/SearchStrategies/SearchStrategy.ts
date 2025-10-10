@@ -15,7 +15,6 @@ export const LiteralSearchStrategy = new SearchStrategy(
 
 export const FuzzySearchStrategy = new SearchStrategy(
   (text: string, criteria: string) => {
-    // Original fuzzy search logic
     const pattern = criteria.trimEnd();
     if (pattern.length === 0) return true;
 
@@ -28,7 +27,6 @@ export const FuzzySearchStrategy = new SearchStrategy(
       const nextIndex = remainingText.indexOf(char);
 
       if (nextIndex === -1 || (currentIndex !== -1 && remainingText.slice(0, nextIndex).split(' ').length - 1 > 2)) {
-        // Fall back to literal search
         const lowerText2 = text.trim().toLowerCase();
         const pattern2 = criteria.endsWith(' ') ? [criteria.toLowerCase()] : criteria.trim().toLowerCase().split(' ');
         return pattern2.filter((word: string) => lowerText2.indexOf(word) >= 0).length === pattern2.length;
@@ -41,7 +39,6 @@ export const FuzzySearchStrategy = new SearchStrategy(
     return true;
   },
   (text: string, criteria: string) => {
-    // Try fuzzy matches first, then fall back to literal matches
     const fuzzyMatches = findFuzzyMatches(text, criteria);
     if (fuzzyMatches.length > 0) {
       return fuzzyMatches;
@@ -52,12 +49,10 @@ export const FuzzySearchStrategy = new SearchStrategy(
 
 export const WildcardSearchStrategy = new SearchStrategy(
   (text: string, criteria: string) => {
-    // Use findWildcardMatches to check if there are any matches
     const wildcardMatches = findWildcardMatches(text, criteria);
     return wildcardMatches.length > 0;
   },
   (text: string, criteria: string) => {
-    // Try wildcard matches first, then fall back to literal matches
     const wildcardMatches = findWildcardMatches(text, criteria);
     if (wildcardMatches.length > 0) {
       return wildcardMatches;

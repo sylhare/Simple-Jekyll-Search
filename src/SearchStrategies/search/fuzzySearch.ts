@@ -15,14 +15,10 @@ export function findFuzzyMatches(text: string, pattern: string): MatchInfo[] {
   
   if (lowerPattern.length === 0) return [];
   
-  // Use the original fuzzy search logic for all patterns
   const matches: MatchInfo[] = [];
-  
-  // Try to find fuzzy matches starting from each position
   for (let i = 0; i < lowerText.length; i++) {
     const match = findFuzzySequenceMatch(lowerText, lowerPattern, i);
     if (match) {
-      // Check if this is an exact match
       const isExact = match.text === lowerPattern;
       
       matches.push({
@@ -31,7 +27,6 @@ export function findFuzzyMatches(text: string, pattern: string): MatchInfo[] {
         text: text.substring(match.start, match.end),
         type: isExact ? 'exact' : 'fuzzy'
       });
-      // Skip ahead to avoid overlapping matches
       i = match.end - 1;
     }
   }
@@ -44,7 +39,6 @@ export function findFuzzyMatches(text: string, pattern: string): MatchInfo[] {
  * Finds a fuzzy sequence match starting from a given position
  */
 function findFuzzySequenceMatch(text: string, pattern: string, startPos: number): { start: number; end: number; text: string } | null {
-  // Implementation based on the original fuzzySearch function
   let textIndex = startPos;
   let patternIndex = 0;
   let matchStart = -1;
@@ -57,7 +51,6 @@ function findFuzzySequenceMatch(text: string, pattern: string, startPos: number)
       }
       patternIndex++;
     } else if (matchStart !== -1) {
-      // Check if we've exceeded the maximum gap
       const gap = textIndex - matchStart;
       if (gap > maxGap) {
         return null;

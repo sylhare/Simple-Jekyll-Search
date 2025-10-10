@@ -12,14 +12,10 @@ import { mergeAndSortMatches } from './utils';
 export function findWildcardMatches(text: string, pattern: string): MatchInfo[] {
   if (!text || !pattern) return [];
   
-  // Try wildcard matching first
   const wildcardMatches = findWildcardPatternMatches(text, pattern);
   if (wildcardMatches.length > 0) {
     return mergeAndSortMatches(wildcardMatches);
   }
-  
-  // Fall back to levenshtein matching for fuzzy search
-  // This matches the original wildcardSearch behavior - full string matching
   if (levenshteinSearch(text, pattern)) {
     return [{
       start: 0,
@@ -43,7 +39,6 @@ function findWildcardPatternMatches(text: string, pattern: string): MatchInfo[] 
   let lastIndex = 0;
   
   while ((match = regex.exec(text)) !== null) {
-    // Prevent infinite loop by checking if we're at the same position
     if (match.index === lastIndex && match[0].length === 0) {
       break;
     }
@@ -56,7 +51,6 @@ function findWildcardPatternMatches(text: string, pattern: string): MatchInfo[] 
       type: 'wildcard'
     });
     
-    // If the match is the entire string, break to prevent infinite loop
     if (match[0].length === text.length) {
       break;
     }
