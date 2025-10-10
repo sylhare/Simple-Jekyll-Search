@@ -97,24 +97,24 @@ Here is a table for the available options, usage questions, troubleshooting & gu
 | `success`              | Function       | No       | A function called once the data has been loaded.                                                                                                                                   |
 | `debounceTime`         | Number         | No       | Limit how many times the search function can be executed over the given time window. If no `debounceTime` (milliseconds) is provided a search will be triggered on each keystroke. |
 | `searchResultTemplate` | String         | No       | The template of a single rendered search result. (match liquid value eg: `'<li><a href="{{ site.url }}{url}">{title}</a></li>'`                                                    |
-| `templateMiddleware`   | Function       | No       | A function that processes template placeholders and can include highlighting functionality. The function receives (prop, value, template, query) parameters. |
+| `templateMiddleware`   | Function       | No       | A function that processes template placeholders and can include highlighting functionality. The function receives (prop, value, template, query, matchInfo) parameters. |
 
 ## Middleware
 
 ### templateMiddleware (Function) [optional]
 
 A function that will be called whenever a match in the template is found.
-It gets passed the current property name, property value, and the template.
+It gets passed the current property name, property value, template, query, and matchInfo.
 If the function returns a non-undefined value, it gets replaced in the template.
 
-This can be potentially useful for manipulating URLs etc.
+This can be potentially useful for manipulating URLs or adding highlighting.
 
 Example:
 
 ```js
 SimpleJekyllSearch({
   // ...other config
-  templateMiddleware: function(prop, value, template) {
+  templateMiddleware: function(prop, value, template, query, matchInfo) {
     if (prop === 'bar') {
       return value.replace(/^\//, '')
     }
@@ -141,17 +141,9 @@ SimpleJekyllSearch({
 })
 ```
 
-### templateMiddleware with Highlighting (Function) [optional]
+### Highlighting Search Results
 
-The `templateMiddleware` function now supports highlighting functionality. It processes template placeholders and can add HTML highlighting to search results.
-
-The function receives four parameters:
-- `prop`: The property name being processed (e.g., 'title', 'content', 'desc')
-- `value`: The value of the property
-- `template`: The full template string
-- `query`: The search query (optional)
-
-Example with built-in highlight template middleware:
+The library includes built-in highlighting functionality through the `createHighlightTemplateMiddleware` function.
 
 ```js
 import { createHighlightTemplateMiddleware } from 'simple-jekyll-search';
@@ -159,7 +151,7 @@ import { createHighlightTemplateMiddleware } from 'simple-jekyll-search';
 SimpleJekyllSearch({
   // ...other config
   templateMiddleware: createHighlightTemplateMiddleware({
-    highlightClass: 'my-highlight',  // Custom CSS class
+    highlightClass: 'highlight',     // CSS class for highlighted text
     contextBefore: 30,               // Characters before match
     contextAfter: 30,                // Characters after match
     maxLength: 200,                  // Maximum total length
@@ -168,43 +160,4 @@ SimpleJekyllSearch({
 })
 ```
 
-You can also create a custom template middleware with highlighting:
-
-```js
-SimpleJekyllSearch({
-  // ...other config
-  templateMiddleware: function(prop, value, template, query) {
-    // Only highlight content and desc fields
-    if ((prop === 'content' || prop === 'desc') && query && typeof value === 'string') {
-      return value.replace(
-        new RegExp(`(${query})`, 'gi'),
-        '<span class="highlight">$1</span>'
-      );
-    }
-    return undefined; // Use default value for other properties
-  },
-})
-```
-
-The template middleware should return a string to replace the placeholder, or `undefined` to use the default value.
-
-#### Search Strategy Compatibility
-
-The highlight template middleware works with all search strategies:
-
-- **Literal Search**: Highlights exact word matches
-- **Wildcard Search**: Highlights exact matches (supports regex patterns)
-- **Fuzzy Search**: Highlights both exact matches and fuzzy matches (e.g., "test" matches "tst", "testing")
-
-The middleware intelligently handles different search types:
-1. First tries exact word matching (for literal and wildcard searches)
-2. Falls back to fuzzy matching if no exact matches found
-3. Prefers exact matches over fuzzy matches when both are available
-
-Example with fuzzy search:
-```js
-// Searching for "test" will highlight:
-// - "test" (exact match)
-// - "testing" (fuzzy match - highlights "test" part)
-// - "tst" (fuzzy match - highlights "tst")
-```
+The highlight middleware works with all search strategies and uses match information provided by the search engine for accurate highlighting.

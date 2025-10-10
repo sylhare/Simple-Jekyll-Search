@@ -197,98 +197,6 @@ export function highlightText(
  */
 export const defaultHighlightMiddleware = createHighlightMiddleware();
 
-/**
- * Finds fuzzy match positions in text for highlighting
- * @param text - The text to search in
- * @param pattern - The search pattern
- * @returns Array of match positions
- */
-function findFuzzyMatches(text: string, pattern: string): Array<{ start: number; end: number; text: string }> {
-  const matches: Array<{ start: number; end: number; text: string }> = [];
-  const lowerText = text.toLowerCase();
-  const lowerPattern = pattern.toLowerCase().trim();
-  
-  if (lowerPattern.length === 0) return matches;
-  
-  const patternWords = lowerPattern.split(/\s+/);
-  
-  for (const word of patternWords) {
-    if (word.length === 0) continue;
-    
-    const wordMatches = findFuzzyWordMatches(lowerText, word);
-    matches.push(...wordMatches);
-  }
-  
-  return matches;
-}
-
-/**
- * Finds fuzzy matches for a single word
- */
-function findFuzzyWordMatches(text: string, word: string): Array<{ start: number; end: number; text: string }> {
-  const matches: Array<{ start: number; end: number; text: string }> = [];
-  
-  const exactRegex = new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
-  let match;
-  while ((match = exactRegex.exec(text)) !== null) {
-    matches.push({
-      start: match.index,
-      end: match.index + match[0].length,
-      text: match[0]
-    });
-  }
-  
-  if (matches.length === 0) {
-    for (let i = 0; i < text.length; i++) {
-      const fuzzyMatch = findFuzzySequenceMatch(text, word, i);
-      if (fuzzyMatch) {
-        matches.push(fuzzyMatch);
-        i = fuzzyMatch.end - 1; // Skip to end of match
-      }
-    }
-  }
-  
-  return matches;
-}
-
-/**
- * Finds a fuzzy sequence match starting from a given position
- */
-function findFuzzySequenceMatch(text: string, pattern: string, startPos: number): { start: number; end: number; text: string } | null {
-  let textIndex = startPos;
-  let patternIndex = 0;
-  let matchStart = -1;
-  let maxGap = 3;
-  const matchedPositions: number[] = [];
-  
-  while (textIndex < text.length && patternIndex < pattern.length) {
-    if (text[textIndex] === pattern[patternIndex]) {
-      if (matchStart === -1) {
-        matchStart = textIndex;
-      }
-      matchedPositions.push(textIndex);
-      patternIndex++;
-    } else if (matchStart !== -1) {
-      if (textIndex - matchStart > maxGap * pattern.length) {
-        return null;
-      }
-    }
-    textIndex++;
-  }
-  
-  if (patternIndex === pattern.length && matchStart !== -1 && matchedPositions.length > 0) {
-    const actualStart = matchedPositions[0];
-    const actualEnd = matchedPositions[matchedPositions.length - 1] + 1;
-    
-    return {
-      start: actualStart,
-      end: actualEnd,
-      text: text.substring(actualStart, actualEnd)
-    };
-  }
-  
-  return null;
-}
 
 /**
  * Highlights text using provided match information (faster, more accurate)
@@ -309,39 +217,6 @@ function highlightWithMatchInfo(text: string, matchInfo: MatchInfo[], options: R
   return highlightedText;
 }
 
-/**
- * Highlights text using query-based search (fallback for backward compatibility)
- */
-function highlightWithQuery(text: string, query: string, options: Required<HighlightOptions>): string {
-  let highlightedText = text;
-  let hasMatches = false;
-  
-  const searchTerms = query.trim().split(/\s+/).filter(term => term.length > 0);
-  for (const term of searchTerms) {
-    const regex = new RegExp(`\\b(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})\\b`, 'gi');
-    if (regex.test(highlightedText)) {
-      highlightedText = highlightedText.replace(regex, `<span class="${options.highlightClass}">$1</span>`);
-      hasMatches = true;
-    }
-  }
-  
-  if (!hasMatches) {
-    const fuzzyMatches = findFuzzyMatches(text, query);
-    if (fuzzyMatches.length > 0) {
-      fuzzyMatches.sort((a, b) => b.start - a.start);
-      
-      for (const match of fuzzyMatches) {
-        const before = highlightedText.substring(0, match.start);
-        const after = highlightedText.substring(match.end);
-        const matchText = highlightedText.substring(match.start, match.end);
-        highlightedText = before + `<span class="${options.highlightClass}">${matchText}</span>` + after;
-      }
-      hasMatches = true;
-    }
-  }
-  
-  return highlightedText;
-}
 
 /**
  * Creates a templateMiddleware that includes highlighting functionality
@@ -364,8 +239,6 @@ export function createHighlightTemplateMiddleware(options: HighlightOptions = {}
         const highlighted = highlightWithMatchInfo(value, matchInfo, highlightOptions);
         return highlighted !== value ? highlighted : undefined;
       }
-      const highlighted = highlightWithQuery(value, query, highlightOptions);
-      return highlighted !== value ? highlighted : undefined;
     }
     return undefined;
   };

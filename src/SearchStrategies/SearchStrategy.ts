@@ -38,13 +38,7 @@ export const FuzzySearchStrategy = new SearchStrategy(
 
     return true;
   },
-  (text: string, criteria: string) => {
-    const fuzzyMatches = findFuzzyMatches(text, criteria);
-    if (fuzzyMatches.length > 0) {
-      return fuzzyMatches;
-    }
-    return findLiteralMatches(text, criteria);
-  }
+  findFuzzyMatches
 );
 
 export const WildcardSearchStrategy = new SearchStrategy(
@@ -52,11 +46,5 @@ export const WildcardSearchStrategy = new SearchStrategy(
     const wildcardMatches = findWildcardMatches(text, criteria);
     return wildcardMatches.length > 0;
   },
-  (text: string, criteria: string) => {
-    const wildcardMatches = findWildcardMatches(text, criteria);
-    if (wildcardMatches.length > 0) {
-      return wildcardMatches;
-    }
-    return findLiteralMatches(text, criteria);
-  }
+  findWildcardMatches
 );

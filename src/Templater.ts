@@ -1,4 +1,4 @@
-type MiddlewareFunction = (prop: string, value: any, template: string, query?: string) => any;
+type MiddlewareFunction = (prop: string, value: any, template: string, query?: string, matchInfo?: any[]) => any;
 
 interface TemplaterOptions {
   pattern?: RegExp;
@@ -30,16 +30,8 @@ export function setOptions(_options: TemplaterOptions): void {
 
 export function compile(data: Data, query?: string): string {
   return options.template.replace(options.pattern, function(match: string, prop: string) {
-    if (data._matchInfo && data._matchInfo[prop] && data._matchInfo[prop].length > 0) {
-      try {
-        const value = (options.middleware as any)(prop, data[prop], options.template, query, data._matchInfo[prop]);
-        if (typeof value !== 'undefined') {
-          return value;
-        }
-      } catch (_e) {
-      }
-    }
-    const value = options.middleware(prop, data[prop], options.template, query);
+    const matchInfo = data._matchInfo && data._matchInfo[prop] ? data._matchInfo[prop] : undefined;
+    const value = options.middleware(prop, data[prop], options.template, query, matchInfo);
     if (typeof value !== 'undefined') {
       return value;
     }
