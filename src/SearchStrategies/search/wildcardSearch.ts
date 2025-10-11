@@ -12,10 +12,13 @@ import { mergeAndSortMatches } from './utils';
 export function findWildcardMatches(text: string, pattern: string): MatchInfo[] {
   if (!text || !pattern) return [];
   
+  // Try wildcard matching first
   const wildcardMatches = findWildcardPatternMatches(text, pattern);
   if (wildcardMatches.length > 0) {
     return mergeAndSortMatches(wildcardMatches);
   }
+  
+  // Fall back to levenshtein matching for fuzzy search
   if (levenshteinSearch(text, pattern)) {
     return [{
       start: 0,
@@ -33,7 +36,18 @@ export function findWildcardMatches(text: string, pattern: string): MatchInfo[] 
  */
 function findWildcardPatternMatches(text: string, pattern: string): MatchInfo[] {
   const matches: MatchInfo[] = [];
-  const regexPattern = pattern.replace(/\*/g, '.*');
+  
+  // Convert pattern to regex
+  let regexPattern: string;
+  if (pattern.includes('*') || pattern.includes('?')) {
+    // For wildcard patterns, use regex matching
+    regexPattern = pattern.replace(/\*/g, '.*').replace(/\?/g, '.');
+  } else {
+    // For non-wildcard patterns, use partial word matching (no word boundaries)
+    const escapedPattern = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    regexPattern = escapedPattern;
+  }
+  
   const regex = new RegExp(regexPattern, 'gi');
   let match;
   let lastIndex = 0;

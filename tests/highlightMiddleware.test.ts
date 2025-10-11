@@ -420,4 +420,130 @@ describe('createHighlightTemplateMiddleware', () => {
       expect(result).toBeUndefined();
     });
   });
+
+  describe('Fallback Removal Verification', () => {
+    it('should NOT fallback to query-based highlighting when matchInfo is missing', () => {
+      const middleware = createHighlightTemplateMiddleware();
+      const text = 'This is a test content with search terms';
+      const query = 'test search';
+      
+      // This should return undefined because there's no matchInfo and no fallback
+      const result = middleware('content', text, '<div>{content}</div>', query);
+      
+      expect(result).toBeUndefined();
+    });
+
+    it('should NOT fallback to query-based highlighting when matchInfo is empty', () => {
+      const middleware = createHighlightTemplateMiddleware();
+      const text = 'This is a test content with search terms';
+      const query = 'test search';
+      
+      // This should return undefined because matchInfo is empty and no fallback
+      const result = middleware('content', text, '<div>{content}</div>', query, []);
+      
+      expect(result).toBeUndefined();
+    });
+
+    it('should work correctly with different match types', () => {
+      const middleware = createHighlightTemplateMiddleware();
+      const text = 'This is a test content with search terms';
+      
+      // Test with exact matches - correct positions
+      const exactMatches = [
+        { start: 10, end: 14, text: 'test', type: 'exact' as const },
+        { start: 28, end: 34, text: 'search', type: 'exact' as const }
+      ];
+      const exactResult = middleware('content', text, '<div>{content}</div>', 'test search', exactMatches);
+      expect(exactResult).toContain('<span class="sjs-highlight">test</span>');
+      expect(exactResult).toContain('<span class="sjs-highlight">search</span>');
+
+      // Test with fuzzy matches - correct positions
+      const fuzzyMatches = [
+        { start: 10, end: 14, text: 'test', type: 'fuzzy' as const },
+        { start: 28, end: 34, text: 'search', type: 'fuzzy' as const }
+      ];
+      const fuzzyResult = middleware('content', text, '<div>{content}</div>', 'test search', fuzzyMatches);
+      expect(fuzzyResult).toContain('<span class="sjs-highlight">test</span>');
+      expect(fuzzyResult).toContain('<span class="sjs-highlight">search</span>');
+
+      // Test with wildcard matches - correct positions
+      const wildcardMatches = [
+        { start: 10, end: 14, text: 'test', type: 'wildcard' as const },
+        { start: 28, end: 34, text: 'search', type: 'wildcard' as const }
+      ];
+      const wildcardResult = middleware('content', text, '<div>{content}</div>', 'test search', wildcardMatches);
+      expect(wildcardResult).toContain('<span class="sjs-highlight">test</span>');
+      expect(wildcardResult).toContain('<span class="sjs-highlight">search</span>');
+    });
+
+    it('should handle overlapping matches correctly', () => {
+      const middleware = createHighlightTemplateMiddleware();
+      const text = 'This is a test test content';
+      
+      const overlappingMatches = [
+        { start: 10, end: 14, text: 'test', type: 'exact' as const },
+        { start: 15, end: 19, text: 'test', type: 'exact' as const }
+      ];
+      
+      const result = middleware('content', text, '<div>{content}</div>', 'test', overlappingMatches);
+      
+      expect(result).toContain('<span class="sjs-highlight">test</span>');
+      expect(result).toContain('<span class="sjs-highlight">test</span>');
+    });
+
+    it('should handle non-content properties without highlighting', () => {
+      const middleware = createHighlightTemplateMiddleware();
+      const text = 'This is a test content';
+      const query = 'test';
+      const matchInfo = [{ start: 10, end: 14, text: 'test', type: 'exact' as const }];
+      
+      // Should not highlight non-content properties
+      const titleResult = middleware('title', text, '<div>{title}</div>', query, matchInfo);
+      expect(titleResult).toBeUndefined();
+      
+      const urlResult = middleware('url', text, '<div>{url}</div>', query, matchInfo);
+      expect(urlResult).toBeUndefined();
+      
+      // Should only highlight content and desc properties
+      const contentResult = middleware('content', text, '<div>{content}</div>', query, matchInfo);
+      expect(contentResult).toContain('<span class="sjs-highlight">test</span>');
+      
+      const descResult = middleware('desc', text, '<div>{desc}</div>', query, matchInfo);
+      expect(descResult).toContain('<span class="sjs-highlight">test</span>');
+    });
+
+    it('should handle custom highlight options', () => {
+      const customOptions = {
+        highlightClass: 'custom-highlight',
+        contextBefore: 5,
+        contextAfter: 5,
+        maxLength: 20,
+        ellipsis: '...'
+      };
+      
+      const middleware = createHighlightTemplateMiddleware(customOptions);
+      const text = 'This is a very long test content that should be truncated';
+      const matchInfo = [{ start: 20, end: 24, text: 'test', type: 'exact' as const }];
+      
+      const result = middleware('content', text, '<div>{content}</div>', 'test', matchInfo);
+      
+      expect(result).toContain('<span class="custom-highlight">test</span>');
+      // Verify the custom class is used
+      expect(result).toContain('custom-highlight');
+      // Verify the result contains the highlighted text
+      expect(result).toContain('test');
+    });
+
+    it('should verify no fallback search is performed', () => {
+      const middleware = createHighlightTemplateMiddleware();
+      const text = 'This is a test content';
+      const query = 'nonexistent';
+      
+      // Even though 'nonexistent' is not in the text, without matchInfo it should return undefined
+      // This proves no fallback search is happening
+      const result = middleware('content', text, '<div>{content}</div>', query);
+      
+      expect(result).toBeUndefined();
+    });
+  });
 });

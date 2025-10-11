@@ -15,11 +15,10 @@ export function findLiteralMatches(text: string, criteria: string): MatchInfo[] 
   const words = criteria.trim().toLowerCase().split(/\s+/);
   const matches: MatchInfo[] = [];
   
-  let textIndex = 0;
   for (const word of words) {
     if (word.length === 0) continue;
     
-    let wordIndex = lowerText.indexOf(word, textIndex);
+    let wordIndex = lowerText.indexOf(word);
     
     if (hasTrailingSpace && word === words[words.length - 1]) {
       while (wordIndex !== -1) {
@@ -38,7 +37,9 @@ export function findLiteralMatches(text: string, criteria: string): MatchInfo[] 
         text: text.substring(wordIndex, wordIndex + word.length),
         type: 'exact'
       });
-      textIndex = wordIndex + word.length;
+    } else {
+      // If any word is not found, return empty array
+      return [];
     }
   }
   

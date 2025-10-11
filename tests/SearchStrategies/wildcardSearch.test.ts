@@ -2,9 +2,27 @@ import { describe, expect, it } from 'vitest';
 import { findWildcardMatches } from '../../src/SearchStrategies/search/wildcardSearch';
 
 describe('findWildcardMatches', () => {
-  it('should find exact matches', () => {
+  it('should find exact matches for non-wildcard patterns', () => {
     const matches = findWildcardMatches('hello', 'hello');
     expect(matches.length).toBeGreaterThan(0);
+    expect(matches[0].type).toBe('wildcard');
+    expect(matches[0].text).toBe('hello');
+    expect(matches[0].start).toBe(0);
+    expect(matches[0].end).toBe(5);
+  });
+
+  it('should find exact matches within longer text', () => {
+    const matches = findWildcardMatches('hello world test', 'world');
+    expect(matches.length).toBeGreaterThan(0);
+    expect(matches[0].type).toBe('wildcard');
+    expect(matches[0].text).toBe('world');
+    expect(matches[0].start).toBe(6);
+    expect(matches[0].end).toBe(11);
+  });
+
+  it('should find fuzzy matches for similar non-wildcard patterns', () => {
+    const matches = findWildcardMatches('testing', 'test');
+    expect(matches.length).toBeGreaterThan(0); // Should find fuzzy match via Levenshtein
     expect(matches[0].type).toBe('wildcard');
   });
 

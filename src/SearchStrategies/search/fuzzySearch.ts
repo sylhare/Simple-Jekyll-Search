@@ -15,6 +15,7 @@ export function findFuzzyMatches(text: string, pattern: string): MatchInfo[] {
   
   if (lowerPattern.length === 0) return [];
   
+  // Try character-by-character fuzzy matching first
   const matches: MatchInfo[] = [];
   for (let i = 0; i < lowerText.length; i++) {
     const match = findFuzzySequenceMatch(lowerText, lowerPattern, i);
@@ -28,6 +29,29 @@ export function findFuzzyMatches(text: string, pattern: string): MatchInfo[] {
         type: isExact ? 'exact' : 'fuzzy'
       });
       i = match.end - 1;
+    }
+  }
+  
+  // If no fuzzy matches found, try literal word matching as fallback
+  if (matches.length === 0) {
+    const words = lowerPattern.split(/\s+/);
+    if (words.length > 1) {
+      // For multi-word patterns, check if all words are present (flexible word order)
+      for (const word of words) {
+        if (word.length === 0) continue;
+        const wordIndex = lowerText.indexOf(word);
+        if (wordIndex !== -1) {
+          matches.push({
+            start: wordIndex,
+            end: wordIndex + word.length,
+            text: text.substring(wordIndex, wordIndex + word.length),
+            type: 'exact'
+          });
+        } else {
+          // If any word is not found, return empty array
+          return [];
+        }
+      }
     }
   }
   

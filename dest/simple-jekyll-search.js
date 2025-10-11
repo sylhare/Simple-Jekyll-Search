@@ -168,9 +168,18 @@
   }
   function findWildcardMatches(text, pattern) {
     if (!text || !pattern) return [];
-    const wildcardMatches = findWildcardPatternMatches(text, pattern);
-    if (wildcardMatches.length > 0) {
-      return mergeAndSortMatches(wildcardMatches);
+    if (pattern.includes("*") || pattern.includes("?")) {
+      const wildcardMatches = findWildcardPatternMatches(text, pattern);
+      if (wildcardMatches.length > 0) {
+        return mergeAndSortMatches(wildcardMatches);
+      }
+    }
+    const literalMatches = findLiteralMatches(text, pattern);
+    if (literalMatches.length > 0) {
+      return literalMatches.map((match) => ({
+        ...match,
+        type: "wildcard"
+      }));
     }
     if (levenshteinSearch(text, pattern)) {
       return [{
@@ -255,8 +264,14 @@
   );
   const WildcardSearchStrategy = new SearchStrategy(
     (text, criteria) => {
-      const wildcardMatches = findWildcardMatches(text, criteria);
-      return wildcardMatches.length > 0;
+      if (criteria.includes("*") || criteria.includes("?")) {
+        const wildcardMatches = findWildcardMatches(text, criteria);
+        return wildcardMatches.length > 0;
+      }
+      if (!text || !criteria) return false;
+      const lowerText = text.trim().toLowerCase();
+      const pattern = criteria.endsWith(" ") ? [criteria.toLowerCase()] : criteria.trim().toLowerCase().split(" ");
+      return pattern.filter((word) => lowerText.indexOf(word) >= 0).length === pattern.length;
     },
     findWildcardMatches
   );
