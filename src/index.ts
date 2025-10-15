@@ -7,6 +7,7 @@ function SimpleJekyllSearch(options: SearchOptions): SimpleJekyllSearchInstance 
 }
 
 export default SimpleJekyllSearch;
+export type { MatchInfo } from './SearchStrategies/types';
 
 // Add to window if in browser environment
 if (typeof window !== 'undefined') {
