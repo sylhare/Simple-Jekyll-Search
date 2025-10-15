@@ -27,6 +27,7 @@ export interface RepositoryOptions {
 
 export interface RepositoryData {
   [key: string]: any;
+  _matchInfo?: Record<string, import('../SearchStrategies/types').MatchInfo[]>;
 }
 
 export interface SearchOptions extends Omit<RepositoryOptions, 'searchStrategy'> {

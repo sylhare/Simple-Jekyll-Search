@@ -26,32 +26,55 @@ describe('Repository', () => {
   });
 
   it('finds a simple string', () => {
-    expect(repository.search('bar')).toEqual([barElement, almostBarElement]);
+    const results = repository.search('bar');
+    expect(results).toHaveLength(2);
+    expect(results[0]).toMatchObject(barElement);
+    expect(results[1]).toMatchObject(almostBarElement);
+    expect(results[0]._matchInfo).toBeDefined();
   });
 
   it('limits the search results to one even if found more', () => {
     repository.setOptions({ limit: 1 });
-    expect(repository.search('bar')).toEqual([barElement]);
+    const results = repository.search('bar');
+    expect(results).toHaveLength(1);
+    expect(results[0]).toMatchObject(barElement);
+    expect(results[0]._matchInfo).toBeDefined();
   });
 
   it('finds a long string', () => {
-    expect(repository.search('lorem ipsum')).toEqual([loremElement]);
+    const results = repository.search('lorem ipsum');
+    expect(results).toHaveLength(1);
+    expect(results[0]).toMatchObject(loremElement);
+    expect(results[0]._matchInfo).toBeDefined();
   });
 
   it('[deprecated] finds a fuzzy string', () => {
     repository.setOptions({ fuzzy: true });
-    expect(repository.search('lrm ism')).toEqual([loremElement]);
+    const results = repository.search('lrm ism');
+    expect(results).toHaveLength(1);
+    expect(results[0]).toMatchObject(loremElement);
+    expect(results[0]._matchInfo).toBeDefined();
   });
 
   it('finds a fuzzy string', () => {
     repository.setOptions({ strategy: 'fuzzy' });
-    expect(repository.search('lrm ism')).toEqual([loremElement]);
+    const results = repository.search('lrm ism');
+    expect(results).toHaveLength(1);
+    expect(results[0]).toMatchObject(loremElement);
+    expect(results[0]._matchInfo).toBeDefined();
   });
 
   it('finds items using a wildcard pattern', () => {
     repository.setOptions({ strategy: 'wildcard' });
-    expect(repository.search('* ipsum')).toEqual([loremElement]);
-    expect(repository.search('*bar')).toEqual([barElement, almostBarElement]);
+    const results1 = repository.search('* ipsum');
+    expect(results1).toHaveLength(1);
+    expect(results1[0]).toMatchObject(loremElement);
+    expect(results1[0]._matchInfo).toBeDefined();
+    
+    const results2 = repository.search('*bar');
+    expect(results2).toHaveLength(2);
+    expect(results2[0]).toMatchObject(barElement);
+    expect(results2[1]).toMatchObject(almostBarElement);
   });
 
   it('returns empty search results when an empty criteria is provided', () => {
@@ -71,7 +94,11 @@ describe('Repository', () => {
         return a.title.localeCompare(b.title);
       },
     });
-    expect(repository.search('r')).toEqual([almostBarElement, barElement, loremElement]);
+    const results = repository.search('r');
+    expect(results).toHaveLength(3);
+    expect(results[0]).toMatchObject(almostBarElement);
+    expect(results[1]).toMatchObject(barElement);
+    expect(results[2]).toMatchObject(loremElement);
   });
 
   it('search results should be a clone and not a reference to repository data', () => {
@@ -82,13 +109,15 @@ describe('Repository', () => {
     );
 
     const results = repository.search(query);
-    expect(results).toEqual([{ name: 'Alice', role: 'Developer' }]);
+    expect(results).toHaveLength(1);
+    expect(results[0]).toMatchObject({ name: 'Alice', role: 'Developer' });
 
     (results as SearchResult[]).forEach(result => {
       result.role = 'Modified Role';
     });
 
     const originalData = repository.search(query);
-    expect(originalData).toEqual([{ name: 'Alice', role: 'Developer' }]);
+    expect(originalData).toHaveLength(1);
+    expect(originalData[0]).toMatchObject({ name: 'Alice', role: 'Developer' });
   });
 });
