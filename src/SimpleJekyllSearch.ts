@@ -84,7 +84,7 @@ class SimpleJekyllSearch {
     results.forEach(result => {
       result.query = query;
       const div = document.createElement('div');
-      div.innerHTML = compileTemplate(result);
+      div.innerHTML = compileTemplate(result, query);
       fragment.appendChild(div);
     });
 

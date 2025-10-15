@@ -59,4 +59,82 @@ describe('Templater', () => {
 
     expect(compiled).toBe('foo - leading/slash');
   });
+
+  it('compile accepts optional query parameter', () => {
+    templater.setOptions({
+      template: '{foo}',
+      middleware(_prop: string, value: string, _template: string, query?: string) {
+        if (query) {
+          return `${value} (query: ${query})`;
+        }
+        return value;
+      }
+    });
+
+    const compiled = templater.compile({ foo: 'bar' }, 'test');
+    expect(compiled).toBe('bar (query: test)');
+  });
+
+  it('middleware receives matchInfo when available', () => {
+    templater.setOptions({
+      template: '{desc}',
+      middleware(_prop: string, value: string, _template: string, _query?: string, matchInfo?: any[]) {
+        if (matchInfo && matchInfo.length > 0) {
+          return `${value} [${matchInfo.length} matches]`;
+        }
+        return value;
+      }
+    });
+
+    const data = {
+      desc: 'hello world',
+      _matchInfo: {
+        desc: [
+          { start: 0, end: 5, text: 'hello', type: 'exact' }
+        ]
+      }
+    };
+
+    const compiled = templater.compile(data, 'hello');
+    expect(compiled).toBe('hello world [1 matches]');
+  });
+
+  it('middleware maintains backward compatibility with 3 parameters', () => {
+    templater.setOptions({
+      template: '{foo}',
+      middleware(_prop: string, value: string) {
+        return value.toUpperCase();
+      }
+    });
+
+    const compiled = templater.compile({ foo: 'bar' }, 'query');
+    expect(compiled).toBe('BAR');
+  });
+
+  it('middleware receives query but not matchInfo when matchInfo is unavailable', () => {
+    templater.setOptions({
+      template: '{foo}',
+      middleware(_prop: string, value: string, _template: string, query?: string, matchInfo?: any[]) {
+        if (query && !matchInfo) {
+          return `${value} (query: ${query}, no matches)`;
+        }
+        return value;
+      }
+    });
+
+    const compiled = templater.compile({ foo: 'bar' }, 'test');
+    expect(compiled).toBe('bar (query: test, no matches)');
+  });
+
+  it('compile works without query parameter (backward compatible)', () => {
+    templater.setOptions({
+      template: '{foo}',
+      middleware(_prop: string, value: string) {
+        return value;
+      }
+    });
+
+    const compiled = templater.compile({ foo: 'bar' });
+    expect(compiled).toBe('bar');
+  });
 }); 
