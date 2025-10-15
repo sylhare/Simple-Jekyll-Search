@@ -36,7 +36,13 @@ export interface SearchOptions extends Omit<RepositoryOptions, 'searchStrategy'>
   json: SearchData[] | string;
   success?: (this: { search: (query: string) => void }) => void;
   searchResultTemplate?: string;
-  templateMiddleware?: (prop: string, value: string, template: string) => string | undefined;
+  templateMiddleware?: (
+    prop: string, 
+    value: string, 
+    template: string, 
+    query?: string, 
+    matchInfo?: import('../SearchStrategies/types').MatchInfo[]
+  ) => string | undefined;
   noResultsText?: string;
   debounceTime?: number | null;
   onSearch?: () => void;
