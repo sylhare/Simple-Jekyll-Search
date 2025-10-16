@@ -13,6 +13,11 @@ export type { HighlightOptions } from './middleware/highlighting';
 export { highlightWithMatchInfo, escapeHtml, mergeOverlappingMatches } from './middleware/highlighting';
 export { createHighlightTemplateMiddleware, defaultHighlightMiddleware } from './middleware/highlightMiddleware';
 
+export { HybridSearchStrategy, DefaultHybridSearchStrategy } from './SearchStrategies/HybridSearchStrategy';
+export type { HybridConfig } from './SearchStrategies/HybridSearchStrategy';
+export { StrategyFactory } from './SearchStrategies/StrategyFactory';
+export type { StrategyType, StrategyConfig } from './SearchStrategies/StrategyFactory';
+
 // Add to window if in browser environment
 if (typeof window !== 'undefined') {
   (window as any).SimpleJekyllSearch = SimpleJekyllSearch;

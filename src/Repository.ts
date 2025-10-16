@@ -1,5 +1,6 @@
 import { FuzzySearchStrategy, LiteralSearchStrategy, WildcardSearchStrategy } from './SearchStrategies/SearchStrategy';
 import { Matcher } from './SearchStrategies/types';
+import { StrategyFactory, StrategyType } from './SearchStrategies/StrategyFactory';
 import { clone, isObject } from './utils';
 import { DEFAULT_OPTIONS } from './utils/default';
 import { RepositoryData, RepositoryOptions } from './utils/types';
@@ -103,8 +104,11 @@ export class Repository {
   }
 
   private searchStrategy(
-    strategy: 'literal' | 'fuzzy' | 'wildcard',
+    strategy: StrategyType,
   ): Matcher {
+    if (StrategyFactory.isValidStrategy(strategy)) {
+      return StrategyFactory.create(strategy);
+    }
     switch (strategy) {
       case 'fuzzy':
         return FuzzySearchStrategy;

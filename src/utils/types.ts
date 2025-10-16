@@ -18,7 +18,7 @@ export interface SearchData {
 export interface RepositoryOptions {
   /** @deprecated Use strategy instead (e.g. `strategy: 'fuzzy'`) */
   fuzzy?: boolean;
-  strategy?: 'literal' | 'fuzzy' | 'wildcard';
+  strategy?: 'literal' | 'fuzzy' | 'wildcard' | 'hybrid';
   limit?: number;
   searchStrategy?: Matcher;
   sortMiddleware?: (a: any, b: any) => number;
