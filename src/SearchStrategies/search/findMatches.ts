@@ -1,19 +1,30 @@
 import { MatchInfo } from '../types';
 
 export function findLiteralMatches(text: string, criteria: string): MatchInfo[] {
-  const matches: MatchInfo[] = [];
-  const lowerText = text.toLowerCase();
-  const lowerCriteria = criteria.toLowerCase();
+  const lowerText = text.trim().toLowerCase();
+  const pattern = criteria.endsWith(' ') 
+    ? [criteria.toLowerCase()] 
+    : criteria.trim().toLowerCase().split(' ');
+
+  const wordsFound = pattern.filter((word: string) => lowerText.indexOf(word) >= 0).length;
   
-  let startIndex = 0;
-  while ((startIndex = lowerText.indexOf(lowerCriteria, startIndex)) !== -1) {
-    matches.push({
-      start: startIndex,
-      end: startIndex + criteria.length,
-      text: text.substring(startIndex, startIndex + criteria.length),
-      type: 'exact'
-    });
-    startIndex += criteria.length;
+  if (wordsFound !== pattern.length) {
+    return [];
+  }
+
+  const matches: MatchInfo[] = [];
+  
+  for (const word of pattern) {
+    let startIndex = 0;
+    while ((startIndex = lowerText.indexOf(word, startIndex)) !== -1) {
+      matches.push({
+        start: startIndex,
+        end: startIndex + word.length,
+        text: text.substring(startIndex, startIndex + word.length),
+        type: 'exact'
+      });
+      startIndex += word.length;
+    }
   }
   
   return matches;
