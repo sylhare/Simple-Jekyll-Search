@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { SearchStrategy } from '../../src/SearchStrategies/types';
-import { PerformanceMonitor } from '../../src/utils/PerformanceMonitor';
+import { PerformanceMonitor } from '../utils/PerformanceMonitor';
 
 describe('Performance Benchmarks', () => {
   const sampleTexts = [

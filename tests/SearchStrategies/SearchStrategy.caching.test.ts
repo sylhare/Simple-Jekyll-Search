@@ -3,17 +3,10 @@ import { SearchStrategy } from '../../src/SearchStrategies/types';
 
 describe('SearchStrategy Caching', () => {
   let strategy: SearchStrategy;
-  let matchFunctionCalls: number;
   let findMatchesCalls: number;
 
   beforeEach(() => {
-    matchFunctionCalls = 0;
     findMatchesCalls = 0;
-
-    const matchFunction = (text: string, criteria: string) => {
-      matchFunctionCalls++;
-      return text.toLowerCase().includes(criteria.toLowerCase());
-    };
 
     const findMatchesFunction = (text: string, criteria: string) => {
       findMatchesCalls++;
@@ -33,7 +26,7 @@ describe('SearchStrategy Caching', () => {
       return [];
     };
 
-    strategy = new SearchStrategy(matchFunction, findMatchesFunction);
+    strategy = new SearchStrategy(findMatchesFunction);
   });
 
   describe('matches() caching', () => {
@@ -41,7 +34,6 @@ describe('SearchStrategy Caching', () => {
       strategy.matches('hello world', 'hello');
       strategy.matches('hello world', 'hello');
       
-      expect(matchFunctionCalls).toBe(0);
       expect(findMatchesCalls).toBe(1);
     });
 
@@ -49,7 +41,6 @@ describe('SearchStrategy Caching', () => {
       strategy.matches('hello world', 'hello');
       strategy.matches('goodbye world', 'hello');
       
-      expect(matchFunctionCalls).toBe(0);
       expect(findMatchesCalls).toBe(2);
     });
 
@@ -57,7 +48,6 @@ describe('SearchStrategy Caching', () => {
       strategy.matches('hello world', 'hello');
       strategy.matches('hello world', 'world');
       
-      expect(matchFunctionCalls).toBe(0);
       expect(findMatchesCalls).toBe(2);
     });
   });
@@ -67,7 +57,6 @@ describe('SearchStrategy Caching', () => {
       strategy.findMatches('hello world', 'hello');
       strategy.findMatches('hello world', 'hello');
       
-      expect(matchFunctionCalls).toBe(0);
       expect(findMatchesCalls).toBe(1);
     });
 
@@ -86,7 +75,6 @@ describe('SearchStrategy Caching', () => {
       strategy.matches('hello world', 'hello');
       strategy.findMatches('hello world', 'hello');
       
-      expect(matchFunctionCalls).toBe(0);
       expect(findMatchesCalls).toBe(1);
     });
 
@@ -94,7 +82,6 @@ describe('SearchStrategy Caching', () => {
       strategy.findMatches('hello world', 'hello');
       strategy.matches('hello world', 'hello');
       
-      expect(matchFunctionCalls).toBe(0);
       expect(findMatchesCalls).toBe(1);
     });
   });
@@ -105,7 +92,6 @@ describe('SearchStrategy Caching', () => {
       strategy.clearCache();
       strategy.matches('hello world', 'hello');
       
-      expect(matchFunctionCalls).toBe(0);
       expect(findMatchesCalls).toBe(2);
     });
 

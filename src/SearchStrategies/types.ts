@@ -73,10 +73,7 @@ export class SearchStrategy implements Matcher {
   }
 
   private findMatchesInternal(text: string, criteria: string): MatchInfo[] {
-    if (this.findMatchesFunction) {
-      return this.findMatchesFunction(text, criteria);
-    }
-    return [];
+    return this.findMatchesFunction(text, criteria);
   }
 
   private getCacheKey(text: string, criteria: string): string {
