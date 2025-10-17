@@ -63,3 +63,15 @@ $on-laptop:        800px;
 .info-text {
   margin-top: 20px;
 }
+
+.search-highlight {
+  background-color: #ffff00;
+  font-weight: bold;
+  padding: 0 2px;
+}
+
+.search-desc {
+  font-size: 0.9em;
+  color: $grey-color-dark;
+  margin: 0.3em 0;
+}

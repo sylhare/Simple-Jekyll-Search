@@ -60,4 +60,45 @@ describe('Simple Jekyll Search', () => {
         .should('exist');
     });
   });
+
+  describe('Highlighting Middleware', () => {
+    it('should highlight search terms in results', () => {
+      cy.get('#search-input')
+        .type('Lorem');
+
+      cy.get('#results-container')
+        .should('be.visible');
+
+      cy.get('#results-container .search-desc .search-highlight')
+        .should('exist')
+        .should('have.css', 'background-color', 'rgb(255, 255, 0)');
+
+      cy.get('#results-container .search-desc .search-highlight')
+        .first()
+        .should('contain', 'Lorem');
+    });
+
+    it('should highlight multiple occurrences', () => {
+      cy.get('#search-input')
+        .type('test');
+
+      cy.get('#results-container')
+        .should('be.visible');
+
+      cy.get('#results-container .search-desc .search-highlight')
+        .should('have.length.at.least', 1);
+    });
+
+    it('should escape HTML in search results', () => {
+      cy.get('#search-input')
+        .type('sed');
+
+      cy.get('#results-container')
+        .should('be.visible');
+
+      cy.get('#results-container .search-desc')
+        .should('exist')
+        .and('not.contain', '<script>');
+    });
+  });
 });
