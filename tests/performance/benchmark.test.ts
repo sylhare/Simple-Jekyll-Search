@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { SearchStrategy } from '../../src/SearchStrategies/types';
 import { PerformanceMonitor } from '../utils/PerformanceMonitor';
 
@@ -20,10 +20,6 @@ describe('Performance Benchmarks', () => {
   let monitor: PerformanceMonitor;
 
   beforeEach(() => {
-    const matchFunction = (text: string, criteria: string) => {
-      return text.toLowerCase().includes(criteria.toLowerCase());
-    };
-
     const findMatchesFunction = (text: string, criteria: string) => {
       const lowerText = text.toLowerCase();
       const lowerCriteria = criteria.toLowerCase();
@@ -47,8 +43,17 @@ describe('Performance Benchmarks', () => {
       return matches;
     };
 
-    strategy = new SearchStrategy(matchFunction, findMatchesFunction);
+    strategy = new SearchStrategy(findMatchesFunction);
     monitor = new PerformanceMonitor();
+  });
+
+  afterEach(() => {
+    if (strategy && strategy.clearCache) {
+      strategy.clearCache();
+    }
+    if (monitor) {
+      monitor.reset();
+    }
   });
 
   describe('Cache Hit Rate', () => {

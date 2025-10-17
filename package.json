@@ -14,6 +14,8 @@
     "postbuild": "node scripts/stamp.js < dest/simple-jekyll-search.min.js > dest/simple-jekyll-search.min.js.tmp && mv dest/simple-jekyll-search.min.js.tmp dest/simple-jekyll-search.min.js && yarn run copy-example-code",
     "copy-example-code": "cp dest/simple-jekyll-search.min.js docs/assets/js/",
     "test": "vitest run --coverage",
+    "test:unit": "vitest run --exclude '**/performance/**' --coverage",
+    "test:benchmark": "NODE_OPTIONS='--max-old-space-size=4096' vitest run tests/performance/",
     "test:watch": "vitest",
     "start": "cd docs; jekyll serve",
     "start:docs": "cd docs && bundle exec jekyll serve"

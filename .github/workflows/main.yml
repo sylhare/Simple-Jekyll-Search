@@ -12,7 +12,9 @@ jobs:
           cache: 'yarn'
       - name: Install dependencies
         run: yarn install --frozen-lockfile
-      - name: Run tests
-        run: yarn test
+      - name: Run unit tests
+        run: yarn run test:unit
+      - name: Run benchmark tests
+        run: yarn run test:benchmark
       - name: Build application
         run: yarn run build
