@@ -48,77 +48,285 @@
       return typeof params.required !== "undefined" && Array.isArray(params.required);
     }
   }
-  function fuzzySearch(text, pattern) {
-    pattern = pattern.trimEnd();
-    if (pattern.length === 0) return true;
-    pattern = pattern.toLowerCase();
-    text = text.toLowerCase();
-    let remainingText = text, currentIndex = -1;
-    for (const char of pattern) {
-      const nextIndex = remainingText.indexOf(char);
-      if (nextIndex === -1 || currentIndex !== -1 && remainingText.slice(0, nextIndex).split(" ").length - 1 > 2) {
+  function findLiteralMatches(text, criteria) {
+    const lowerText = text.trim().toLowerCase();
+    const pattern = criteria.endsWith(" ") ? [criteria.toLowerCase()] : criteria.trim().toLowerCase().split(" ");
+    const wordsFound = pattern.filter((word) => lowerText.indexOf(word) >= 0).length;
+    if (wordsFound !== pattern.length) {
+      return [];
+    }
+    const matches = [];
+    for (const word of pattern) {
+      let startIndex = 0;
+      while ((startIndex = lowerText.indexOf(word, startIndex)) !== -1) {
+        matches.push({
+          start: startIndex,
+          end: startIndex + word.length,
+          text: text.substring(startIndex, startIndex + word.length),
+          type: "exact"
+        });
+        startIndex += word.length;
+      }
+    }
+    return matches;
+  }
+  function findFuzzyMatches(text, criteria) {
+    criteria = criteria.trimEnd();
+    if (criteria.length === 0) return [];
+    const lowerText = text.toLowerCase();
+    const lowerCriteria = criteria.toLowerCase();
+    let textIndex = 0;
+    let criteriaIndex = 0;
+    const matchedIndices = [];
+    while (textIndex < text.length && criteriaIndex < criteria.length) {
+      if (lowerText[textIndex] === lowerCriteria[criteriaIndex]) {
+        matchedIndices.push(textIndex);
+        criteriaIndex++;
+      }
+      textIndex++;
+    }
+    if (criteriaIndex !== criteria.length) {
+      return [];
+    }
+    if (matchedIndices.length === 0) {
+      return [];
+    }
+    const start = matchedIndices[0];
+    const end = matchedIndices[matchedIndices.length - 1] + 1;
+    return [{
+      start,
+      end,
+      text: text.substring(start, end),
+      type: "fuzzy"
+    }];
+  }
+  function findWildcardMatches(text, pattern) {
+    const regexPattern = pattern.replace(/\*/g, ".*");
+    const regex = new RegExp(regexPattern, "gi");
+    const matches = [];
+    let match;
+    while ((match = regex.exec(text)) !== null) {
+      matches.push({
+        start: match.index,
+        end: match.index + match[0].length,
+        text: match[0],
+        type: "wildcard"
+      });
+      if (regex.lastIndex === match.index) {
+        regex.lastIndex++;
+      }
+    }
+    return matches;
+  }
+  class SearchCache {
+    constructor(options2 = {}) {
+      this.cache = /* @__PURE__ */ new Map();
+      this.hitCount = 0;
+      this.missCount = 0;
+      this.options = {
+        maxSize: options2.maxSize || 1e3,
+        ttl: options2.ttl || 6e4
+      };
+    }
+    get(key) {
+      const entry = this.cache.get(key);
+      if (!entry) {
+        this.missCount++;
+        return void 0;
+      }
+      if (Date.now() - entry.timestamp > this.options.ttl) {
+        this.cache.delete(key);
+        this.missCount++;
+        return void 0;
+      }
+      entry.hits++;
+      this.hitCount++;
+      return entry.value;
+    }
+    set(key, value) {
+      if (this.cache.size >= this.options.maxSize) {
+        this.evictOldest();
+      }
+      this.cache.set(key, {
+        value,
+        timestamp: Date.now(),
+        hits: 0
+      });
+    }
+    clear() {
+      this.cache.clear();
+      this.hitCount = 0;
+      this.missCount = 0;
+    }
+    evictOldest() {
+      let oldestKey;
+      let lowestScore = Infinity;
+      for (const [key, entry] of this.cache) {
+        const score = entry.timestamp + entry.hits * 1e4;
+        if (score < lowestScore) {
+          lowestScore = score;
+          oldestKey = key;
+        }
+      }
+      if (oldestKey) {
+        this.cache.delete(oldestKey);
+      }
+    }
+    getStats() {
+      const total = this.hitCount + this.missCount;
+      const hitRate = total > 0 ? this.hitCount / total : 0;
+      return {
+        size: this.cache.size,
+        maxSize: this.options.maxSize,
+        ttl: this.options.ttl,
+        hits: this.hitCount,
+        misses: this.missCount,
+        hitRate: Math.round(hitRate * 1e4) / 100
+      };
+    }
+    has(key) {
+      const entry = this.cache.get(key);
+      if (!entry) return false;
+      if (Date.now() - entry.timestamp > this.options.ttl) {
+        this.cache.delete(key);
         return false;
       }
-      currentIndex = nextIndex;
-      remainingText = remainingText.slice(nextIndex + 1);
+      return true;
     }
-    return true;
-  }
-  function literalSearch(text, criteria) {
-    text = text.trim().toLowerCase();
-    const pattern = criteria.endsWith(" ") ? [criteria.toLowerCase()] : criteria.trim().toLowerCase().split(" ");
-    return pattern.filter((word) => text.indexOf(word) >= 0).length === pattern.length;
-  }
-  function levenshtein(a, b) {
-    const lenA = a.length;
-    const lenB = b.length;
-    const distanceMatrix = Array.from({ length: lenA + 1 }, () => Array(lenB + 1).fill(0));
-    for (let i = 0; i <= lenA; i++) distanceMatrix[i][0] = i;
-    for (let j = 0; j <= lenB; j++) distanceMatrix[0][j] = j;
-    for (let i = 1; i <= lenA; i++) {
-      for (let j = 1; j <= lenB; j++) {
-        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-        distanceMatrix[i][j] = Math.min(
-          distanceMatrix[i - 1][j] + 1,
-          // Removing a character from one string
-          distanceMatrix[i][j - 1] + 1,
-          // Adding a character to one string to make it closer to the other string.
-          distanceMatrix[i - 1][j - 1] + cost
-          // Replacing one character in a string with another
-        );
-      }
-    }
-    return distanceMatrix[lenA][lenB];
-  }
-  function levenshteinSearch(text, pattern) {
-    const distance = levenshtein(pattern, text);
-    const similarity = 1 - distance / Math.max(pattern.length, text.length);
-    return similarity >= 0.3;
-  }
-  function wildcardSearch(text, pattern) {
-    const regexPattern = pattern.replace(/\*/g, ".*");
-    const regex = new RegExp(`^${regexPattern}$`, "i");
-    if (regex.test(text)) return true;
-    return levenshteinSearch(text, pattern);
   }
   class SearchStrategy {
-    constructor(matchFunction) {
-      this.matchFunction = matchFunction;
+    constructor(findMatchesFunction) {
+      this.findMatchesFunction = findMatchesFunction;
+      this.cache = new SearchCache({ maxSize: 500, ttl: 6e4 });
     }
     matches(text, criteria) {
       if (text === null || text.trim() === "" || !criteria) {
         return false;
       }
-      return this.matchFunction(text, criteria);
+      const cacheKey = this.getCacheKey(text, criteria);
+      const cached = this.cache.get(cacheKey);
+      if (cached !== void 0) {
+        return cached.matches;
+      }
+      const matchInfo = this.findMatchesInternal(text, criteria);
+      const result = {
+        matches: matchInfo.length > 0,
+        matchInfo
+      };
+      this.cache.set(cacheKey, result);
+      return result.matches;
+    }
+    findMatches(text, criteria) {
+      if (text === null || text.trim() === "" || !criteria) {
+        return [];
+      }
+      const cacheKey = this.getCacheKey(text, criteria);
+      const cached = this.cache.get(cacheKey);
+      if (cached !== void 0) {
+        return cached.matchInfo;
+      }
+      const matchInfo = this.findMatchesInternal(text, criteria);
+      const result = {
+        matches: matchInfo.length > 0,
+        matchInfo
+      };
+      this.cache.set(cacheKey, result);
+      return result.matchInfo;
+    }
+    findMatchesInternal(text, criteria) {
+      return this.findMatchesFunction(text, criteria);
+    }
+    getCacheKey(text, criteria) {
+      return `${text.length}:${criteria}:${text.substring(0, 20)}`;
+    }
+    clearCache() {
+      this.cache.clear();
+    }
+    getCacheStats() {
+      const stats = this.cache.getStats();
+      return {
+        hitRate: stats.hitRate,
+        size: stats.size
+      };
     }
   }
-  const LiteralSearchStrategy = new SearchStrategy(literalSearch);
-  const FuzzySearchStrategy = new SearchStrategy((text, criteria) => {
-    return fuzzySearch(text, criteria) || literalSearch(text, criteria);
-  });
-  const WildcardSearchStrategy = new SearchStrategy((text, criteria) => {
-    return wildcardSearch(text, criteria) || literalSearch(text, criteria);
-  });
+  const LiteralSearchStrategy = new SearchStrategy(
+    findLiteralMatches
+  );
+  const FuzzySearchStrategy = new SearchStrategy(
+    (text, criteria) => {
+      const fuzzyMatches = findFuzzyMatches(text, criteria);
+      if (fuzzyMatches.length > 0) {
+        return fuzzyMatches;
+      }
+      return findLiteralMatches(text, criteria);
+    }
+  );
+  const WildcardSearchStrategy = new SearchStrategy(
+    (text, criteria) => {
+      const wildcardMatches = findWildcardMatches(text, criteria);
+      if (wildcardMatches.length > 0) {
+        return wildcardMatches;
+      }
+      return findLiteralMatches(text, criteria);
+    }
+  );
+  class HybridSearchStrategy extends SearchStrategy {
+    constructor(config = {}) {
+      super((text, criteria) => {
+        return this.hybridFind(text, criteria);
+      });
+      this.config = {
+        preferFuzzy: config.preferFuzzy ?? false,
+        wildcardPriority: config.wildcardPriority ?? true,
+        minFuzzyLength: config.minFuzzyLength ?? 3
+      };
+    }
+    hybridFind(text, criteria) {
+      if (this.config.wildcardPriority && criteria.includes("*")) {
+        const wildcardMatches = findWildcardMatches(text, criteria);
+        if (wildcardMatches.length > 0) return wildcardMatches;
+      }
+      if (criteria.includes(" ") || criteria.length < this.config.minFuzzyLength) {
+        const literalMatches = findLiteralMatches(text, criteria);
+        if (literalMatches.length > 0) return literalMatches;
+      }
+      if (this.config.preferFuzzy || criteria.length >= this.config.minFuzzyLength) {
+        const fuzzyMatches = findFuzzyMatches(text, criteria);
+        if (fuzzyMatches.length > 0) return fuzzyMatches;
+      }
+      return findLiteralMatches(text, criteria);
+    }
+    getConfig() {
+      return { ...this.config };
+    }
+  }
+  const DefaultHybridSearchStrategy = new HybridSearchStrategy();
+  class StrategyFactory {
+    static create(config) {
+      if (typeof config === "string") {
+        config = { type: config };
+      }
+      switch (config.type) {
+        case "literal":
+          return LiteralSearchStrategy;
+        case "fuzzy":
+          return FuzzySearchStrategy;
+        case "wildcard":
+          return WildcardSearchStrategy;
+        case "hybrid":
+          return new HybridSearchStrategy(config.hybridConfig);
+        default:
+          return LiteralSearchStrategy;
+      }
+    }
+    static getAvailableStrategies() {
+      return ["literal", "fuzzy", "wildcard", "hybrid"];
+    }
+    static isValidStrategy(type) {
+      return this.getAvailableStrategies().includes(type);
+    }
+  }
   function merge(target, source) {
     return { ...target, ...source };
   }
@@ -238,12 +446,21 @@
       return matches;
     }
     findMatchesInObject(obj, criteria) {
+      let hasMatch = false;
+      const result = { ...obj };
+      result._matchInfo = {};
       for (const key in obj) {
         if (!this.isExcluded(obj[key]) && this.options.searchStrategy.matches(obj[key], criteria)) {
-          return obj;
+          hasMatch = true;
+          if (this.options.searchStrategy.findMatches) {
+            const matchInfo = this.options.searchStrategy.findMatches(obj[key], criteria);
+            if (matchInfo && matchInfo.length > 0) {
+              result._matchInfo[key] = matchInfo;
+            }
+          }
         }
       }
-      return void 0;
+      return hasMatch ? result : void 0;
     }
     isExcluded(term) {
       for (const excludedTerm of this.options.exclude) {
@@ -254,6 +471,9 @@
       return false;
     }
     searchStrategy(strategy) {
+      if (StrategyFactory.isValidStrategy(strategy)) {
+        return StrategyFactory.create(strategy);
+      }
       switch (strategy) {
         case "fuzzy":
           return FuzzySearchStrategy;
@@ -282,8 +502,22 @@
       options.middleware = _options.middleware;
     }
   }
-  function compile(data) {
+  function compile(data, query) {
     return options.template.replace(options.pattern, function(match, prop) {
+      var _a;
+      const matchInfo = (_a = data._matchInfo) == null ? void 0 : _a[prop];
+      if (matchInfo && matchInfo.length > 0 && query) {
+        const value2 = options.middleware(prop, data[prop], options.template, query, matchInfo);
+        if (typeof value2 !== "undefined") {
+          return value2;
+        }
+      }
+      if (query) {
+        const value2 = options.middleware(prop, data[prop], options.template, query);
+        if (typeof value2 !== "undefined") {
+          return value2;
+        }
+      }
       const value = options.middleware(prop, data[prop], options.template);
       if (typeof value !== "undefined") {
         return value;
@@ -357,7 +591,7 @@
       results.forEach((result) => {
         result.query = query;
         const div = document.createElement("div");
-        div.innerHTML = compile(result);
+        div.innerHTML = compile(result, query);
         fragment.appendChild(div);
       });
       this.options.resultsContainer.appendChild(fragment);
@@ -392,13 +626,117 @@
       return rv;
     }
   };
+  function escapeHtml(text) {
+    const map = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;"
+    };
+    return text.replace(/[&<>"']/g, (m) => map[m]);
+  }
+  function mergeOverlappingMatches(matches) {
+    if (matches.length === 0) return [];
+    const sorted = [...matches].sort((a, b) => a.start - b.start);
+    const merged = [{ ...sorted[0] }];
+    for (let i = 1; i < sorted.length; i++) {
+      const current = sorted[i];
+      const last = merged[merged.length - 1];
+      if (current.start <= last.end) {
+        last.end = Math.max(last.end, current.end);
+      } else {
+        merged.push({ ...current });
+      }
+    }
+    return merged;
+  }
+  function highlightWithMatchInfo(text, matchInfo, options2 = {}) {
+    if (!text || matchInfo.length === 0) {
+      return escapeHtml(text);
+    }
+    const className = options2.className || "search-highlight";
+    const maxLength = options2.maxLength;
+    const mergedMatches = mergeOverlappingMatches(matchInfo);
+    let result = "";
+    let lastIndex = 0;
+    for (const match of mergedMatches) {
+      result += escapeHtml(text.substring(lastIndex, match.start));
+      result += `<span class="${className}">${escapeHtml(text.substring(match.start, match.end))}</span>`;
+      lastIndex = match.end;
+    }
+    result += escapeHtml(text.substring(lastIndex));
+    if (maxLength && result.length > maxLength) {
+      result = truncateAroundMatches(text, mergedMatches, maxLength, options2.contextLength || 30, className);
+    }
+    return result;
+  }
+  function truncateAroundMatches(text, matches, maxLength, contextLength, className) {
+    if (matches.length === 0) {
+      const truncated = text.substring(0, maxLength - 3);
+      return escapeHtml(truncated) + "...";
+    }
+    const firstMatch = matches[0];
+    const start = Math.max(0, firstMatch.start - contextLength);
+    const end = Math.min(text.length, firstMatch.end + contextLength);
+    let result = "";
+    if (start > 0) {
+      result += "...";
+    }
+    const snippet = text.substring(start, end);
+    const adjustedMatches = matches.filter((m) => m.start < end && m.end > start).map((m) => ({
+      ...m,
+      start: Math.max(0, m.start - start),
+      end: Math.min(snippet.length, m.end - start)
+    }));
+    let lastIndex = 0;
+    for (const match of adjustedMatches) {
+      result += escapeHtml(snippet.substring(lastIndex, match.start));
+      result += `<span class="${className}">${escapeHtml(snippet.substring(match.start, match.end))}</span>`;
+      lastIndex = match.end;
+    }
+    result += escapeHtml(snippet.substring(lastIndex));
+    if (end < text.length) {
+      result += "...";
+    }
+    return result;
+  }
+  function createHighlightTemplateMiddleware(options2 = {}) {
+    const highlightOptions = {
+      className: options2.className || "search-highlight",
+      maxLength: options2.maxLength,
+      contextLength: options2.contextLength || 30
+    };
+    return function(prop, value, _template, query, matchInfo) {
+      if ((prop === "content" || prop === "desc" || prop === "description") && query && typeof value === "string") {
+        if (matchInfo && matchInfo.length > 0) {
+          const highlighted = highlightWithMatchInfo(value, matchInfo, highlightOptions);
+          return highlighted !== value ? highlighted : void 0;
+        }
+      }
+      return void 0;
+    };
+  }
+  function defaultHighlightMiddleware(prop, value, template, query, matchInfo) {
+    const middleware = createHighlightTemplateMiddleware();
+    return middleware(prop, value, template, query, matchInfo);
+  }
   function SimpleJekyllSearch(options2) {
     const instance = new SimpleJekyllSearch$1();
     return instance.init(options2);
   }
   if (typeof window !== "undefined") {
     window.SimpleJekyllSearch = SimpleJekyllSearch;
+    window.createHighlightTemplateMiddleware = createHighlightTemplateMiddleware;
   }
+  exports2.DefaultHybridSearchStrategy = DefaultHybridSearchStrategy;
+  exports2.HybridSearchStrategy = HybridSearchStrategy;
+  exports2.StrategyFactory = StrategyFactory;
+  exports2.createHighlightTemplateMiddleware = createHighlightTemplateMiddleware;
   exports2.default = SimpleJekyllSearch;
+  exports2.defaultHighlightMiddleware = defaultHighlightMiddleware;
+  exports2.escapeHtml = escapeHtml;
+  exports2.highlightWithMatchInfo = highlightWithMatchInfo;
+  exports2.mergeOverlappingMatches = mergeOverlappingMatches;
   Object.defineProperties(exports2, { __esModule: { value: true }, [Symbol.toStringTag]: { value: "Module" } });
 });

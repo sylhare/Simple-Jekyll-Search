@@ -7,7 +7,7 @@ import { RepositoryData, RepositoryOptions } from './utils/types';
 
 export class Repository {
   private data: RepositoryData[] = [];
-  private options!: Required<RepositoryOptions>;
+  private options!: Required<Omit<RepositoryOptions, 'fuzzy'>> & Pick<RepositoryOptions, 'fuzzy'>;
 
   constructor(initialOptions: RepositoryOptions = {}) {
     this.setOptions(initialOptions);
@@ -36,13 +36,19 @@ export class Repository {
   }
 
   public setOptions(newOptions: RepositoryOptions): void {
+    // Backward compatibility: convert fuzzy: true to strategy: 'fuzzy'
+    let strategy = newOptions?.strategy || DEFAULT_OPTIONS.strategy;
+    if (newOptions?.fuzzy && !newOptions?.strategy) {
+      console.warn('[Simple Jekyll Search] Warning: fuzzy option is deprecated. Use strategy: "fuzzy" instead.');
+      strategy = 'fuzzy';
+    }
+    
     this.options = {
-      fuzzy: newOptions?.fuzzy || DEFAULT_OPTIONS.fuzzy,
       limit: newOptions?.limit || DEFAULT_OPTIONS.limit,
-      searchStrategy: this.searchStrategy(newOptions?.strategy || (newOptions.fuzzy && 'fuzzy') || DEFAULT_OPTIONS.strategy),
+      searchStrategy: this.searchStrategy(strategy),
       sortMiddleware: newOptions?.sortMiddleware || DEFAULT_OPTIONS.sortMiddleware,
       exclude: newOptions?.exclude || DEFAULT_OPTIONS.exclude,
-      strategy: newOptions?.strategy || DEFAULT_OPTIONS.strategy,
+      strategy: strategy,
     };
   }
 
