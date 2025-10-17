@@ -7,11 +7,17 @@
   <script src="{{ '/assets/js/simple-jekyll-search.min.js' | relative_url }}"></script>
 
   <script>
+    var highlightMiddleware = window.createHighlightTemplateMiddleware({
+      className: 'search-highlight',
+      maxLength: 200
+    });
+
     window.simpleJekyllSearch = new SimpleJekyllSearch({
       searchInput: document.getElementById('search-input'),
       resultsContainer: document.getElementById('results-container'),
       json: '{{ "/assets/data/search.json" | relative_url }}',
-      searchResultTemplate: '<li><a href="{url}?query={query}" title="{desc}">{title}</a></li>',
+      searchResultTemplate: '<li><a href="{url}?query={query}">{title}</a><p class="search-desc">{content}</p></li>',
+      templateMiddleware: highlightMiddleware,
       noResultsText: 'No results found',
       limit: 10,
       strategy: 'wildcard',
