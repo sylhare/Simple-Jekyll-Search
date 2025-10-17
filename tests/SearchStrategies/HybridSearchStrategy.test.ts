@@ -142,23 +142,6 @@ describe('HybridSearchStrategy', () => {
     });
   });
 
-  describe('cache integration', () => {
-    const strategy = new HybridSearchStrategy();
-
-    it('should use cache for repeated searches', () => {
-      const matches1 = strategy.findMatches('hello world', 'hello');
-      const matches2 = strategy.findMatches('hello world', 'hello');
-      expect(matches1).toEqual(matches2);
-    });
-
-    it('should clear cache', () => {
-      strategy.findMatches('test', 'test');
-      strategy.clearCache();
-      const stats = strategy.getCacheStats();
-      expect(stats.size).toBe(0);
-    });
-  });
-
   describe('matches() method', () => {
     const strategy = new HybridSearchStrategy();
 

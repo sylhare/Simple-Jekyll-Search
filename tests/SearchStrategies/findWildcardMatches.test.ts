@@ -21,11 +21,6 @@ describe('findWildcardMatches', () => {
     expect(findWildcardMatches('hello world', 'hello*')).toHaveLength(1);
   });
 
-  it.skip('should return matches for fuzzy matches with high similarity', () => {
-    expect(findWildcardMatches('hello', 'helo')).toHaveLength(1);
-    expect(findWildcardMatches('hello', 'hell')).toHaveLength(1);
-  });
-
   it('should return empty array for non-matching wildcard patterns', () => {
     expect(findWildcardMatches('world', 'h*o')).toEqual([]);
     expect(findWildcardMatches('xyz', 'abc')).toEqual([]);

@@ -1,13 +1,14 @@
 {
   "name": "simple-jekyll-search",
-  "version": "1.15.2",
-  "description": "Fork of Simple Jekyll Search from https://github.com/christian-fei/Simple-Jekyll-Search",
+  "version": "2.0.0",
+  "description": "A simple JavaScript library to add search functionality to any Jekyll blog - Fast, lightweight, client-side search. Fork of Simple Jekyll Search from https://github.com/christian-fei/Simple-Jekyll-Search",
   "main": "dest/simple-jekyll-search.js",
   "type": "module",
   "scripts": {
     "cypress": "cypress run",
     "cypress:run": "node scripts/start-jekyll.js && sleep 8 && cypress run; node scripts/kill-jekyll.js",
     "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
     "pretest": "yarn run lint",
     "build": "tsc && vite build && terser dest/simple-jekyll-search.js -o dest/simple-jekyll-search.min.js",
     "prebuild": "yarn run test",
