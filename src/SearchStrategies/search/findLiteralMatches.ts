@@ -24,6 +24,8 @@ export function findLiteralMatches(text: string, criteria: string): MatchInfo[] 
   const matches: MatchInfo[] = [];
   
   for (const word of pattern) {
+    if (!word || word.length === 0) continue;
+    
     let startIndex = 0;
     while ((startIndex = lowerText.indexOf(word, startIndex)) !== -1) {
       matches.push({
