@@ -24,10 +24,14 @@ export class SearchStrategy implements Matcher {
   private readonly cache: SearchCache<CachedResult>;
 
   constructor(
-    findMatchesFunction: (text: string, criteria: string) => MatchInfo[]
+    findMatchesFunction: (text: string, criteria: string) => MatchInfo[],
+    cacheOptions?: { maxSize?: number; ttl?: number }
   ) {
     this.findMatchesFunction = findMatchesFunction;
-    this.cache = new SearchCache<CachedResult>({ maxSize: 500, ttl: 60000 });
+    this.cache = new SearchCache<CachedResult>({ 
+      maxSize: cacheOptions?.maxSize ?? 100, 
+      ttl: cacheOptions?.ttl ?? 60000 
+    });
   }
 
   matches(text: string | null, criteria: string): boolean {

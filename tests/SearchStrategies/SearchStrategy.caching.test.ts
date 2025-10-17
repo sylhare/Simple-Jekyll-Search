@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach } from 'vitest';
+import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { SearchStrategy } from '../../src/SearchStrategies/types';
 
 describe('SearchStrategy Caching', () => {
@@ -27,6 +27,12 @@ describe('SearchStrategy Caching', () => {
     };
 
     strategy = new SearchStrategy(findMatchesFunction);
+  });
+
+  afterEach(() => {
+    if (strategy && strategy.clearCache) {
+      strategy.clearCache();
+    }
   });
 
   describe('matches() caching', () => {
