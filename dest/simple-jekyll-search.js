@@ -57,6 +57,7 @@
     }
     const matches = [];
     for (const word of pattern) {
+      if (!word || word.length === 0) continue;
       let startIndex = 0;
       while ((startIndex = lowerText.indexOf(word, startIndex)) !== -1) {
         matches.push({
@@ -118,136 +119,22 @@
     }
     return matches;
   }
-  class SearchCache {
-    constructor(options2 = {}) {
-      this.cache = /* @__PURE__ */ new Map();
-      this.hitCount = 0;
-      this.missCount = 0;
-      this.options = {
-        maxSize: options2.maxSize || 1e3,
-        ttl: options2.ttl || 6e4
-      };
-    }
-    get(key) {
-      const entry = this.cache.get(key);
-      if (!entry) {
-        this.missCount++;
-        return void 0;
-      }
-      if (Date.now() - entry.timestamp > this.options.ttl) {
-        this.cache.delete(key);
-        this.missCount++;
-        return void 0;
-      }
-      entry.hits++;
-      this.hitCount++;
-      return entry.value;
-    }
-    set(key, value) {
-      if (this.cache.size >= this.options.maxSize) {
-        this.evictOldest();
-      }
-      this.cache.set(key, {
-        value,
-        timestamp: Date.now(),
-        hits: 0
-      });
-    }
-    clear() {
-      this.cache.clear();
-      this.hitCount = 0;
-      this.missCount = 0;
-    }
-    evictOldest() {
-      let oldestKey;
-      let lowestScore = Infinity;
-      for (const [key, entry] of this.cache) {
-        const score = entry.timestamp + entry.hits * 1e4;
-        if (score < lowestScore) {
-          lowestScore = score;
-          oldestKey = key;
-        }
-      }
-      if (oldestKey) {
-        this.cache.delete(oldestKey);
-      }
-    }
-    getStats() {
-      const total = this.hitCount + this.missCount;
-      const hitRate = total > 0 ? this.hitCount / total : 0;
-      return {
-        size: this.cache.size,
-        maxSize: this.options.maxSize,
-        ttl: this.options.ttl,
-        hits: this.hitCount,
-        misses: this.missCount,
-        hitRate: Math.round(hitRate * 1e4) / 100
-      };
-    }
-    has(key) {
-      const entry = this.cache.get(key);
-      if (!entry) return false;
-      if (Date.now() - entry.timestamp > this.options.ttl) {
-        this.cache.delete(key);
-        return false;
-      }
-      return true;
-    }
-  }
   class SearchStrategy {
     constructor(findMatchesFunction) {
       this.findMatchesFunction = findMatchesFunction;
-      this.cache = new SearchCache({ maxSize: 500, ttl: 6e4 });
     }
     matches(text, criteria) {
       if (text === null || text.trim() === "" || !criteria) {
         return false;
       }
-      const cacheKey = this.getCacheKey(text, criteria);
-      const cached = this.cache.get(cacheKey);
-      if (cached !== void 0) {
-        return cached.matches;
-      }
-      const matchInfo = this.findMatchesInternal(text, criteria);
-      const result = {
-        matches: matchInfo.length > 0,
-        matchInfo
-      };
-      this.cache.set(cacheKey, result);
-      return result.matches;
+      const matchInfo = this.findMatchesFunction(text, criteria);
+      return matchInfo.length > 0;
     }
     findMatches(text, criteria) {
       if (text === null || text.trim() === "" || !criteria) {
         return [];
       }
-      const cacheKey = this.getCacheKey(text, criteria);
-      const cached = this.cache.get(cacheKey);
-      if (cached !== void 0) {
-        return cached.matchInfo;
-      }
-      const matchInfo = this.findMatchesInternal(text, criteria);
-      const result = {
-        matches: matchInfo.length > 0,
-        matchInfo
-      };
-      this.cache.set(cacheKey, result);
-      return result.matchInfo;
-    }
-    findMatchesInternal(text, criteria) {
       return this.findMatchesFunction(text, criteria);
-    }
-    getCacheKey(text, criteria) {
-      return `${text.length}:${criteria}:${text.substring(0, 20)}`;
-    }
-    clearCache() {
-      this.cache.clear();
-    }
-    getCacheStats() {
-      const stats = this.cache.getStats();
-      return {
-        hitRate: stats.hitRate,
-        size: stats.size
-      };
     }
   }
   const LiteralSearchStrategy = new SearchStrategy(
@@ -369,12 +256,13 @@
     sortMiddleware: NoSort,
     noResultsText: "No results found",
     limit: 10,
-    fuzzy: false,
     strategy: "literal",
     debounceTime: null,
     exclude: [],
     onSearch: () => {
-    }
+    },
+    fuzzy: false
+    // Deprecated, use strategy: 'fuzzy' instead
   };
   const REQUIRED_OPTIONS = ["searchInput", "resultsContainer", "json"];
   const WHITELISTED_KEYS = /* @__PURE__ */ new Set([
@@ -412,13 +300,17 @@
       return clone(this.findMatches(this.data, criteria).sort(this.options.sortMiddleware));
     }
     setOptions(newOptions) {
+      let strategy = (newOptions == null ? void 0 : newOptions.strategy) || DEFAULT_OPTIONS.strategy;
+      if ((newOptions == null ? void 0 : newOptions.fuzzy) && !(newOptions == null ? void 0 : newOptions.strategy)) {
+        console.warn('[Simple Jekyll Search] Warning: fuzzy option is deprecated. Use strategy: "fuzzy" instead.');
+        strategy = "fuzzy";
+      }
       this.options = {
-        fuzzy: (newOptions == null ? void 0 : newOptions.fuzzy) || DEFAULT_OPTIONS.fuzzy,
         limit: (newOptions == null ? void 0 : newOptions.limit) || DEFAULT_OPTIONS.limit,
-        searchStrategy: this.searchStrategy((newOptions == null ? void 0 : newOptions.strategy) || newOptions.fuzzy && "fuzzy" || DEFAULT_OPTIONS.strategy),
+        searchStrategy: this.searchStrategy(strategy),
         sortMiddleware: (newOptions == null ? void 0 : newOptions.sortMiddleware) || DEFAULT_OPTIONS.sortMiddleware,
         exclude: (newOptions == null ? void 0 : newOptions.exclude) || DEFAULT_OPTIONS.exclude,
-        strategy: (newOptions == null ? void 0 : newOptions.strategy) || DEFAULT_OPTIONS.strategy
+        strategy
       };
     }
     addObject(obj) {
@@ -608,7 +500,6 @@
         middleware: this.options.templateMiddleware
       });
       this.repository.setOptions({
-        fuzzy: this.options.fuzzy,
         limit: this.options.limit,
         sortMiddleware: this.options.sortMiddleware,
         strategy: this.options.strategy,
