@@ -11,11 +11,11 @@ export const DEFAULT_OPTIONS: Required<SearchOptions> = {
   sortMiddleware: NoSort,
   noResultsText: 'No results found',
   limit: 10,
-  fuzzy: false,
   strategy: 'literal',
   debounceTime: null,
   exclude: [],
-  onSearch: () => {}
+  onSearch: () => {},
+  fuzzy: false  // Deprecated, use strategy: 'fuzzy' instead
 };
 
 export const REQUIRED_OPTIONS = ['searchInput', 'resultsContainer', 'json'];

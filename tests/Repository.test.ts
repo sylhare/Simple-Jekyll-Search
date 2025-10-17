@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Repository } from '../src/Repository';
 import { SearchResult } from '../src/utils/types';
 
@@ -48,12 +48,19 @@ describe('Repository', () => {
     expect(results[0]._matchInfo).toBeDefined();
   });
 
-  it('[deprecated] finds a fuzzy string', () => {
+  it('[v1.x deprecated] fuzzy option still works via backward compatibility', () => {
+    // Test backward compatibility: fuzzy: true should work and show warning
+    const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    
     repository.setOptions({ fuzzy: true });
     const results = repository.search('lrm ism');
+    
     expect(results).toHaveLength(1);
     expect(results[0]).toMatchObject(loremElement);
     expect(results[0]._matchInfo).toBeDefined();
+    expect(consoleWarnSpy).toHaveBeenCalledWith('[Simple Jekyll Search] Warning: fuzzy option is deprecated. Use strategy: "fuzzy" instead.');
+    
+    consoleWarnSpy.mockRestore();
   });
 
   it('finds a fuzzy string', () => {

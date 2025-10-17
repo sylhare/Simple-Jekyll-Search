@@ -105,7 +105,6 @@ class SimpleJekyllSearch {
     });
 
     this.repository.setOptions({
-      fuzzy: this.options.fuzzy,
       limit: this.options.limit,
       sortMiddleware: this.options.sortMiddleware,
       strategy: this.options.strategy,
