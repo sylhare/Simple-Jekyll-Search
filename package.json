@@ -35,7 +35,7 @@
   "homepage": "https://github.com/sylhare/Simple-Jekyll-Search",
   "devDependencies": {
     "@types/jsdom": "^21.1.7",
-    "@types/node": "^22.13.4",
+    "@types/node": "^24.7.0",
     "@typescript-eslint/eslint-plugin": "^8.29.0",
     "@typescript-eslint/parser": "^8.29.0",
     "@vitest/coverage-v8": "^3.1.2",
