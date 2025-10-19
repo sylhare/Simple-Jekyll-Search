@@ -218,32 +218,13 @@
     return { ...target, ...source };
   }
   function isJSON(json) {
-    try {
-      return !!(json instanceof Object && JSON.parse(JSON.stringify(json)));
-    } catch (_err) {
-      return false;
-    }
+    return Array.isArray(json) || json !== null && typeof json === "object";
   }
   function NoSort() {
     return 0;
   }
   function isObject(obj) {
     return Boolean(obj) && Object.prototype.toString.call(obj) === "[object Object]";
-  }
-  function clone(input) {
-    if (input === null || typeof input !== "object") {
-      return input;
-    }
-    if (Array.isArray(input)) {
-      return input.map((item) => clone(item));
-    }
-    const output = {};
-    for (const key in input) {
-      if (Object.prototype.hasOwnProperty.call(input, key)) {
-        output[key] = clone(input[key]);
-      }
-    }
-    return output;
   }
   const DEFAULT_OPTIONS = {
     searchInput: null,
@@ -278,6 +259,7 @@
   class Repository {
     constructor(initialOptions = {}) {
       this.data = [];
+      this.excludePatterns = [];
       this.setOptions(initialOptions);
     }
     put(input) {
@@ -297,7 +279,8 @@
       if (!criteria) {
         return [];
       }
-      return clone(this.findMatches(this.data, criteria).sort(this.options.sortMiddleware));
+      const matches = this.findMatches(this.data, criteria).sort(this.options.sortMiddleware);
+      return matches.map((item) => ({ ...item }));
     }
     setOptions(newOptions) {
       let strategy = (newOptions == null ? void 0 : newOptions.strategy) || DEFAULT_OPTIONS.strategy;
@@ -305,11 +288,13 @@
         console.warn('[Simple Jekyll Search] Warning: fuzzy option is deprecated. Use strategy: "fuzzy" instead.');
         strategy = "fuzzy";
       }
+      const exclude = (newOptions == null ? void 0 : newOptions.exclude) || DEFAULT_OPTIONS.exclude;
+      this.excludePatterns = exclude.map((pattern) => new RegExp(pattern));
       this.options = {
         limit: (newOptions == null ? void 0 : newOptions.limit) || DEFAULT_OPTIONS.limit,
         searchStrategy: this.searchStrategy(strategy),
         sortMiddleware: (newOptions == null ? void 0 : newOptions.sortMiddleware) || DEFAULT_OPTIONS.sortMiddleware,
-        exclude: (newOptions == null ? void 0 : newOptions.exclude) || DEFAULT_OPTIONS.exclude,
+        exclude,
         strategy
       };
     }
@@ -355,12 +340,8 @@
       return hasMatch ? result : void 0;
     }
     isExcluded(term) {
-      for (const excludedTerm of this.options.exclude) {
-        if (new RegExp(excludedTerm).test(String(term))) {
-          return true;
-        }
-      }
-      return false;
+      const termStr = String(term);
+      return this.excludePatterns.some((regex) => regex.test(termStr));
     }
     searchStrategy(strategy) {
       if (StrategyFactory.isValidStrategy(strategy)) {

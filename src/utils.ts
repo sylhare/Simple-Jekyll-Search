@@ -5,12 +5,7 @@ export function merge<T>(target: T, source: Partial<T>): T {
 }
 
 export function isJSON(json: any): boolean {
-  try {
-    return !!(json instanceof Object && JSON.parse(JSON.stringify(json)));
-
-  } catch (_err) {
-    return false;
-  }
+  return Array.isArray(json) || (json !== null && typeof json === 'object');
 }
 
 export function NoSort(): number {
