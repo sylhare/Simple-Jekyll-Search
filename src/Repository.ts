@@ -1,13 +1,14 @@
 import { FuzzySearchStrategy, LiteralSearchStrategy, WildcardSearchStrategy } from './SearchStrategies/SearchStrategy';
 import { Matcher } from './SearchStrategies/types';
 import { StrategyFactory, StrategyType } from './SearchStrategies/StrategyFactory';
-import { clone, isObject } from './utils';
+import { isObject } from './utils';
 import { DEFAULT_OPTIONS } from './utils/default';
 import { RepositoryData, RepositoryOptions } from './utils/types';
 
 export class Repository {
   private data: RepositoryData[] = [];
   private options!: Required<Omit<RepositoryOptions, 'fuzzy'>> & Pick<RepositoryOptions, 'fuzzy'>;
+  private excludePatterns: RegExp[] = [];
 
   constructor(initialOptions: RepositoryOptions = {}) {
     this.setOptions(initialOptions);
@@ -32,7 +33,8 @@ export class Repository {
     if (!criteria) {
       return [];
     }
-    return clone(this.findMatches(this.data, criteria).sort(this.options.sortMiddleware));
+    const matches = this.findMatches(this.data, criteria).sort(this.options.sortMiddleware);
+    return matches.map(item => ({ ...item }));
   }
 
   public setOptions(newOptions: RepositoryOptions): void {
@@ -43,11 +45,14 @@ export class Repository {
       strategy = 'fuzzy';
     }
     
+    const exclude = newOptions?.exclude || DEFAULT_OPTIONS.exclude;
+    this.excludePatterns = exclude.map(pattern => new RegExp(pattern));
+    
     this.options = {
       limit: newOptions?.limit || DEFAULT_OPTIONS.limit,
       searchStrategy: this.searchStrategy(strategy),
       sortMiddleware: newOptions?.sortMiddleware || DEFAULT_OPTIONS.sortMiddleware,
-      exclude: newOptions?.exclude || DEFAULT_OPTIONS.exclude,
+      exclude: exclude,
       strategy: strategy,
     };
   }
@@ -101,12 +106,8 @@ export class Repository {
   }
 
   private isExcluded(term: any): boolean {
-    for (const excludedTerm of this.options.exclude) {
-      if (new RegExp(excludedTerm).test(String(term))) {
-        return true;
-      }
-    }
-    return false;
+    const termStr = String(term);
+    return this.excludePatterns.some(regex => regex.test(termStr));
   }
 
   private searchStrategy(

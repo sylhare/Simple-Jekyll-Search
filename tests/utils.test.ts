@@ -51,8 +51,46 @@ describe('utils', () => {
   });
 
   describe('isJSON', () => {
-    it('returns true if is JSON object', () => {
+    it('returns true for plain objects', () => {
       expect(isJSON({ foo: 'bar' })).toBe(true);
+      expect(isJSON({})).toBe(true);
+      expect(isJSON({ nested: { key: 'value' } })).toBe(true);
+    });
+
+    it('returns true for arrays', () => {
+      expect(isJSON([])).toBe(true);
+      expect(isJSON([1, 2, 3])).toBe(true);
+      expect(isJSON([{ foo: 'bar' }])).toBe(true);
+    });
+
+    it('returns false for null', () => {
+      expect(isJSON(null)).toBe(false);
+    });
+
+    it('returns false for undefined', () => {
+      expect(isJSON(undefined)).toBe(false);
+    });
+
+    it('returns false for primitives', () => {
+      expect(isJSON(42)).toBe(false);
+      expect(isJSON(0)).toBe(false);
+      expect(isJSON('string')).toBe(false);
+      expect(isJSON('')).toBe(false);
+      expect(isJSON(true)).toBe(false);
+      expect(isJSON(false)).toBe(false);
+    });
+
+    it('returns true for Date objects', () => {
+      expect(isJSON(new Date())).toBe(true);
+    });
+
+    it('returns true for RegExp objects', () => {
+      expect(isJSON(/regex/)).toBe(true);
+    });
+
+    it('returns false for functions', () => {
+      expect(isJSON(() => {})).toBe(false);
+      expect(isJSON(function() {})).toBe(false);
     });
   });
 
