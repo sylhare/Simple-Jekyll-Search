@@ -1,5 +1,5 @@
 import { JSDOM } from 'jsdom';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import SimpleJekyllSearch from '../src/SimpleJekyllSearch';
 import { SearchData, SearchOptions } from '../src/utils/types';
 
@@ -142,6 +142,100 @@ describe('SimpleJekyllSearch', () => {
 
       await new Promise(resolve => setTimeout(resolve, mockOptions.debounceTime! + 10));
       expect(resultsContainer.innerHTML).toContain('Test Post');
+    });
+  });
+
+  describe('error handling', () => {
+    beforeEach(() => {
+      mockOptions.json = mockSearchData;
+    });
+
+    it('should call onError callback when provided', async () => {
+      const onErrorSpy = vi.fn();
+      const optionsWithErrorHandler = { ...mockOptions, onError: onErrorSpy };
+      
+      searchInstance.init(optionsWithErrorHandler);
+      
+      const input = mockOptions.searchInput;
+      input.value = 'test';
+      input.dispatchEvent(new dom.window.KeyboardEvent('input', { key: 't' }));
+
+      await new Promise(resolve => setTimeout(resolve, mockOptions.debounceTime! + 10));
+      
+      expect(onErrorSpy).not.toHaveBeenCalled();
+    });
+
+    it('should handle malformed search data gracefully', async () => {
+      const onErrorSpy = vi.fn();
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      
+      const malformedData = [
+        { title: 'Valid Post', url: '/valid' },
+        { title: null, url: undefined },
+        { title: 'Another Valid Post', url: '/another' }
+      ];
+      
+      const optionsWithMalformedData = { 
+        ...mockOptions, 
+        json: malformedData as any,
+        onError: onErrorSpy 
+      };
+      
+      expect(() => searchInstance.init(optionsWithMalformedData)).not.toThrow();
+      
+      const input = mockOptions.searchInput;
+      input.value = 'Valid';
+      input.dispatchEvent(new dom.window.KeyboardEvent('input', { key: 'V' }));
+
+      await new Promise(resolve => setTimeout(resolve, mockOptions.debounceTime! + 10));
+      
+      expect(onErrorSpy).toHaveBeenCalledWith(expect.any(Error));
+      consoleErrorSpy.mockRestore();
+    });
+
+    it('should handle missing DOM elements gracefully', async () => {
+      const onErrorSpy = vi.fn();
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      
+      const optionsWithMissingElement = { 
+        ...mockOptions, 
+        searchInput: null as any,
+        onError: onErrorSpy 
+      };
+      
+      expect(() => searchInstance.init(optionsWithMissingElement)).toThrow();
+      consoleErrorSpy.mockRestore();
+    });
+
+    it('should use default error handler when onError not provided', async () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      
+      searchInstance.init(mockOptions);
+      
+      const input = mockOptions.searchInput;
+      input.value = 'test';
+      input.dispatchEvent(new dom.window.KeyboardEvent('input', { key: 't' }));
+
+      await new Promise(resolve => setTimeout(resolve, mockOptions.debounceTime! + 10));
+      
+      expect(consoleErrorSpy).not.toHaveBeenCalled();
+      consoleErrorSpy.mockRestore();
+    });
+
+    it('should handle invalid search queries gracefully', async () => {
+      const onErrorSpy = vi.fn();
+      const optionsWithErrorHandler = { ...mockOptions, onError: onErrorSpy };
+      
+      searchInstance.init(optionsWithErrorHandler);
+      
+      const input = mockOptions.searchInput;
+      input.value = 'a'.repeat(10000);
+      input.dispatchEvent(new dom.window.KeyboardEvent('input', { key: 'a' }));
+
+      await new Promise(resolve => setTimeout(resolve, mockOptions.debounceTime! + 10));
+      
+      expect(mockOptions.resultsContainer.innerHTML).toContain('No results found');
+      expect(onErrorSpy).not.toHaveBeenCalled();
     });
   });
 }); 

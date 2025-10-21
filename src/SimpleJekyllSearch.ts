@@ -11,6 +11,9 @@ class SimpleJekyllSearch {
   private repository: Repository;
   private optionsValidator: OptionsValidator;
   private debounceTimerHandle: NodeJS.Timeout | null = null;
+  private eventHandler: ((e: Event) => void) | null = null;
+  private pendingRequest: XMLHttpRequest | null = null;
+  private isInitialized: boolean = false;
 
   constructor() {
     this.options = { ...DEFAULT_OPTIONS };
@@ -54,15 +57,27 @@ class SimpleJekyllSearch {
   }
 
   private registerInput(): void {
-    this.options.searchInput.addEventListener('input', (e: Event) => {
-      const inputEvent = e as KeyboardEvent;
-      if (!WHITELISTED_KEYS.has(inputEvent.key)) {
-        this.emptyResultsContainer();
-        this.debounce(() => {
-          this.search((e.target as HTMLInputElement).value);
-        }, this.options.debounceTime ?? null);
+    this.eventHandler = (e: Event) => {
+      try {
+        const inputEvent = e as KeyboardEvent;
+        if (!WHITELISTED_KEYS.has(inputEvent.key)) {
+          this.emptyResultsContainer();
+          this.debounce(() => {
+            try {
+              this.search((e.target as HTMLInputElement).value);
+            } catch (searchError) {
+              console.error('Search error:', searchError);
+              this.options.onError?.(searchError as Error);
+            }
+          }, this.options.debounceTime ?? null);
+        }
+      } catch (error) {
+        console.error('Input handler error:', error);
+        this.options.onError?.(error as Error);
       }
-    });
+    };
+    
+    this.options.searchInput.addEventListener('input', this.eventHandler);
   }
 
   public search(query: string): void {

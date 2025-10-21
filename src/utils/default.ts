@@ -15,6 +15,7 @@ export const DEFAULT_OPTIONS: Required<SearchOptions> = {
   debounceTime: null,
   exclude: [],
   onSearch: () => {},
+  onError: (error: Error) => console.error('SimpleJekyllSearch error:', error),
   fuzzy: false  // Deprecated, use strategy: 'fuzzy' instead
 };
 
