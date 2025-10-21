@@ -242,6 +242,7 @@
     exclude: [],
     onSearch: () => {
     },
+    onError: (error) => console.error("SimpleJekyllSearch error:", error),
     fuzzy: false
     // Deprecated, use strategy: 'fuzzy' instead
   };
@@ -401,6 +402,9 @@
   let SimpleJekyllSearch$1 = class SimpleJekyllSearch {
     constructor() {
       this.debounceTimerHandle = null;
+      this.eventHandler = null;
+      this.pendingRequest = null;
+      this.isInitialized = false;
       this.options = { ...DEFAULT_OPTIONS };
       this.repository = new Repository();
       this.optionsValidator = new OptionsValidator({
@@ -436,15 +440,28 @@
       });
     }
     registerInput() {
-      this.options.searchInput.addEventListener("input", (e) => {
-        const inputEvent = e;
-        if (!WHITELISTED_KEYS.has(inputEvent.key)) {
-          this.emptyResultsContainer();
-          this.debounce(() => {
-            this.search(e.target.value);
-          }, this.options.debounceTime ?? null);
+      this.eventHandler = (e) => {
+        var _a, _b;
+        try {
+          const inputEvent = e;
+          if (!WHITELISTED_KEYS.has(inputEvent.key)) {
+            this.emptyResultsContainer();
+            this.debounce(() => {
+              var _a2, _b2;
+              try {
+                this.search(e.target.value);
+              } catch (searchError) {
+                console.error("Search error:", searchError);
+                (_b2 = (_a2 = this.options).onError) == null ? void 0 : _b2.call(_a2, searchError);
+              }
+            }, this.options.debounceTime ?? null);
+          }
+        } catch (error) {
+          console.error("Input handler error:", error);
+          (_b = (_a = this.options).onError) == null ? void 0 : _b.call(_a, error);
         }
-      });
+      };
+      this.options.searchInput.addEventListener("input", this.eventHandler);
     }
     search(query) {
       var _a, _b;

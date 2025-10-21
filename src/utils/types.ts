@@ -46,6 +46,7 @@ export interface SearchOptions extends Omit<RepositoryOptions, 'searchStrategy'>
   noResultsText?: string;
   debounceTime?: number | null;
   onSearch?: () => void;
+  onError?: (error: Error) => void;
 }
 
 export interface SimpleJekyllSearchInstance {
