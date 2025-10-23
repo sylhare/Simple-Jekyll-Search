@@ -137,4 +137,43 @@ describe('Templater', () => {
     const compiled = templater.compile({ foo: 'bar' });
     expect(compiled).toBe('bar');
   });
+
+  it('demonstrates README example: uppercase title middleware', () => {
+    templater.setOptions({
+      template: '<li>{title}</li>',
+      middleware(prop: string, value: string) {
+        if (prop === 'title') {
+          return value.toUpperCase();
+        }
+        return undefined
+      }
+    });
+
+    const data = { title: 'my post' };
+    const compiled = templater.compile(data);
+    expect(compiled).toBe('<li>MY POST</li>');
+  });
+
+  it('demonstrates multiple property processing with different transformations', () => {
+    templater.setOptions({
+      template: '<li><a href="{url}">{title}</a><p>{desc}</p></li>',
+      middleware(prop: string, value: string) {
+        if (prop === 'url') {
+          return value.replace(/^\//, ''); // Remove leading slash
+        }
+        if (prop === 'title') {
+          return value.toUpperCase();
+        }
+        return undefined;
+      }
+    });
+
+    const data = { 
+      url: '/blog/post', 
+      title: 'my post', 
+      desc: 'description' 
+    };
+    const compiled = templater.compile(data);
+    expect(compiled).toBe('<li><a href="blog/post">MY POST</a><p>description</p></li>');
+  });
 }); 
