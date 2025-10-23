@@ -65,7 +65,7 @@ Customize SimpleJekyllSearch by passing in your configuration options:
     searchResultTemplate: '<li><a href="{url}?query={query}" title="{desc}">{title}</a></li>',
     noResultsText: 'No results found',
     limit: 10,
-    fuzzy: true,
+    strategy: 'fuzzy',
     exclude: ['Welcome']
   })
 </script>
