@@ -1,3 +1,6 @@
+# encoding: utf-8
+# frozen_string_literal: true
+
 # Example usage in a Jekyll template:
 #   {{ some_variable | remove_chars }}
 #

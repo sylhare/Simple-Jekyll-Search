@@ -1,12 +1,20 @@
+export interface MatchInfo {
+  start: number;
+  end: number;
+  text: string;
+  type: 'exact' | 'fuzzy' | 'wildcard';
+}
+
 export interface Matcher {
   matches(text: string | null, criteria: string): boolean;
+  findMatches?(text: string | null, criteria: string): MatchInfo[];
 }
 
 export class SearchStrategy implements Matcher {
-  private readonly matchFunction: (text: string, criteria: string) => boolean;
+  private readonly findMatchesFunction: (text: string, criteria: string) => MatchInfo[];
 
-  constructor(matchFunction: (text: string, criteria: string) => boolean) {
-    this.matchFunction = matchFunction;
+  constructor(findMatchesFunction: (text: string, criteria: string) => MatchInfo[]) {
+    this.findMatchesFunction = findMatchesFunction;
   }
 
   matches(text: string | null, criteria: string): boolean {
@@ -14,6 +22,15 @@ export class SearchStrategy implements Matcher {
       return false;
     }
 
-    return this.matchFunction(text, criteria);
+    const matchInfo = this.findMatchesFunction(text, criteria);
+    return matchInfo.length > 0;
+  }
+
+  findMatches(text: string | null, criteria: string): MatchInfo[] {
+    if (text === null || text.trim() === '' || !criteria) {
+      return [];
+    }
+
+    return this.findMatchesFunction(text, criteria);
   }
 }
