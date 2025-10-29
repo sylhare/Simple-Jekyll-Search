@@ -28,6 +28,7 @@ jobs:
           cd docs
           bundle exec jekyll build
       - name: Run Cypress tests
-        run: yarn run cypress:ci
+        run: yarn run cypress:run
+        shell: bash {0}
         env:
           NODE_NO_WARNINGS: 1
