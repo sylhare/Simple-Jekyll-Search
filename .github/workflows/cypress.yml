@@ -27,8 +27,22 @@ jobs:
         run: |
           cd docs
           bundle exec jekyll build
-      - name: Run Cypress tests
-        run: yarn run cypress:run
-        shell: bash {0}
-        env:
-          NODE_NO_WARNINGS: 1
+      - name: Run Cypress (start Jekyll, run tests, kill Jekyll)
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/start-jekyll.js &
+          JEKYLL_PID=$!
+
+          sleep 8
+
+          npx cypress run
+          CYPRESS_EXIT_CODE=$?
+
+          node scripts/kill-jekyll.js || true
+
+          if kill -0 $JEKYLL_PID 2>/dev/null; then
+            kill $JEKYLL_PID || true
+          fi
+
+          exit $CYPRESS_EXIT_CODE
