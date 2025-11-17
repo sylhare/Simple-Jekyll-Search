@@ -15,10 +15,11 @@ describe('findWildcardMatches', () => {
     expect(findWildcardMatches('text', 'te*t')).toHaveLength(1);
   });
 
-  it('should match multiple words with wildcards', () => {
-    expect(findWildcardMatches('hello amazing world', 'hello*world')).toHaveLength(1);
-    expect(findWildcardMatches('hello world', 'hello*world')).toHaveLength(1);
+  it('should match within words but stop at spaces', () => {
+    expect(findWildcardMatches('hello amazing world', 'hello*world')).toHaveLength(0);
+    expect(findWildcardMatches('hello world', 'hello*world')).toHaveLength(0);
     expect(findWildcardMatches('hello world', 'hello*')).toHaveLength(1);
+    expect(findWildcardMatches('hello world', 'hello*')[0].text).toBe('hello');
   });
 
   it('should return empty array for non-matching wildcard patterns', () => {
@@ -47,8 +48,22 @@ describe('findWildcardMatches', () => {
 
   it('should handle wildcards at beginning and end', () => {
     expect(findWildcardMatches('hello world', '*world')).toHaveLength(1);
+    expect(findWildcardMatches('hello world', '*world')[0].text).toBe('world');
     expect(findWildcardMatches('hello world', 'hello*')).toHaveLength(1);
+    expect(findWildcardMatches('hello world', 'hello*')[0].text).toBe('hello');
     expect(findWildcardMatches('hello world', '*llo wor*')).toHaveLength(1);
+    expect(findWildcardMatches('hello world', '*llo wor*')[0].text).toBe('hello world');
+  });
+
+  it('should stop at spaces and not match entire article', () => {
+    const article = 'this is a test article with many words';
+    const matches = findWildcardMatches(article, 't*');
+    expect(matches.length).toBeGreaterThanOrEqual(2);
+    expect(matches[0].text).toBe('this');
+    expect(matches[1].text).toBe('test');
+    matches.forEach(match => {
+      expect(match.text).not.toContain(' ');
+    });
   });
 });
 
