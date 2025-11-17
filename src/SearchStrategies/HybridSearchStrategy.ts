@@ -1,13 +1,9 @@
-import { SearchStrategy, MatchInfo } from './types';
+import { SearchStrategy, MatchInfo, HybridOptions } from './types';
 import { findLiteralMatches } from './search/findLiteralMatches';
 import { findFuzzyMatches } from './search/findFuzzyMatches';
 import { findWildcardMatches } from './search/findWildcardMatches';
 
-export interface HybridConfig {
-  preferFuzzy?: boolean;
-  wildcardPriority?: boolean;
-  minFuzzyLength?: number;
-}
+export type HybridConfig = HybridOptions;
 
 export class HybridSearchStrategy extends SearchStrategy {
   private config: Required<HybridConfig>;
@@ -21,6 +17,7 @@ export class HybridSearchStrategy extends SearchStrategy {
       preferFuzzy: config.preferFuzzy ?? false,
       wildcardPriority: config.wildcardPriority ?? true,
       minFuzzyLength: config.minFuzzyLength ?? 3,
+      maxExtraFuzzyChars: config.maxExtraFuzzyChars ?? 4,
     };
   }
 
@@ -37,10 +34,35 @@ export class HybridSearchStrategy extends SearchStrategy {
 
     if (this.config.preferFuzzy || criteria.length >= this.config.minFuzzyLength) {
       const fuzzyMatches = findFuzzyMatches(text, criteria);
-      if (fuzzyMatches.length > 0) return fuzzyMatches;
+      if (fuzzyMatches.length > 0) {
+        const constrainedMatches = this.applyFuzzyConstraints(fuzzyMatches, criteria);
+        if (constrainedMatches.length > 0) return constrainedMatches;
+      }
     }
 
     return findLiteralMatches(text, criteria);
+  }
+
+  private applyFuzzyConstraints(matches: MatchInfo[], criteria: string): MatchInfo[] {
+    const limit = this.config.maxExtraFuzzyChars;
+    if (!Number.isFinite(limit) || limit < 0) {
+      return matches;
+    }
+
+    const normalizedCriteriaLength = this.normalizeLength(criteria);
+    if (normalizedCriteriaLength === 0) {
+      return matches;
+    }
+
+    return matches.filter(match => {
+      const normalizedMatchLength = this.normalizeLength(match.text);
+      const extraChars = Math.max(0, normalizedMatchLength - normalizedCriteriaLength);
+      return extraChars <= limit;
+    });
+  }
+
+  private normalizeLength(value: string): number {
+    return value.replace(/\s+/g, '').length;
   }
 
   getConfig(): Readonly<Required<HybridConfig>> {

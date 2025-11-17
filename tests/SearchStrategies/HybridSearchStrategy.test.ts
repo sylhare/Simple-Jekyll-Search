@@ -6,15 +6,17 @@ describe('HybridSearchStrategy', () => {
     const strategy = new HybridSearchStrategy();
 
     it('should use wildcard search when * is present', () => {
-      const matches = strategy.findMatches('hello world', 'hel*rld');
+      const matches = strategy.findMatches('hello world', 'hel*');
       expect(matches).toHaveLength(1);
       expect(matches[0].type).toBe('wildcard');
+      expect(matches[0].text).toBe('hello');
     });
 
     it('should use wildcard search for multiple * patterns', () => {
-      const matches = strategy.findMatches('hello amazing world', 'hello*world');
+      const matches = strategy.findMatches('hello amazing world', 'amaz*');
       expect(matches).toHaveLength(1);
       expect(matches[0].type).toBe('wildcard');
+      expect(matches[0].text).toBe('amazing');
     });
 
     it('should fall back to literal if wildcard has no match', () => {
@@ -59,6 +61,22 @@ describe('HybridSearchStrategy', () => {
     });
   });
 
+  describe('fuzzy span constraints', () => {
+    const longText = 'This is an article with more technical content to test the search functionality. A command with some regex and special characters.';
+
+    it('rejects fuzzy matches that span too many extra characters by default', () => {
+      const strategy = new HybridSearchStrategy();
+      expect(strategy.findMatches(longText, 'high')).toEqual([]);
+    });
+
+    it('allows wider spans when explicitly configured', () => {
+      const permissive = new HybridSearchStrategy({ maxExtraFuzzyChars: Infinity });
+      const matches = permissive.findMatches(longText, 'high');
+      expect(matches.length).toBeGreaterThan(0);
+      expect(matches[0].type).toBe('fuzzy');
+    });
+  });
+
   describe('short query handling', () => {
     const strategy = new HybridSearchStrategy();
 
@@ -94,12 +112,23 @@ describe('HybridSearchStrategy', () => {
       expect(matches.length).toBeGreaterThan(0);
     });
 
+    it('should respect maxExtraFuzzyChars config', () => {
+      const strict = new HybridSearchStrategy({ maxExtraFuzzyChars: 0, minFuzzyLength: 1 });
+      expect(strict.findMatches('hello world', 'hw')).toEqual([]);
+
+      const lenient = new HybridSearchStrategy({ maxExtraFuzzyChars: 10, minFuzzyLength: 1 });
+      const matches = lenient.findMatches('hello world', 'hw');
+      expect(matches.length).toBeGreaterThan(0);
+      expect(matches[0].type).toBe('fuzzy');
+    });
+
     it('should return config via getConfig()', () => {
       const strategy = new HybridSearchStrategy({ minFuzzyLength: 5, preferFuzzy: true });
       const config = strategy.getConfig();
       expect(config.minFuzzyLength).toBe(5);
       expect(config.preferFuzzy).toBe(true);
       expect(config.wildcardPriority).toBe(true);
+      expect(config.maxExtraFuzzyChars).toBe(4);
     });
   });
 
