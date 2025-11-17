@@ -1,9 +1,7 @@
-import { SearchStrategy, MatchInfo, HybridOptions } from './types';
+import { SearchStrategy, MatchInfo, HybridConfig } from './types';
 import { findLiteralMatches } from './search/findLiteralMatches';
 import { findFuzzyMatches } from './search/findFuzzyMatches';
 import { findWildcardMatches } from './search/findWildcardMatches';
-
-export type HybridConfig = HybridOptions;
 
 export class HybridSearchStrategy extends SearchStrategy {
   private config: Required<HybridConfig>;

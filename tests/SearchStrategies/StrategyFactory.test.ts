@@ -4,32 +4,25 @@ import { LiteralSearchStrategy, FuzzySearchStrategy, WildcardSearchStrategy } fr
 import { HybridSearchStrategy } from '../../src/SearchStrategies/HybridSearchStrategy';
 
 describe('StrategyFactory', () => {
-  describe('create with string type', () => {
+  describe('create', () => {
     it('should create literal strategy', () => {
-      const strategy = StrategyFactory.create('literal');
+      const strategy = StrategyFactory.create({ type: 'literal' });
       expect(strategy).toBe(LiteralSearchStrategy);
     });
 
     it('should create fuzzy strategy', () => {
-      const strategy = StrategyFactory.create('fuzzy');
+      const strategy = StrategyFactory.create({ type: 'fuzzy' });
       expect(strategy).toBe(FuzzySearchStrategy);
     });
 
     it('should create wildcard strategy', () => {
-      const strategy = StrategyFactory.create('wildcard');
+      const strategy = StrategyFactory.create({ type: 'wildcard' });
       expect(strategy).toBe(WildcardSearchStrategy);
     });
 
     it('should create hybrid strategy', () => {
-      const strategy = StrategyFactory.create('hybrid');
+      const strategy = StrategyFactory.create({ type: 'hybrid' });
       expect(strategy).toBeInstanceOf(HybridSearchStrategy);
-    });
-  });
-
-  describe('create with config object', () => {
-    it('should create strategy from config', () => {
-      const strategy = StrategyFactory.create({ type: 'literal' });
-      expect(strategy).toBe(LiteralSearchStrategy);
     });
 
     it('should pass hybrid config', () => {
@@ -41,11 +34,9 @@ describe('StrategyFactory', () => {
       const config = (strategy as HybridSearchStrategy).getConfig();
       expect(config.minFuzzyLength).toBe(5);
     });
-
   });
 
   describe('error handling', () => {
-
     it('should default to literal for unknown type', () => {
       const strategy = StrategyFactory.create({ type: 'unknown' as any });
       expect(strategy).toBe(LiteralSearchStrategy);
@@ -80,23 +71,23 @@ describe('StrategyFactory', () => {
 
   describe('strategy functionality', () => {
     it('should create working literal strategy', () => {
-      const strategy = StrategyFactory.create('literal');
+      const strategy = StrategyFactory.create({ type: 'literal' });
       expect(strategy.matches('hello world', 'hello')).toBe(true);
     });
 
     it('should create working fuzzy strategy', () => {
-      const strategy = StrategyFactory.create('fuzzy');
+      const strategy = StrategyFactory.create({ type: 'fuzzy' });
       const matches = strategy.findMatches('hello', 'hlo');
       expect(matches.length).toBeGreaterThan(0);
     });
 
     it('should create working wildcard strategy', () => {
-      const strategy = StrategyFactory.create('wildcard');
-      expect(strategy.matches('hello world', 'hel*rld')).toBe(true);
+      const strategy = StrategyFactory.create({ type: 'wildcard' });
+      expect(strategy.matches('hello world', 'hel*')).toBe(true);
     });
 
     it('should create working hybrid strategy', () => {
-      const strategy = StrategyFactory.create('hybrid');
+      const strategy = StrategyFactory.create({ type: 'hybrid' });
       expect(strategy.matches('hello world', 'hello')).toBe(true);
       expect(strategy.matches('test', 'te*t')).toBe(true);
     });

@@ -1,3 +1,5 @@
+import type { StrategyType } from './StrategyFactory';
+
 export interface MatchInfo {
   start: number;
   end: number;
@@ -8,6 +10,25 @@ export interface MatchInfo {
 export interface Matcher {
   matches(text: string | null, criteria: string): boolean;
   findMatches?(text: string | null, criteria: string): MatchInfo[];
+}
+
+export interface HybridOptions {
+  preferFuzzy?: boolean;
+  wildcardPriority?: boolean;
+  minFuzzyLength?: number;
+  /**
+   * Maximum number of additional non-whitespace characters that a fuzzy match
+   * is allowed to span beyond the query length. Set to a negative number or
+   * Infinity to disable this guard.
+   */
+  maxExtraFuzzyChars?: number;
+}
+
+export type HybridConfig = HybridOptions;
+
+export interface StrategyConfig {
+  type: StrategyType;
+  hybridConfig?: HybridConfig;
 }
 
 export class SearchStrategy implements Matcher {

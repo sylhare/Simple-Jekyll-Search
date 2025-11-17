@@ -1,4 +1,5 @@
-import { Matcher } from '../SearchStrategies/types';
+import { Matcher, StrategyConfig } from '../SearchStrategies/types';
+import { StrategyType } from '../SearchStrategies/StrategyFactory';
 
 export interface SearchResult {
   url: string;
@@ -18,7 +19,7 @@ export interface SearchData {
 export interface RepositoryOptions {
   /** @deprecated Use strategy instead (e.g. `strategy: 'fuzzy'`) */
   fuzzy?: boolean;
-  strategy?: 'literal' | 'fuzzy' | 'wildcard' | 'hybrid';
+  strategy?: StrategyType | StrategyConfig;
   limit?: number;
   searchStrategy?: Matcher;
   sortMiddleware?: (a: any, b: any) => number;

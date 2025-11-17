@@ -14,9 +14,9 @@ export { highlightWithMatchInfo, escapeHtml, mergeOverlappingMatches } from './m
 export { createHighlightTemplateMiddleware, defaultHighlightMiddleware } from './middleware/highlightMiddleware';
 
 export { HybridSearchStrategy, DefaultHybridSearchStrategy } from './SearchStrategies/HybridSearchStrategy';
-export type { HybridConfig } from './SearchStrategies/HybridSearchStrategy';
+export type { HybridConfig } from './SearchStrategies/types';
 export { StrategyFactory } from './SearchStrategies/StrategyFactory';
-export type { StrategyType, StrategyConfig } from './SearchStrategies/StrategyFactory';
+export type { StrategyType } from './SearchStrategies/StrategyFactory';
 
 // Add to window if in browser environment
 if (typeof window !== 'undefined') {

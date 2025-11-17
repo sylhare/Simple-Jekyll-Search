@@ -1,5 +1,5 @@
-import { FuzzySearchStrategy, LiteralSearchStrategy, WildcardSearchStrategy } from './SearchStrategies/SearchStrategy';
-import { Matcher } from './SearchStrategies/types';
+import { LiteralSearchStrategy } from './SearchStrategies/SearchStrategy';
+import { Matcher, StrategyConfig } from './SearchStrategies/types';
 import { StrategyFactory, StrategyType } from './SearchStrategies/StrategyFactory';
 import { isObject } from './utils';
 import { DEFAULT_OPTIONS } from './utils/default';
@@ -38,22 +38,21 @@ export class Repository {
   }
 
   public setOptions(newOptions: RepositoryOptions): void {
-    // Backward compatibility: convert fuzzy: true to strategy: 'fuzzy'
-    let strategy = newOptions?.strategy || DEFAULT_OPTIONS.strategy;
+    let strategyConfig = this.normalizeStrategyOption(newOptions?.strategy ?? DEFAULT_OPTIONS.strategy);
+    
     if (newOptions?.fuzzy && !newOptions?.strategy) {
       console.warn('[Simple Jekyll Search] Warning: fuzzy option is deprecated. Use strategy: "fuzzy" instead.');
-      strategy = 'fuzzy';
+      strategyConfig = { type: 'fuzzy' };
     }
     
     const exclude = newOptions?.exclude || DEFAULT_OPTIONS.exclude;
     this.excludePatterns = exclude.map(pattern => new RegExp(pattern));
-    
     this.options = {
       limit: newOptions?.limit || DEFAULT_OPTIONS.limit,
-      searchStrategy: this.searchStrategy(strategy),
+      searchStrategy: this.searchStrategy(strategyConfig),
       sortMiddleware: newOptions?.sortMiddleware || DEFAULT_OPTIONS.sortMiddleware,
       exclude: exclude,
-      strategy: strategy,
+      strategy: strategyConfig,
     };
   }
 
@@ -110,19 +109,27 @@ export class Repository {
     return this.excludePatterns.some(regex => regex.test(termStr));
   }
 
-  private searchStrategy(
-    strategy: StrategyType,
-  ): Matcher {
-    if (StrategyFactory.isValidStrategy(strategy)) {
-      return StrategyFactory.create(strategy);
+  private searchStrategy(strategy: StrategyConfig): Matcher {
+    if (!strategy?.type || !StrategyFactory.isValidStrategy(strategy.type)) {
+      return LiteralSearchStrategy;
     }
-    switch (strategy) {
-      case 'fuzzy':
-        return FuzzySearchStrategy;
-      case 'wildcard':
-        return WildcardSearchStrategy;
-      default:
-        return LiteralSearchStrategy;
+
+    return StrategyFactory.create(strategy);
+  }
+
+  private normalizeStrategyOption(strategy?: StrategyType | StrategyConfig): StrategyConfig {
+    if (!strategy) {
+      return this.getDefaultStrategyConfig();
     }
+
+    return typeof strategy === 'string' ? { type: strategy } : strategy;
+  }
+
+  private getDefaultStrategyConfig(): StrategyConfig {
+    const defaultStrategy = DEFAULT_OPTIONS.strategy;
+    if (typeof defaultStrategy === 'string') {
+      return { type: defaultStrategy };
+    }
+    return defaultStrategy;
   }
 }

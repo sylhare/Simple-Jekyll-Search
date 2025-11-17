@@ -1,21 +1,15 @@
-import { SearchStrategy } from './types';
+import { SearchStrategy, StrategyConfig } from './types';
 import { LiteralSearchStrategy, FuzzySearchStrategy, WildcardSearchStrategy } from './SearchStrategy';
-import { HybridSearchStrategy, HybridConfig } from './HybridSearchStrategy';
+import { HybridSearchStrategy } from './HybridSearchStrategy';
 
 export type StrategyType = 'literal' | 'fuzzy' | 'wildcard' | 'hybrid';
 
-export interface StrategyConfig {
-  type: StrategyType;
-  hybridConfig?: HybridConfig;
-}
-
 export class StrategyFactory {
-  static create(config: StrategyConfig | StrategyType): SearchStrategy {
-    if (typeof config === 'string') {
-      config = { type: config };
-    }
+  static create(config: StrategyConfig = { type: 'literal' }): SearchStrategy {
+    const { hybridConfig } = config;
+    const type = this.isValidStrategy(config.type) ? config.type : 'literal';
 
-    switch (config.type) {
+    switch (type) {
       case 'literal':
         return LiteralSearchStrategy;
       
@@ -26,7 +20,7 @@ export class StrategyFactory {
         return WildcardSearchStrategy;
       
       case 'hybrid':
-        return new HybridSearchStrategy(config.hybridConfig);
+        return new HybridSearchStrategy(hybridConfig);
       
       default:
         return LiteralSearchStrategy;
