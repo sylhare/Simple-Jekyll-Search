@@ -6,7 +6,7 @@ export type StrategyType = 'literal' | 'fuzzy' | 'wildcard' | 'hybrid';
 
 export class StrategyFactory {
   static create(config: StrategyConfig = { type: 'literal' }): SearchStrategy {
-    const { hybridConfig } = config;
+    const { options } = config;
     const type = this.isValidStrategy(config.type) ? config.type : 'literal';
 
     switch (type) {
@@ -17,10 +17,10 @@ export class StrategyFactory {
         return FuzzySearchStrategy;
       
       case 'wildcard':
-        return WildcardSearchStrategy;
+        return new WildcardSearchStrategy(options);
       
       case 'hybrid':
-        return new HybridSearchStrategy(hybridConfig);
+        return new HybridSearchStrategy(options);
       
       default:
         return LiteralSearchStrategy;

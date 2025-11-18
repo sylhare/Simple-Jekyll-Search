@@ -12,7 +12,7 @@ export interface Matcher {
   findMatches?(text: string | null, criteria: string): MatchInfo[];
 }
 
-export interface HybridOptions {
+export interface HybridConfig {
   preferFuzzy?: boolean;
   wildcardPriority?: boolean;
   minFuzzyLength?: number;
@@ -22,13 +22,28 @@ export interface HybridOptions {
    * Infinity to disable this guard.
    */
   maxExtraFuzzyChars?: number;
+  /**
+   * Optional wildcard configuration applied when the hybrid strategy hits
+   * the wildcard branch.
+   */
+  wildcardConfig?: WildcardConfig;
 }
 
-export type HybridConfig = HybridOptions;
+export interface WildcardOptions {
+  /**
+   * Maximum number of spaces a `*` wildcard is allowed to span within a single match.
+   * Defaults to 0, which means wildcards stop at spaces.
+   */
+  maxSpaces?: number;
+}
+
+export type WildcardConfig = WildcardOptions;
+
+export interface StrategyOptions extends HybridConfig, WildcardConfig {}
 
 export interface StrategyConfig {
   type: StrategyType;
-  hybridConfig?: HybridConfig;
+  options?: StrategyOptions;
 }
 
 export class SearchStrategy implements Matcher {
