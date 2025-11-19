@@ -101,8 +101,8 @@
       type: "fuzzy"
     }];
   }
-  function findWildcardMatches(text, pattern) {
-    const regexPattern = pattern.replace(/\*/g, ".*");
+  function findWildcardMatches(text, pattern, config = {}) {
+    const regexPattern = pattern.replace(/\*/g, buildWildcardFragment(config));
     const regex = new RegExp(regexPattern, "gi");
     const matches = [];
     let match;
@@ -118,6 +118,25 @@
       }
     }
     return matches;
+  }
+  function buildWildcardFragment(config) {
+    const maxSpaces = normalizeMaxSpaces(config.maxSpaces);
+    if (maxSpaces === 0) {
+      return "[^ ]*";
+    }
+    if (maxSpaces === Infinity) {
+      return "[^ ]*(?: [^ ]*)*";
+    }
+    return `[^ ]*(?: [^ ]*){0,${maxSpaces}}`;
+  }
+  function normalizeMaxSpaces(value) {
+    if (typeof value !== "number" || Number.isNaN(value) || value <= 0) {
+      return 0;
+    }
+    if (!Number.isFinite(value)) {
+      return Infinity;
+    }
+    return Math.floor(value);
   }
   class SearchStrategy {
     constructor(findMatchesFunction) {
@@ -149,29 +168,39 @@
       return findLiteralMatches(text, criteria);
     }
   );
-  const WildcardSearchStrategy = new SearchStrategy(
-    (text, criteria) => {
-      const wildcardMatches = findWildcardMatches(text, criteria);
-      if (wildcardMatches.length > 0) {
-        return wildcardMatches;
-      }
-      return findLiteralMatches(text, criteria);
+  class WildcardSearchStrategy extends SearchStrategy {
+    constructor(config = {}) {
+      const normalizedConfig = { ...config };
+      super((text, criteria) => {
+        const wildcardMatches = findWildcardMatches(text, criteria, normalizedConfig);
+        if (wildcardMatches.length > 0) {
+          return wildcardMatches;
+        }
+        return findLiteralMatches(text, criteria);
+      });
+      this.config = normalizedConfig;
     }
-  );
+    getConfig() {
+      return { ...this.config };
+    }
+  }
+  new WildcardSearchStrategy();
   class HybridSearchStrategy extends SearchStrategy {
     constructor(config = {}) {
       super((text, criteria) => {
         return this.hybridFind(text, criteria);
       });
       this.config = {
+        ...config,
         preferFuzzy: config.preferFuzzy ?? false,
         wildcardPriority: config.wildcardPriority ?? true,
-        minFuzzyLength: config.minFuzzyLength ?? 3
+        minFuzzyLength: config.minFuzzyLength ?? 3,
+        maxExtraFuzzyChars: config.maxExtraFuzzyChars ?? 4
       };
     }
     hybridFind(text, criteria) {
       if (this.config.wildcardPriority && criteria.includes("*")) {
-        const wildcardMatches = findWildcardMatches(text, criteria);
+        const wildcardMatches = findWildcardMatches(text, criteria, this.config);
         if (wildcardMatches.length > 0) return wildcardMatches;
       }
       if (criteria.includes(" ") || criteria.length < this.config.minFuzzyLength) {
@@ -180,29 +209,46 @@
       }
       if (this.config.preferFuzzy || criteria.length >= this.config.minFuzzyLength) {
         const fuzzyMatches = findFuzzyMatches(text, criteria);
-        if (fuzzyMatches.length > 0) return fuzzyMatches;
+        if (fuzzyMatches.length > 0) {
+          const constrainedMatches = this.applyFuzzyConstraints(fuzzyMatches, criteria);
+          if (constrainedMatches.length > 0) return constrainedMatches;
+        }
       }
       return findLiteralMatches(text, criteria);
     }
-    getConfig() {
-      return { ...this.config };
+    applyFuzzyConstraints(matches, criteria) {
+      const limit = this.config.maxExtraFuzzyChars;
+      if (!Number.isFinite(limit) || limit < 0) {
+        return matches;
+      }
+      const normalizedCriteriaLength = this.normalizeLength(criteria);
+      if (normalizedCriteriaLength === 0) {
+        return matches;
+      }
+      return matches.filter((match) => {
+        const normalizedMatchLength = this.normalizeLength(match.text);
+        const extraChars = Math.max(0, normalizedMatchLength - normalizedCriteriaLength);
+        return extraChars <= limit;
+      });
+    }
+    normalizeLength(value) {
+      return value.replace(/\s+/g, "").length;
     }
   }
   const DefaultHybridSearchStrategy = new HybridSearchStrategy();
   class StrategyFactory {
-    static create(config) {
-      if (typeof config === "string") {
-        config = { type: config };
-      }
-      switch (config.type) {
+    static create(config = { type: "literal" }) {
+      const { options: options2 } = config;
+      const type = this.isValidStrategy(config.type) ? config.type : "literal";
+      switch (type) {
         case "literal":
           return LiteralSearchStrategy;
         case "fuzzy":
           return FuzzySearchStrategy;
         case "wildcard":
-          return WildcardSearchStrategy;
+          return new WildcardSearchStrategy(options2);
         case "hybrid":
-          return new HybridSearchStrategy(config.hybridConfig);
+          return new HybridSearchStrategy(options2);
         default:
           return LiteralSearchStrategy;
       }
@@ -284,19 +330,19 @@
       return matches.map((item) => ({ ...item }));
     }
     setOptions(newOptions) {
-      let strategy = (newOptions == null ? void 0 : newOptions.strategy) || DEFAULT_OPTIONS.strategy;
+      let strategyConfig = this.normalizeStrategyOption((newOptions == null ? void 0 : newOptions.strategy) ?? DEFAULT_OPTIONS.strategy);
       if ((newOptions == null ? void 0 : newOptions.fuzzy) && !(newOptions == null ? void 0 : newOptions.strategy)) {
         console.warn('[Simple Jekyll Search] Warning: fuzzy option is deprecated. Use strategy: "fuzzy" instead.');
-        strategy = "fuzzy";
+        strategyConfig = { type: "fuzzy" };
       }
       const exclude = (newOptions == null ? void 0 : newOptions.exclude) || DEFAULT_OPTIONS.exclude;
       this.excludePatterns = exclude.map((pattern) => new RegExp(pattern));
       this.options = {
         limit: (newOptions == null ? void 0 : newOptions.limit) || DEFAULT_OPTIONS.limit,
-        searchStrategy: this.searchStrategy(strategy),
+        searchStrategy: this.searchStrategy(strategyConfig),
         sortMiddleware: (newOptions == null ? void 0 : newOptions.sortMiddleware) || DEFAULT_OPTIONS.sortMiddleware,
         exclude,
-        strategy
+        strategy: strategyConfig
       };
     }
     addObject(obj) {
@@ -345,16 +391,21 @@
       return this.excludePatterns.some((regex) => regex.test(termStr));
     }
     searchStrategy(strategy) {
-      if (StrategyFactory.isValidStrategy(strategy)) {
-        return StrategyFactory.create(strategy);
+      if (!(strategy == null ? void 0 : strategy.type) || !StrategyFactory.isValidStrategy(strategy.type)) {
+        return LiteralSearchStrategy;
       }
-      switch (strategy) {
-        case "fuzzy":
-          return FuzzySearchStrategy;
-        case "wildcard":
-          return WildcardSearchStrategy;
-        default:
-          return LiteralSearchStrategy;
+      return StrategyFactory.create(strategy);
+    }
+    normalizeStrategyOption(strategy) {
+      if (!strategy) {
+        return this.getDefaultStrategyConfig();
+      }
+      return typeof strategy === "string" ? { type: strategy } : strategy;
+    }
+    getDefaultStrategyConfig() {
+      const defaultStrategy = DEFAULT_OPTIONS.strategy;
+      {
+        return { type: defaultStrategy };
       }
     }
   }
