@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { StrategyFactory } from '../../src/SearchStrategies/StrategyFactory';
-import { LiteralSearchStrategy, FuzzySearchStrategy, WildcardSearchStrategy } from '../../src/SearchStrategies/SearchStrategy';
+import { LiteralSearchStrategy, FuzzySearchStrategy, WildcardSearchStrategy, DefaultWildcardSearchStrategy } from '../../src/SearchStrategies/SearchStrategy';
 import { HybridSearchStrategy } from '../../src/SearchStrategies/HybridSearchStrategy';
 
 describe('StrategyFactory', () => {
@@ -17,7 +17,19 @@ describe('StrategyFactory', () => {
 
     it('should create wildcard strategy', () => {
       const strategy = StrategyFactory.create({ type: 'wildcard' });
-      expect(strategy).toBe(WildcardSearchStrategy);
+      expect(strategy).toBeInstanceOf(WildcardSearchStrategy);
+      expect(strategy).not.toBe(DefaultWildcardSearchStrategy);
+      expect(strategy.matches('hello world', 'hel*')).toBe(true);
+    });
+
+    it('should create configurable wildcard strategy when options are provided', () => {
+      const strategy = StrategyFactory.create({
+        type: 'wildcard',
+        options: { maxSpaces: 1 }
+      });
+      expect(strategy).not.toBe(DefaultWildcardSearchStrategy);
+      expect(strategy.matches('hello world', 'hel*rld')).toBe(true);
+      expect(DefaultWildcardSearchStrategy.matches('hello world', 'hel*rld')).toBe(false);
     });
 
     it('should create hybrid strategy', () => {
@@ -28,11 +40,19 @@ describe('StrategyFactory', () => {
     it('should pass hybrid config', () => {
       const strategy = StrategyFactory.create({
         type: 'hybrid',
-        hybridConfig: { minFuzzyLength: 5 }
+        options: { minFuzzyLength: 10 }
       });
       expect(strategy).toBeInstanceOf(HybridSearchStrategy);
-      const config = (strategy as HybridSearchStrategy).getConfig();
-      expect(config.minFuzzyLength).toBe(5);
+      expect(strategy.findMatches('javascript', 'jvscrpt')).toEqual([]);
+    });
+
+    it('should forward wildcard options to hybrid strategy', () => {
+      const strategy = StrategyFactory.create({
+        type: 'hybrid',
+        options: { maxSpaces: 1 }
+      }) as HybridSearchStrategy;
+
+      expect(strategy.matches('hello world', 'hel*rld')).toBe(true);
     });
   });
 

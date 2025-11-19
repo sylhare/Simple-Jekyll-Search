@@ -22,11 +22,6 @@ export interface HybridConfig {
    * Infinity to disable this guard.
    */
   maxExtraFuzzyChars?: number;
-  /**
-   * Optional wildcard configuration applied when the hybrid strategy hits
-   * the wildcard branch.
-   */
-  wildcardConfig?: WildcardConfig;
 }
 
 export interface WildcardOptions {

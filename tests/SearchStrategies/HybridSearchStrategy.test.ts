@@ -23,6 +23,12 @@ describe('HybridSearchStrategy', () => {
       const matches = strategy.findMatches('hello world', 'xyz*abc');
       expect(matches).toEqual([]);
     });
+
+    it('should respect wildcard maxSpaces when provided', () => {
+      const configurable = new HybridSearchStrategy({ maxSpaces: 1 });
+      expect(configurable.matches('hello world', 'hel*rld')).toBe(true);
+      expect(strategy.matches('hello world', 'hel*rld')).toBe(false);
+    });
   });
 
   describe('multi-word detection', () => {
@@ -122,14 +128,6 @@ describe('HybridSearchStrategy', () => {
       expect(matches[0].type).toBe('fuzzy');
     });
 
-    it('should return config via getConfig()', () => {
-      const strategy = new HybridSearchStrategy({ minFuzzyLength: 5, preferFuzzy: true });
-      const config = strategy.getConfig();
-      expect(config.minFuzzyLength).toBe(5);
-      expect(config.preferFuzzy).toBe(true);
-      expect(config.wildcardPriority).toBe(true);
-      expect(config.maxExtraFuzzyChars).toBe(4);
-    });
   });
 
   describe('fallback chain', () => {

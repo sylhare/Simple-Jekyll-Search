@@ -1,17 +1,18 @@
-import { SearchStrategy, MatchInfo, HybridConfig } from './types';
+import { SearchStrategy, MatchInfo, StrategyOptions } from './types';
 import { findLiteralMatches } from './search/findLiteralMatches';
 import { findFuzzyMatches } from './search/findFuzzyMatches';
 import { findWildcardMatches } from './search/findWildcardMatches';
 
 export class HybridSearchStrategy extends SearchStrategy {
-  private config: Required<HybridConfig>;
+  private config: Readonly<StrategyOptions>;
 
-  constructor(config: HybridConfig = {}) {
+  constructor(config: StrategyOptions = {}) {
     super((text: string, criteria: string) => {
       return this.hybridFind(text, criteria);
     });
     
     this.config = {
+      ...config,
       preferFuzzy: config.preferFuzzy ?? false,
       wildcardPriority: config.wildcardPriority ?? true,
       minFuzzyLength: config.minFuzzyLength ?? 3,
@@ -21,7 +22,7 @@ export class HybridSearchStrategy extends SearchStrategy {
 
   private hybridFind(text: string, criteria: string): MatchInfo[] {
     if (this.config.wildcardPriority && criteria.includes('*')) {
-      const wildcardMatches = findWildcardMatches(text, criteria);
+      const wildcardMatches = findWildcardMatches(text, criteria, this.config);
       if (wildcardMatches.length > 0) return wildcardMatches;
     }
 
@@ -61,10 +62,6 @@ export class HybridSearchStrategy extends SearchStrategy {
 
   private normalizeLength(value: string): number {
     return value.replace(/\s+/g, '').length;
-  }
-
-  getConfig(): Readonly<Required<HybridConfig>> {
-    return { ...this.config };
   }
 }
 

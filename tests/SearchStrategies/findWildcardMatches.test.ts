@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { findWildcardMatches } from '../../src/SearchStrategies/search/findWildcardMatches';
+import { findWildcardMatches, buildWildcardFragment } from '../../src/SearchStrategies/search/findWildcardMatches';
 
 describe('findWildcardMatches', () => {
   it('should return matches for exact matches', () => {
@@ -20,6 +20,19 @@ describe('findWildcardMatches', () => {
     expect(findWildcardMatches('hello world', 'hello*world')).toHaveLength(0);
     expect(findWildcardMatches('hello world', 'hello*')).toHaveLength(1);
     expect(findWildcardMatches('hello world', 'hello*')[0].text).toBe('hello');
+  });
+
+  it('should allow spaces when configured', () => {
+    const matches = findWildcardMatches('hello world', 'hel*rld', { maxSpaces: 1 });
+    expect(matches).toHaveLength(1);
+    expect(matches[0].text).toBe('hello world');
+  });
+
+  it('should respect the maximum number of allowed spaces', () => {
+    expect(findWildcardMatches('hello brave new world', 'hel*rld', { maxSpaces: 2 })).toHaveLength(0);
+    const matches = findWildcardMatches('hello brave new world', 'hel*rld', { maxSpaces: 3 });
+    expect(matches).toHaveLength(1);
+    expect(matches[0].text).toBe('hello brave new world');
   });
 
   it('should return empty array for non-matching wildcard patterns', () => {
@@ -65,6 +78,13 @@ describe('findWildcardMatches', () => {
       expect(match.text).not.toContain(' ');
     });
   });
+
+  it('should allow unlimited spaces when configured with Infinity', () => {
+    const matches = findWildcardMatches('hello this is a long world sequence', 'hel*rld', { maxSpaces: Infinity });
+    expect(matches).toHaveLength(1);
+    expect(matches[0].text).toBe('hello this is a long world');
+  });
+});
 
 describe('buildWildcardFragment', () => {
   it('returns single-word pattern by default', () => {

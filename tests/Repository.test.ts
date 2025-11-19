@@ -83,6 +83,19 @@ describe('Repository', () => {
     expect(results2[1]).toMatchObject(almostBarElement);
   });
 
+  it('respects wildcard spacing configuration via strategy object', () => {
+    repository.put([{ title: 'foo', content: 'foo bar' }]);
+    repository.setOptions({ strategy: 'wildcard' });
+    expect(repository.search('foo*r')).toEqual([]);
+
+    repository.setOptions({
+      strategy: { type: 'wildcard', options: { maxSpaces: 1 } }
+    });
+    const configuredResults = repository.search('foo*r');
+    expect(configuredResults).toHaveLength(1);
+    expect(configuredResults[0]).toMatchObject({ title: 'foo', content: 'foo bar' });
+  });
+
   it('returns empty search results when an empty criteria is provided', () => {
     expect(repository.search('')).toEqual([]);
   });
