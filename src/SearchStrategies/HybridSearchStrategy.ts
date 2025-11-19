@@ -3,8 +3,10 @@ import { findLiteralMatches } from './search/findLiteralMatches';
 import { findFuzzyMatches } from './search/findFuzzyMatches';
 import { findWildcardMatches } from './search/findWildcardMatches';
 
+type ResolvedHybridOptions = StrategyOptions & Required<Pick<StrategyOptions, 'preferFuzzy' | 'wildcardPriority' | 'minFuzzyLength' | 'maxExtraFuzzyChars'>>;
+
 export class HybridSearchStrategy extends SearchStrategy {
-  private config: Readonly<StrategyOptions>;
+  private config: Readonly<ResolvedHybridOptions>;
 
   constructor(config: StrategyOptions = {}) {
     super((text: string, criteria: string) => {
