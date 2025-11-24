@@ -98,6 +98,27 @@ Here is a table for the available options, usage questions, troubleshooting & gu
 | `debounceTime`         | Number         | No       | Limit how many times the search function can be executed over the given time window. If no `debounceTime` (milliseconds) is provided a search will be triggered on each keystroke. |
 | `searchResultTemplate` | String         | No       | The template of a single rendered search result. (match liquid value eg: `'<li><a href="{{ site.url }}{url}">{title}</a></li>'`                                                    |
 
+### Configurable strategies
+
+The `strategy` option can also accept an object for advanced tuning:
+
+```js
+SimpleJekyllSearch({
+  // ...
+  strategy: {
+    type: 'hybrid',
+    options: {
+      minFuzzyLength: 4,
+      preferFuzzy: true,
+      maxSpaces: 1   // Let `*` span up to 1 space (default: 0 = stop at spaces)
+    }
+  }
+})
+```
+
+- `options` mirrors the hybrid strategy options (fuzzy length, priority, etc.) and also accepts `maxSpaces` for wildcard matching.
+- `options.maxSpaces` lets wildcard searches capture up to _n_ spaces inside each `*` segment so patterns like `hel*rld` can match `"hello brave world"` when `maxSpaces >= 1`. (You can still set `options.maxSpaces` when using the dedicated `'wildcard'` strategy.)
+
 ## Middleware
 
 ### templateMiddleware (Function) [optional]
