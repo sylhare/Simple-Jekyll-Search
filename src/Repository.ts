@@ -1,12 +1,14 @@
-import { FuzzySearchStrategy, LiteralSearchStrategy, WildcardSearchStrategy } from './SearchStrategies/SearchStrategy';
-import { Matcher } from './SearchStrategies/types';
-import { clone, isObject } from './utils';
+import { LiteralSearchStrategy } from './SearchStrategies/SearchStrategy';
+import { Matcher, StrategyConfig } from './SearchStrategies/types';
+import { StrategyFactory, StrategyType } from './SearchStrategies/StrategyFactory';
+import { isObject } from './utils';
 import { DEFAULT_OPTIONS } from './utils/default';
 import { RepositoryData, RepositoryOptions } from './utils/types';
 
 export class Repository {
   private data: RepositoryData[] = [];
-  private options!: Required<RepositoryOptions>;
+  private options!: Required<Omit<RepositoryOptions, 'fuzzy'>> & Pick<RepositoryOptions, 'fuzzy'>;
+  private excludePatterns: RegExp[] = [];
 
   constructor(initialOptions: RepositoryOptions = {}) {
     this.setOptions(initialOptions);
@@ -31,17 +33,26 @@ export class Repository {
     if (!criteria) {
       return [];
     }
-    return clone(this.findMatches(this.data, criteria).sort(this.options.sortMiddleware));
+    const matches = this.findMatches(this.data, criteria).sort(this.options.sortMiddleware);
+    return matches.map(item => ({ ...item }));
   }
 
   public setOptions(newOptions: RepositoryOptions): void {
+    let strategyConfig = this.normalizeStrategyOption(newOptions?.strategy ?? DEFAULT_OPTIONS.strategy);
+    
+    if (newOptions?.fuzzy && !newOptions?.strategy) {
+      console.warn('[Simple Jekyll Search] Warning: fuzzy option is deprecated. Use strategy: "fuzzy" instead.');
+      strategyConfig = { type: 'fuzzy' };
+    }
+    
+    const exclude = newOptions?.exclude || DEFAULT_OPTIONS.exclude;
+    this.excludePatterns = exclude.map(pattern => new RegExp(pattern));
     this.options = {
-      fuzzy: newOptions?.fuzzy || DEFAULT_OPTIONS.fuzzy,
       limit: newOptions?.limit || DEFAULT_OPTIONS.limit,
-      searchStrategy: this.searchStrategy(newOptions?.strategy || (newOptions.fuzzy && 'fuzzy') || DEFAULT_OPTIONS.strategy),
+      searchStrategy: this.searchStrategy(strategyConfig),
       sortMiddleware: newOptions?.sortMiddleware || DEFAULT_OPTIONS.sortMiddleware,
-      exclude: newOptions?.exclude || DEFAULT_OPTIONS.exclude,
-      strategy: newOptions?.strategy || DEFAULT_OPTIONS.strategy,
+      exclude: exclude,
+      strategy: strategyConfig,
     };
   }
 
@@ -73,33 +84,52 @@ export class Repository {
   }
 
   private findMatchesInObject(obj: RepositoryData, criteria: string): RepositoryData | undefined {
+    let hasMatch = false;
+    const result = { ...obj };
+    result._matchInfo = {};
+
     for (const key in obj) {
       if (!this.isExcluded(obj[key]) && this.options.searchStrategy.matches(obj[key], criteria)) {
-        return obj;
+        hasMatch = true;
+        
+        if (this.options.searchStrategy.findMatches) {
+          const matchInfo = this.options.searchStrategy.findMatches(obj[key], criteria);
+          if (matchInfo && matchInfo.length > 0) {
+            result._matchInfo[key] = matchInfo;
+          }
+        }
       }
     }
-    return undefined;
+
+    return hasMatch ? result : undefined;
   }
 
   private isExcluded(term: any): boolean {
-    for (const excludedTerm of this.options.exclude) {
-      if (new RegExp(excludedTerm).test(String(term))) {
-        return true;
-      }
-    }
-    return false;
+    const termStr = String(term);
+    return this.excludePatterns.some(regex => regex.test(termStr));
   }
 
-  private searchStrategy(
-    strategy: 'literal' | 'fuzzy' | 'wildcard',
-  ): Matcher {
-    switch (strategy) {
-      case 'fuzzy':
-        return FuzzySearchStrategy;
-      case 'wildcard':
-        return WildcardSearchStrategy;
-      default:
-        return LiteralSearchStrategy;
+  private searchStrategy(strategy: StrategyConfig): Matcher {
+    if (!strategy?.type || !StrategyFactory.isValidStrategy(strategy.type)) {
+      return LiteralSearchStrategy;
     }
+
+    return StrategyFactory.create(strategy);
+  }
+
+  private normalizeStrategyOption(strategy?: StrategyType | StrategyConfig): StrategyConfig {
+    if (!strategy) {
+      return this.getDefaultStrategyConfig();
+    }
+
+    return typeof strategy === 'string' ? { type: strategy } : strategy;
+  }
+
+  private getDefaultStrategyConfig(): StrategyConfig {
+    const defaultStrategy = DEFAULT_OPTIONS.strategy;
+    if (typeof defaultStrategy === 'string') {
+      return { type: defaultStrategy };
+    }
+    return defaultStrategy;
   }
 }

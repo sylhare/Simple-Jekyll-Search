@@ -1,3 +1,6 @@
+# encoding: utf-8
+# frozen_string_literal: true
+
 # Same as `simple_search_filter.rb`, but with additional adapted for Chinese characters
 # Example usage in a Jekyll template:
 #   {{ some_variable | remove_chars_cn }}

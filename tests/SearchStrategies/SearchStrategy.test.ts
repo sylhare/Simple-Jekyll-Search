@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest';
 import {
   FuzzySearchStrategy,
   LiteralSearchStrategy,
-  WildcardSearchStrategy,
+  DefaultWildcardSearchStrategy,
 } from '../../src/SearchStrategies/SearchStrategy';
 
 describe.each([
   { name: 'LiteralSearchStrategy', strategy: LiteralSearchStrategy },
   { name: 'FuzzySearchStrategy', strategy: FuzzySearchStrategy },
-  { name: 'WildcardSearchStrategy', strategy: WildcardSearchStrategy },
+  { name: 'WildcardSearchStrategy', strategy: DefaultWildcardSearchStrategy },
 ])('$name', ({ strategy }) => {
   it('matches a word that is contained in the search criteria (single words)', () => {
     expect(strategy.matches('hello world test search text', 'world')).toBe(true);

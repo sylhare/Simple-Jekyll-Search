@@ -1,21 +1,25 @@
 {
   "name": "simple-jekyll-search",
-  "version": "1.15.2",
-  "description": "Fork of Simple Jekyll Search from https://github.com/christian-fei/Simple-Jekyll-Search",
+  "version": "2.0.0",
+  "description": "A simple JavaScript library to add search functionality to any Jekyll blog - Fast, lightweight, client-side search. Fork of Simple Jekyll Search from https://github.com/christian-fei/Simple-Jekyll-Search",
   "main": "dest/simple-jekyll-search.js",
   "type": "module",
   "scripts": {
     "cypress": "cypress run",
     "cypress:run": "node scripts/start-jekyll.js && sleep 8 && cypress run; node scripts/kill-jekyll.js",
     "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
     "pretest": "yarn run lint",
     "build": "tsc && vite build && terser dest/simple-jekyll-search.js -o dest/simple-jekyll-search.min.js",
     "prebuild": "yarn run test",
     "postbuild": "node scripts/stamp.js < dest/simple-jekyll-search.min.js > dest/simple-jekyll-search.min.js.tmp && mv dest/simple-jekyll-search.min.js.tmp dest/simple-jekyll-search.min.js && yarn run copy-example-code",
     "copy-example-code": "cp dest/simple-jekyll-search.min.js docs/assets/js/",
     "test": "vitest run --coverage",
+    "test:unit": "vitest run --exclude '**/performance/**' --coverage",
+    "test:benchmark": "NODE_OPTIONS='--max-old-space-size=4096' vitest run tests/performance/",
     "test:watch": "vitest",
     "start": "cd docs; jekyll serve",
+    "prestart:docs": "yarn run build",
     "start:docs": "cd docs && bundle exec jekyll serve"
   },
   "repository": {

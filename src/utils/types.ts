@@ -1,4 +1,5 @@
-import { Matcher } from '../SearchStrategies/types';
+import { Matcher, StrategyConfig } from '../SearchStrategies/types';
+import { StrategyType } from '../SearchStrategies/StrategyFactory';
 
 export interface SearchResult {
   url: string;
@@ -18,7 +19,7 @@ export interface SearchData {
 export interface RepositoryOptions {
   /** @deprecated Use strategy instead (e.g. `strategy: 'fuzzy'`) */
   fuzzy?: boolean;
-  strategy?: 'literal' | 'fuzzy' | 'wildcard';
+  strategy?: StrategyType | StrategyConfig;
   limit?: number;
   searchStrategy?: Matcher;
   sortMiddleware?: (a: any, b: any) => number;
@@ -27,6 +28,7 @@ export interface RepositoryOptions {
 
 export interface RepositoryData {
   [key: string]: any;
+  _matchInfo?: Record<string, import('../SearchStrategies/types').MatchInfo[]>;
 }
 
 export interface SearchOptions extends Omit<RepositoryOptions, 'searchStrategy'> {
@@ -35,10 +37,17 @@ export interface SearchOptions extends Omit<RepositoryOptions, 'searchStrategy'>
   json: SearchData[] | string;
   success?: (this: { search: (query: string) => void }) => void;
   searchResultTemplate?: string;
-  templateMiddleware?: (prop: string, value: string, template: string) => string | undefined;
+  templateMiddleware?: (
+    prop: string, 
+    value: string, 
+    template: string, 
+    query?: string, 
+    matchInfo?: import('../SearchStrategies/types').MatchInfo[]
+  ) => string | undefined;
   noResultsText?: string;
   debounceTime?: number | null;
   onSearch?: () => void;
+  onError?: (error: Error) => void;
 }
 
 export interface SimpleJekyllSearchInstance {

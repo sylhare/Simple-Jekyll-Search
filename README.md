@@ -92,7 +92,7 @@ Here is a table for the available options, usage questions, troubleshooting & gu
 | `json`                 | String \| JSON | Yes      | You can either pass in an URL to the `search.json` file, or the results in form of JSON directly, to save one round trip to get the data.                                          |
 | `noResultsText`        | String         | No       | The HTML that will be shown if the query didn't match anything.                                                                                                                    |
 | `limit`                | Number         | No       | You can limit the number of posts rendered on the page.                                                                                                                            |
-| `strategy`             | String         | No       | With 'fuzzy' enables fuzzy search to allow less restrictive matching or 'wildcard' for enhance regex search with similar matching.                                                 |
+| `strategy`             | String         | No       | Selects the built-in search behavior: `'literal'` (default), `'fuzzy'`, `'wildcard'`, or `'hybrid'`.                                                                               |
 | `exclude`              | Array          | No       | Pass in a list of terms you want to exclude (terms will be matched against a regex, so URLs, words are allowed).                                                                   |
 | `success`              | Function       | No       | A function called once the data has been loaded.                                                                                                                                   |
 | `debounceTime`         | Number         | No       | Limit how many times the search function can be executed over the given time window. If no `debounceTime` (milliseconds) is provided a search will be triggered on each keystroke. |
@@ -103,23 +103,40 @@ Here is a table for the available options, usage questions, troubleshooting & gu
 ### templateMiddleware (Function) [optional]
 
 A function that will be called whenever a match in the template is found.
-It gets passed the current property name, property value, and the template.
+It gets passed the current property name, property value, template, query, and match information.
 If the function returns a non-undefined value, it gets replaced in the template.
 
-This can be potentially useful for manipulating URLs etc.
+**New Interface:**
+```js
+templateMiddleware(prop, value, template, query?, matchInfo?)
+```
 
-Example:
+- `prop`: The property name being processed from the JSON data.
+- `value`: The property value
+- `template`: The template string
+- `query`: The search query (optional)
+- `matchInfo`: Array of match information objects with start/end positions and match types (optional)
 
+This can be useful for manipulating URLs, highlighting search terms, or custom formatting.
+
+**Basic Example:**
 ```js
 SimpleJekyllSearch({
   // ...other config
-  templateMiddleware: function(prop, value, template) {
-    if (prop === 'bar') {
-      return value.replace(/^\//, '')
+  searchResultTemplate: '<li>{title}</li>',
+  templateMiddleware: function(prop, value, template, query, matchInfo) {
+    if (prop === 'title') {
+      return value.toUpperCase()
     }
   },
 })
 ```
+
+**How it works:**
+- Template: `'<li>{title}</li>'`
+- When processing `{title}`: `prop = 'title'`, `value = 'my post'` → returns `'MY POST'`
+- Final result: `'<li>MY POST</li>'`
+
 
 ### sortMiddleware (Function) [optional]
 
@@ -138,4 +155,34 @@ SimpleJekyllSearch({
     return astr.localeCompare(bstr)
   },
 })
+```
+
+### Built-in Highlight Middleware (Function) [optional]
+
+Simple-Jekyll-Search now includes built-in highlighting functionality that can be easily integrated:
+
+```js
+import { createHighlightTemplateMiddleware } from 'simple-jekyll-search/middleware';
+
+SimpleJekyllSearch({
+  // ...other config
+  templateMiddleware: createHighlightTemplateMiddleware({
+    className: 'search-highlight',  // CSS class for highlighted text
+    maxLength: 200,                 // Maximum length of highlighted content
+    contextLength: 30               // Characters of context around matches
+  }),
+})
+```
+
+**Highlight Options:**
+- `className`: CSS class name for highlighted spans (default: 'search-highlight')
+- `maxLength`: Maximum length of content to display (truncates with ellipsis)
+- `contextLength`: Number of characters to show around matches when truncating
+
+**CSS Styling:**
+```css
+.search-highlight {
+  background-color: yellow;
+  font-weight: bold;
+}
 ```
