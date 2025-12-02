@@ -513,6 +513,14 @@
         }
       };
       this.options.searchInput.addEventListener("input", this.eventHandler);
+      this.restoreSearchState();
+    }
+    restoreSearchState() {
+      const existingValue = this.options.searchInput.value;
+      const hasExistingResults = this.options.resultsContainer.children.length > 0;
+      if ((existingValue == null ? void 0 : existingValue.trim().length) > 0 && !hasExistingResults) {
+        this.search(existingValue);
+      }
     }
     search(query) {
       var _a, _b;

@@ -145,6 +145,53 @@ describe('SimpleJekyllSearch', () => {
     });
   });
 
+  describe('search state restoration', () => {
+    it('should restore search when input has value but results are empty', () => {
+      const input = mockOptions.searchInput;
+      const resultsContainer = mockOptions.resultsContainer;
+      
+      input.value = 'Test';
+      mockOptions.json = mockSearchData;
+      searchInstance.init(mockOptions);
+      
+      expect(resultsContainer.innerHTML).toContain('Test Post');
+    });
+
+    it('should not restore search when input is empty', () => {
+      const input = mockOptions.searchInput;
+      const resultsContainer = mockOptions.resultsContainer;
+      
+      input.value = '';
+      mockOptions.json = mockSearchData;
+      searchInstance.init(mockOptions);
+      
+      expect(resultsContainer.innerHTML).toBe('');
+    });
+
+    it('should not restore search when results already exist', () => {
+      const input = mockOptions.searchInput;
+      const resultsContainer = mockOptions.resultsContainer;
+      
+      resultsContainer.innerHTML = '<li>Existing Result</li>';
+      input.value = 'Test';
+      mockOptions.json = mockSearchData;
+      searchInstance.init(mockOptions);
+      
+      expect(resultsContainer.innerHTML).toBe('<li>Existing Result</li>');
+    });
+
+    it('should not restore search when input has only whitespace', () => {
+      const input = mockOptions.searchInput;
+      const resultsContainer = mockOptions.resultsContainer;
+      
+      input.value = '   ';
+      mockOptions.json = mockSearchData;
+      searchInstance.init(mockOptions);
+      
+      expect(resultsContainer.innerHTML).toBe('');
+    });
+  });
+
   describe('error handling', () => {
     beforeEach(() => {
       mockOptions.json = mockSearchData;

@@ -78,6 +78,15 @@ class SimpleJekyllSearch {
     };
     
     this.options.searchInput.addEventListener('input', this.eventHandler);
+    this.restoreSearchState();
+  }
+
+  private restoreSearchState(): void {
+    const existingValue = this.options.searchInput.value;
+    const hasExistingResults = this.options.resultsContainer.children.length > 0;
+    if (existingValue?.trim().length > 0 && !hasExistingResults) {
+      this.search(existingValue);
+    }
   }
 
   public search(query: string): void {
