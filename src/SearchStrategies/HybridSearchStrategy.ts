@@ -3,7 +3,7 @@ import { findLiteralMatches } from './search/findLiteralMatches';
 import { findFuzzyMatches } from './search/findFuzzyMatches';
 import { findWildcardMatches } from './search/findWildcardMatches';
 
-type ResolvedHybridOptions = StrategyOptions & Required<Pick<StrategyOptions, 'preferFuzzy' | 'wildcardPriority' | 'minFuzzyLength' | 'maxExtraFuzzyChars'>>;
+type ResolvedHybridOptions = StrategyOptions & Required<Pick<StrategyOptions, 'preferFuzzy' | 'wildcardPriority' | 'minFuzzyLength' | 'maxExtraFuzzyChars' | 'maxSpaces'>>;
 
 export class HybridSearchStrategy extends SearchStrategy {
   private config: Readonly<ResolvedHybridOptions>;
@@ -17,8 +17,9 @@ export class HybridSearchStrategy extends SearchStrategy {
       ...config,
       preferFuzzy: config.preferFuzzy ?? false,
       wildcardPriority: config.wildcardPriority ?? true,
-      minFuzzyLength: config.minFuzzyLength ?? 3,
-      maxExtraFuzzyChars: config.maxExtraFuzzyChars ?? 4,
+      minFuzzyLength: config.minFuzzyLength ?? 4,
+      maxExtraFuzzyChars: config.maxExtraFuzzyChars ?? 2,
+      maxSpaces: config.maxSpaces ?? 1,
     };
   }
 

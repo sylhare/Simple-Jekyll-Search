@@ -9,14 +9,22 @@ describe('HybridSearchStrategy', () => {
       const matches = strategy.findMatches('hello world', 'hel*');
       expect(matches).toHaveLength(1);
       expect(matches[0].type).toBe('wildcard');
-      expect(matches[0].text).toBe('hello');
+      expect(matches[0].text).toBe('hello world');
     });
 
     it('should use wildcard search for multiple * patterns', () => {
       const matches = strategy.findMatches('hello amazing world', 'amaz*');
       expect(matches).toHaveLength(1);
       expect(matches[0].type).toBe('wildcard');
-      expect(matches[0].text).toBe('amazing');
+      expect(matches[0].text).toBe('amazing world');
+    });
+
+    it('should use wildcard search with maxSpaces: 0 to stop at word boundary', () => {
+      const noSpaces = new HybridSearchStrategy({ maxSpaces: 0 });
+      const matches = noSpaces.findMatches('hello world', 'hel*');
+      expect(matches).toHaveLength(1);
+      expect(matches[0].type).toBe('wildcard');
+      expect(matches[0].text).toBe('hello');
     });
 
     it('should fall back to literal if wildcard has no match', () => {
@@ -24,10 +32,22 @@ describe('HybridSearchStrategy', () => {
       expect(matches).toEqual([]);
     });
 
-    it('should respect wildcard maxSpaces when provided', () => {
-      const configurable = new HybridSearchStrategy({ maxSpaces: 1 });
-      expect(configurable.matches('hello world', 'hel*rld')).toBe(true);
-      expect(strategy.matches('hello world', 'hel*rld')).toBe(false);
+    it('should match across one space by default (maxSpaces: 1)', () => {
+      expect(strategy.matches('hello world', 'hel*rld')).toBe(true);
+    });
+
+    it('should respect wildcard maxSpaces: 0 to disable space spanning', () => {
+      const noSpaces = new HybridSearchStrategy({ maxSpaces: 0 });
+      expect(noSpaces.matches('hello world', 'hel*rld')).toBe(false);
+    });
+
+    it('should respect wildcard maxSpaces when provided and above 1', () => {
+      const twoSpaces = new HybridSearchStrategy({ maxSpaces: 2 });
+      expect(twoSpaces.matches('hello brave world', 'hel*rld')).toBe(true);
+      expect(twoSpaces.matches('hello brave new world', 'hel*rld')).toBe(false);
+
+      const threeSpaces = new HybridSearchStrategy({ maxSpaces: 3 });
+      expect(threeSpaces.matches('hello brave new world', 'hel*rld')).toBe(true);
     });
   });
 
@@ -55,13 +75,13 @@ describe('HybridSearchStrategy', () => {
     const strategy = new HybridSearchStrategy();
 
     it('should use fuzzy search for single-word queries >= minFuzzyLength', () => {
-      const matches = strategy.findMatches('javascript', 'jvscrpt');
+      const matches = strategy.findMatches('testing', 'tsting');
       expect(matches.length).toBeGreaterThan(0);
       expect(matches[0].type).toBe('fuzzy');
     });
 
     it('should use fuzzy for long single words', () => {
-      const matches = strategy.findMatches('development', 'dvlpmnt');
+      const matches = strategy.findMatches('hello', 'hllo');
       expect(matches.length).toBeGreaterThan(0);
       expect(matches[0].type).toBe('fuzzy');
     });
