@@ -194,8 +194,9 @@
         ...config,
         preferFuzzy: config.preferFuzzy ?? false,
         wildcardPriority: config.wildcardPriority ?? true,
-        minFuzzyLength: config.minFuzzyLength ?? 3,
-        maxExtraFuzzyChars: config.maxExtraFuzzyChars ?? 4
+        minFuzzyLength: config.minFuzzyLength ?? 4,
+        maxExtraFuzzyChars: config.maxExtraFuzzyChars ?? 2,
+        maxSpaces: config.maxSpaces ?? 1
       };
     }
     hybridFind(text, criteria) {
@@ -330,17 +331,17 @@
       return matches.map((item) => ({ ...item }));
     }
     setOptions(newOptions) {
-      let strategyConfig = this.normalizeStrategyOption((newOptions == null ? void 0 : newOptions.strategy) ?? DEFAULT_OPTIONS.strategy);
-      if ((newOptions == null ? void 0 : newOptions.fuzzy) && !(newOptions == null ? void 0 : newOptions.strategy)) {
+      let strategyConfig = this.normalizeStrategyOption(newOptions?.strategy ?? DEFAULT_OPTIONS.strategy);
+      if (newOptions?.fuzzy && !newOptions?.strategy) {
         console.warn('[Simple Jekyll Search] Warning: fuzzy option is deprecated. Use strategy: "fuzzy" instead.');
         strategyConfig = { type: "fuzzy" };
       }
-      const exclude = (newOptions == null ? void 0 : newOptions.exclude) || DEFAULT_OPTIONS.exclude;
+      const exclude = newOptions?.exclude || DEFAULT_OPTIONS.exclude;
       this.excludePatterns = exclude.map((pattern) => new RegExp(pattern));
       this.options = {
-        limit: (newOptions == null ? void 0 : newOptions.limit) || DEFAULT_OPTIONS.limit,
+        limit: newOptions?.limit || DEFAULT_OPTIONS.limit,
         searchStrategy: this.searchStrategy(strategyConfig),
-        sortMiddleware: (newOptions == null ? void 0 : newOptions.sortMiddleware) || DEFAULT_OPTIONS.sortMiddleware,
+        sortMiddleware: newOptions?.sortMiddleware || DEFAULT_OPTIONS.sortMiddleware,
         exclude,
         strategy: strategyConfig
       };
@@ -391,7 +392,7 @@
       return this.excludePatterns.some((regex) => regex.test(termStr));
     }
     searchStrategy(strategy) {
-      if (!(strategy == null ? void 0 : strategy.type) || !StrategyFactory.isValidStrategy(strategy.type)) {
+      if (!strategy?.type || !StrategyFactory.isValidStrategy(strategy.type)) {
         return LiteralSearchStrategy;
       }
       return StrategyFactory.create(strategy);
@@ -429,8 +430,7 @@
   }
   function compile(data, query) {
     return options.template.replace(options.pattern, function(match, prop) {
-      var _a;
-      const matchInfo = (_a = data._matchInfo) == null ? void 0 : _a[prop];
+      const matchInfo = data._matchInfo?.[prop];
       if (matchInfo && matchInfo.length > 0 && query) {
         const value2 = options.middleware(prop, data[prop], options.template, query, matchInfo);
         if (typeof value2 !== "undefined") {
@@ -492,24 +492,22 @@
     }
     registerInput() {
       this.eventHandler = (e) => {
-        var _a, _b;
         try {
           const inputEvent = e;
           if (!WHITELISTED_KEYS.has(inputEvent.key)) {
             this.emptyResultsContainer();
             this.debounce(() => {
-              var _a2, _b2;
               try {
                 this.search(e.target.value);
               } catch (searchError) {
                 console.error("Search error:", searchError);
-                (_b2 = (_a2 = this.options).onError) == null ? void 0 : _b2.call(_a2, searchError);
+                this.options.onError?.(searchError);
               }
             }, this.options.debounceTime ?? null);
           }
         } catch (error) {
           console.error("Input handler error:", error);
-          (_b = (_a = this.options).onError) == null ? void 0 : _b.call(_a, error);
+          this.options.onError?.(error);
         }
       };
       this.options.searchInput.addEventListener("input", this.eventHandler);
@@ -518,17 +516,16 @@
     restoreSearchState() {
       const existingValue = this.options.searchInput.value;
       const hasExistingResults = this.options.resultsContainer.children.length > 0;
-      if ((existingValue == null ? void 0 : existingValue.trim().length) > 0 && !hasExistingResults) {
+      if (existingValue?.trim().length > 0 && !hasExistingResults) {
         this.search(existingValue);
       }
     }
     search(query) {
-      var _a, _b;
-      if ((query == null ? void 0 : query.trim().length) > 0) {
+      if (query?.trim().length > 0) {
         this.emptyResultsContainer();
         const results = this.repository.search(query);
         this.render(results, query);
-        (_b = (_a = this.options).onSearch) == null ? void 0 : _b.call(_a);
+        this.options.onSearch?.();
       }
     }
     render(results, query) {
@@ -546,7 +543,6 @@
       this.options.resultsContainer.appendChild(fragment);
     }
     init(_options) {
-      var _a;
       const errors = this.optionsValidator.validate(_options);
       if (errors.length > 0) {
         this.throwError(`Missing required options: ${REQUIRED_OPTIONS.join(", ")}`);
@@ -570,7 +566,7 @@
       const rv = {
         search: this.search.bind(this)
       };
-      (_a = this.options.success) == null ? void 0 : _a.call(rv);
+      this.options.success?.call(rv);
       return rv;
     }
   };
