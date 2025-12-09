@@ -86,6 +86,32 @@ describe('createHighlightTemplateMiddleware', () => {
     expect(result).toBeUndefined();
   });
 
+  it('should truncate long content even without matchInfo when maxLength is set', () => {
+    const middleware = createHighlightTemplateMiddleware({
+      maxLength: 50
+    });
+    const longText = 'This is a very long article that should be truncated. '.repeat(10);
+
+    const result = middleware('content', longText, '<div>{content}</div>', 'other', undefined);
+    
+    expect(result).toBeDefined();
+    expect(result).toContain('...');
+    expect(result!.length).toEqual(50);
+  });
+
+  it('should truncate content when match is on another field (title) but content is displayed', () => {    
+    const middleware = createHighlightTemplateMiddleware({
+      maxLength: 100
+    });
+    const longContent = 'This is a long article body that does not contain the search term. '.repeat(20);
+
+    const result = middleware('content', longContent, '<div>{content}</div>', 'hello', undefined);
+    
+    expect(result).toBeDefined();
+    expect(result).toContain('...');
+    expect(result!.length).toEqual(100);
+  });
+
   it('should return undefined when value is not a string', () => {
     const middleware = createHighlightTemplateMiddleware();
     const matchInfo: MatchInfo[] = [
@@ -153,7 +179,7 @@ describe('createHighlightTemplateMiddleware', () => {
     expect(result).toContain('&gt;');
   });
 
-  it('should return undefined when highlighted result equals original', () => {
+  it('should return undefined when short content has no matches', () => {
     const middleware = createHighlightTemplateMiddleware();
     const matchInfo: MatchInfo[] = [];
 
@@ -205,7 +231,7 @@ describe('defaultHighlightMiddleware', () => {
     expect(result).toBeUndefined();
   });
 
-  it('should return undefined without matchInfo', () => {
+  it('should return undefined without matchInfo for short content', () => {
     const result = defaultHighlightMiddleware('content', 'hello world', '<div>{content}</div>', 'hello', undefined);
     
     expect(result).toBeUndefined();
