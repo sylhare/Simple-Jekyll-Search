@@ -3,6 +3,7 @@ layout: post
 title: "Welcome to Jekyll!"
 date: 2014-11-01 20:07:22
 categories: [ jekyll ]
+tags: [ jekyll, ruby, getting-started ]
 ---
 
 You’ll find this post in your `_posts` directory.
