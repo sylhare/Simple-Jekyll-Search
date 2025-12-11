@@ -16,7 +16,7 @@
       searchInput: document.getElementById('search-input'),
       resultsContainer: document.getElementById('results-container'),
       json: '{{ "/assets/data/search.json" | relative_url }}',
-      searchResultTemplate: '<li><a href="{url}?query={query}">{title}</a><p class="search-desc">{content}</p></li>',
+      searchResultTemplate: '<li><a href="{url}?query={query}">{title}</a><p class="search-tags">{tags}</p><p class="search-desc">{content}</p></li>',
       templateMiddleware: highlightMiddleware,
       noResultsText: 'No results found',
       limit: 10,

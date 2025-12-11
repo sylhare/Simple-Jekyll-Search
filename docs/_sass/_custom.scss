@@ -75,3 +75,18 @@ $on-laptop:        800px;
   color: $grey-color-dark;
   margin: 0.3em 0;
 }
+
+.search-tags {
+  font-size: 0.8em;
+  color: $grey-color;
+  margin: 0.2em 0;
+  
+  &:empty {
+    display: none;
+  }
+  
+  &:not(:empty)::before {
+    content: "Tags: ";
+    font-weight: 500;
+  }
+}
