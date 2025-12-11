@@ -149,5 +149,37 @@ describe('Simple Jekyll Search', () => {
         .should('exist')
         .and('not.contain', '<script>');
     });
+
+    it('should not break URL when searching for term that matches url (e.g., "test")', () => {
+      cy.get('#search-input')
+        .type('test');
+
+      cy.get('#results-container')
+        .should('be.visible');
+
+      cy.get('#results-container')
+        .contains('This is just a test')
+        .should('exist');
+
+      cy.get('#results-container a')
+        .contains('This is just a test')
+        .should('have.attr', 'href')
+        .and('match', /\/2014\/11\/02\/test\.html\?query=test/);
+    });
+
+    it('should navigate to correct page when clicking on "This is just a test" after searching "test"', () => {
+      cy.get('#search-input')
+        .type('test');
+
+      cy.get('#results-container')
+        .should('be.visible');
+
+      cy.get('#results-container a')
+        .contains('This is just a test')
+        .click();
+
+      cy.url().should('include', '/2014/11/02/test.html');
+      cy.url().should('include', '?query=test');
+    });
   });
 });
