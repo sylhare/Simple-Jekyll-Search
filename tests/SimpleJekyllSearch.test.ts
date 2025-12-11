@@ -1,4 +1,3 @@
-import { JSDOM } from 'jsdom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import SimpleJekyllSearch from '../src/SimpleJekyllSearch';
 import { SearchData, SearchOptions } from '../src/utils/types';
@@ -7,30 +6,13 @@ describe('SimpleJekyllSearch', () => {
   let searchInstance: SimpleJekyllSearch;
   let mockOptions: SearchOptions;
   let mockSearchData: SearchData[];
-  let dom: JSDOM;
 
   beforeEach(() => {
-    dom = new JSDOM(`
-      <!DOCTYPE html>
-      <html>
-        <body>
-          <input id="search-input" type="text" />
-          <div id="results-container"></div>
-        </body>
-      </html>
-    `);
-
-    Object.defineProperty(global, 'document', {
-      value: dom.window.document,
-      writable: true,
-      configurable: true,
-    });
-
-    Object.defineProperty(global, 'window', {
-      value: dom.window,
-      writable: true,
-      configurable: true,
-    });
+    // Set up DOM using vitest's jsdom environment
+    document.body.innerHTML = `
+      <input id="search-input" type="text" />
+      <div id="results-container"></div>
+    `;
 
     searchInstance = new SimpleJekyllSearch();
 
@@ -101,7 +83,7 @@ describe('SimpleJekyllSearch', () => {
 
     it('should trigger search on non-whitelisted key input', async () => {
       const input = mockOptions.searchInput;
-      const event = new dom.window.KeyboardEvent('input', { key: 't' });
+      const event = new KeyboardEvent('input', { key: 't' });
       input.value = 'Test';
       input.dispatchEvent(event);
 
@@ -112,7 +94,7 @@ describe('SimpleJekyllSearch', () => {
 
     it('should not trigger search on whitelisted key input', async () => {
       const input = mockOptions.searchInput;
-      const event = new dom.window.KeyboardEvent('input', { key: 'Enter' });
+      const event = new KeyboardEvent('input', { key: 'Enter' });
       input.value = 'Test';
       input.dispatchEvent(event);
 
@@ -132,13 +114,13 @@ describe('SimpleJekyllSearch', () => {
       const resultsContainer = mockOptions.resultsContainer;
 
       input.value = 'T';
-      input.dispatchEvent(new dom.window.KeyboardEvent('input', { key: 'T' }));
+      input.dispatchEvent(new KeyboardEvent('input', { key: 'T' }));
 
       input.value = 'Te';
-      input.dispatchEvent(new dom.window.KeyboardEvent('input', { key: 'e' }));
+      input.dispatchEvent(new KeyboardEvent('input', { key: 'e' }));
 
       input.value = 'Tes';
-      input.dispatchEvent(new dom.window.KeyboardEvent('input', { key: 's' }));
+      input.dispatchEvent(new KeyboardEvent('input', { key: 's' }));
 
       await new Promise(resolve => setTimeout(resolve, mockOptions.debounceTime! + 10));
       expect(resultsContainer.innerHTML).toContain('Test Post');
@@ -205,7 +187,7 @@ describe('SimpleJekyllSearch', () => {
       
       const input = mockOptions.searchInput;
       input.value = 'test';
-      input.dispatchEvent(new dom.window.KeyboardEvent('input', { key: 't' }));
+      input.dispatchEvent(new KeyboardEvent('input', { key: 't' }));
 
       await new Promise(resolve => setTimeout(resolve, mockOptions.debounceTime! + 10));
       
@@ -232,7 +214,7 @@ describe('SimpleJekyllSearch', () => {
       
       const input = mockOptions.searchInput;
       input.value = 'Valid';
-      input.dispatchEvent(new dom.window.KeyboardEvent('input', { key: 'V' }));
+      input.dispatchEvent(new KeyboardEvent('input', { key: 'V' }));
 
       await new Promise(resolve => setTimeout(resolve, mockOptions.debounceTime! + 10));
       
@@ -261,7 +243,7 @@ describe('SimpleJekyllSearch', () => {
       
       const input = mockOptions.searchInput;
       input.value = 'test';
-      input.dispatchEvent(new dom.window.KeyboardEvent('input', { key: 't' }));
+      input.dispatchEvent(new KeyboardEvent('input', { key: 't' }));
 
       await new Promise(resolve => setTimeout(resolve, mockOptions.debounceTime! + 10));
       
@@ -277,7 +259,7 @@ describe('SimpleJekyllSearch', () => {
       
       const input = mockOptions.searchInput;
       input.value = 'a'.repeat(10000);
-      input.dispatchEvent(new dom.window.KeyboardEvent('input', { key: 'a' }));
+      input.dispatchEvent(new KeyboardEvent('input', { key: 'a' }));
 
       await new Promise(resolve => setTimeout(resolve, mockOptions.debounceTime! + 10));
       
