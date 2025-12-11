@@ -7,10 +7,20 @@ export interface HighlightMiddlewareOptions extends HighlightOptions {
    * @default ['content', 'desc', 'description']
    */
   truncateFields?: string[];
+  
+  /**
+   * Fields that should NOT be highlighted (e.g., fields used in URLs/attributes).
+   * These fields will be left untouched to prevent breaking HTML structure.
+   * @default ['url', 'link', 'href', 'query']
+   */
+  noHighlightFields?: string[];
 }
 
 /** Fields that contain long content and should be truncated by default */
 const DEFAULT_TRUNCATE_FIELDS = ['content', 'desc', 'description'];
+
+/** Fields that should never be highlighted (used in HTML attributes) */
+const DEFAULT_NO_HIGHLIGHT_FIELDS = ['url', 'link', 'href', 'query'];
 
 /**
  * Creates a template middleware that highlights search matches and truncates long content.
@@ -29,6 +39,7 @@ export function createHighlightTemplateMiddleware(options: HighlightMiddlewareOp
   };
   
   const truncateFields = options.truncateFields || DEFAULT_TRUNCATE_FIELDS;
+  const noHighlightFields = options.noHighlightFields || DEFAULT_NO_HIGHLIGHT_FIELDS;
 
   return function(
     prop: string, 
@@ -38,6 +49,10 @@ export function createHighlightTemplateMiddleware(options: HighlightMiddlewareOp
     matchInfo?: MatchInfo[]
   ): string | undefined {
     if (typeof value !== 'string') {
+      return undefined;
+    }
+
+    if (noHighlightFields.includes(prop)) {
       return undefined;
     }
 

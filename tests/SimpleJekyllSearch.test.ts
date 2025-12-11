@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import SimpleJekyllSearch from '../src/SimpleJekyllSearch';
 import { SearchData, SearchOptions } from '../src/utils/types';
+import { createHighlightTemplateMiddleware } from '../src/middleware/highlightMiddleware';
 
 describe('SimpleJekyllSearch', () => {
   let searchInstance: SimpleJekyllSearch;
@@ -8,7 +9,6 @@ describe('SimpleJekyllSearch', () => {
   let mockSearchData: SearchData[];
 
   beforeEach(() => {
-    // Set up DOM using vitest's jsdom environment
     document.body.innerHTML = `
       <input id="search-input" type="text" />
       <div id="results-container"></div>
@@ -265,6 +265,118 @@ describe('SimpleJekyllSearch', () => {
       
       expect(mockOptions.resultsContainer.innerHTML).toContain('No results found');
       expect(onErrorSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('title highlighting with URL template', () => {
+    it('should not break URL when search term matches url field', async () => {
+      const highlightMiddleware = createHighlightTemplateMiddleware({
+        className: 'search-highlight',
+        maxLength: 200
+      });
+
+      const searchDataWithMatchingUrl: SearchData[] = [
+        { 
+          title: 'This is just a test', 
+          url: '/2014/11/02/test.html', 
+          category: 'test', 
+          tags: 'test1, test2',
+          content: 'Some test content here'
+        }
+      ];
+
+      const optionsWithTemplate = {
+        ...mockOptions,
+        json: searchDataWithMatchingUrl,
+        searchResultTemplate: '<li><a href="{url}?query={query}">{title}</a></li>',
+        templateMiddleware: highlightMiddleware,
+        strategy: 'hybrid' as const
+      };
+
+      searchInstance.init(optionsWithTemplate);
+      searchInstance.search('test');
+
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      const resultsContainer = mockOptions.resultsContainer;
+      const html = resultsContainer.innerHTML;
+
+      expect(html).toContain('href="/2014/11/02/test.html?query=test"');
+      expect(html).not.toContain('href="/2014/11/02/<span');
+      expect(html).not.toContain('</span>.html');
+    });
+
+    it('should highlight title when it contains the search term', async () => {
+      const highlightMiddleware = createHighlightTemplateMiddleware({
+        className: 'search-highlight',
+        maxLength: 200
+      });
+
+      const searchDataWithMatchingTitle: SearchData[] = [
+        { 
+          title: 'This is just a test', 
+          url: '/2014/11/02/test.html', 
+          category: 'test', 
+          tags: 'test1, test2',
+          content: 'Some content here'
+        }
+      ];
+
+      const optionsWithTemplate = {
+        ...mockOptions,
+        json: searchDataWithMatchingTitle,
+        searchResultTemplate: '<li><a href="{url}">{title}</a></li>',
+        templateMiddleware: highlightMiddleware,
+        strategy: 'hybrid' as const
+      };
+
+      searchInstance.init(optionsWithTemplate);
+      searchInstance.search('test');
+
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      const resultsContainer = mockOptions.resultsContainer;
+      const html = resultsContainer.innerHTML;
+
+      expect(html).toContain('<span class="search-highlight">test</span>');
+      expect(html).toContain('href="/2014/11/02/test.html"');
+    });
+
+    it('should produce valid clickable links when searching for "test"', async () => {
+      const highlightMiddleware = createHighlightTemplateMiddleware({
+        className: 'search-highlight',
+        maxLength: 200
+      });
+
+      const searchDataWithMatchingUrl: SearchData[] = [
+        { 
+          title: 'This is just a test', 
+          url: '/2014/11/02/test.html', 
+          category: 'test', 
+          tags: 'test1, test2',
+          content: 'Lorem ipsum test content'
+        }
+      ];
+
+      const optionsWithTemplate = {
+        ...mockOptions,
+        json: searchDataWithMatchingUrl,
+        searchResultTemplate: '<li><a href="{url}?query={query}">{title}</a><p>{content}</p></li>',
+        templateMiddleware: highlightMiddleware,
+        strategy: 'hybrid' as const
+      };
+
+      searchInstance.init(optionsWithTemplate);
+      searchInstance.search('test');
+
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      const resultsContainer = mockOptions.resultsContainer;
+      const link = resultsContainer.querySelector('a');
+
+      expect(link).toBeTruthy();
+      expect(link?.getAttribute('href')).toBe('/2014/11/02/test.html?query=test');
+      expect(link?.textContent).toContain('test');
     });
   });
 }); 

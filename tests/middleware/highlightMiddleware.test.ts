@@ -234,6 +234,80 @@ describe('createHighlightTemplateMiddleware', () => {
     expect(result).toContain('<span class="search-highlight">javascript</span>');
     expect(result).toContain('...');
   });
+
+  describe('noHighlightFields - preventing broken URLs', () => {
+    it('should NOT highlight url field even when matchInfo is provided', () => {
+      const middleware = createHighlightTemplateMiddleware();
+      const matchInfo: MatchInfo[] = [
+        { start: 14, end: 18, text: 'test', type: 'exact' }
+      ];
+
+      const result = middleware('url', '/2014/11/02/test.html', '<a href="{url}">{title}</a>', 'test', matchInfo);
+      
+      expect(result).toBeUndefined();
+    });
+
+    it('should NOT highlight link field even when matchInfo is provided', () => {
+      const middleware = createHighlightTemplateMiddleware();
+      const matchInfo: MatchInfo[] = [
+        { start: 0, end: 4, text: 'test', type: 'exact' }
+      ];
+
+      const result = middleware('link', 'test-page.html', '<a href="{link}">{title}</a>', 'test', matchInfo);
+      
+      expect(result).toBeUndefined();
+    });
+
+    it('should NOT highlight href field even when matchInfo is provided', () => {
+      const middleware = createHighlightTemplateMiddleware();
+      const matchInfo: MatchInfo[] = [
+        { start: 0, end: 4, text: 'test', type: 'exact' }
+      ];
+
+      const result = middleware('href', 'test.html', '<a href="{href}">{title}</a>', 'test', matchInfo);
+      
+      expect(result).toBeUndefined();
+    });
+
+    it('should NOT highlight query field even when matchInfo is provided', () => {
+      const middleware = createHighlightTemplateMiddleware();
+      const matchInfo: MatchInfo[] = [
+        { start: 0, end: 4, text: 'test', type: 'exact' }
+      ];
+
+      const result = middleware('query', 'test', '<a href="{url}?query={query}">{title}</a>', 'test', matchInfo);
+      
+      expect(result).toBeUndefined();
+    });
+
+    it('should still highlight title when url also matches', () => {
+      const middleware = createHighlightTemplateMiddleware();
+      const titleMatchInfo: MatchInfo[] = [
+        { start: 15, end: 19, text: 'test', type: 'exact' }
+      ];
+
+      const result = middleware('title', 'This is just a test', '<a href="{url}">{title}</a>', 'test', titleMatchInfo);
+      
+      expect(result).toBeDefined();
+      expect(result).toContain('<span class="search-highlight">test</span>');
+    });
+
+    it('should allow custom noHighlightFields option', () => {
+      const middleware = createHighlightTemplateMiddleware({
+        noHighlightFields: ['customUrl', 'customLink']
+      });
+      const matchInfo: MatchInfo[] = [
+        { start: 0, end: 4, text: 'test', type: 'exact' }
+      ];
+
+      const urlResult = middleware('url', 'test.html', '<a href="{url}">{title}</a>', 'test', matchInfo);
+      expect(urlResult).toBeDefined();
+      expect(urlResult).toContain('<span class="search-highlight">test</span>');
+
+      const customResult = middleware('customUrl', 'test.html', '<a href="{customUrl}">{title}</a>', 'test', matchInfo);
+      expect(customResult).toBeUndefined();
+    });
+  });
 });
 
 describe('defaultHighlightMiddleware', () => {
