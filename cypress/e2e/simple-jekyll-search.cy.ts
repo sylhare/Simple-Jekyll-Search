@@ -127,17 +127,6 @@ describe('Simple Jekyll Search', () => {
         .should('contain.text', 'Technical');
     });
 
-    it('should highlight multiple occurrences in literal search', () => {
-      cy.get('#search-input')
-        .type('test');
-
-      cy.get('#results-container')
-        .should('be.visible');
-
-      cy.get('#results-container .search-desc .search-highlight')
-        .should('have.length.at.least', 1);
-    });
-
     it('should escape HTML in search results', () => {
       cy.get('#search-input')
         .type('sed');
@@ -150,29 +139,20 @@ describe('Simple Jekyll Search', () => {
         .and('not.contain', '<script>');
     });
 
-    it('should not break URL when searching for term that matches url (e.g., "test")', () => {
+    it('should highlight matches, preserve valid URLs, and navigate correctly', () => {
       cy.get('#search-input')
         .type('test');
 
       cy.get('#results-container')
         .should('be.visible');
 
-      cy.get('#results-container')
-        .contains('This is just a test')
-        .should('exist');
+      cy.get('#results-container .search-desc .search-highlight')
+        .should('have.length.at.least', 1);
 
       cy.get('#results-container a')
         .contains('This is just a test')
         .should('have.attr', 'href')
         .and('match', /\/2014\/11\/02\/test\.html\?query=test/);
-    });
-
-    it('should navigate to correct page when clicking on "This is just a test" after searching "test"', () => {
-      cy.get('#search-input')
-        .type('test');
-
-      cy.get('#results-container')
-        .should('be.visible');
 
       cy.get('#results-container a')
         .contains('This is just a test')
