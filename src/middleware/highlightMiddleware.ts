@@ -56,8 +56,9 @@ export function createHighlightTemplateMiddleware(options: HighlightMiddlewareOp
       return undefined;
     }
 
+    const shouldTruncate = truncateFields.includes(prop);
+
     if (matchInfo && matchInfo.length > 0 && query) {
-      const shouldTruncate = truncateFields.includes(prop);
       const fieldOptions: HighlightOptions = {
         ...highlightOptions,
         maxLength: shouldTruncate ? highlightOptions.maxLength : undefined
@@ -66,10 +67,8 @@ export function createHighlightTemplateMiddleware(options: HighlightMiddlewareOp
       return highlighted !== value ? highlighted : undefined;
     }
     
-    const shouldTruncate = truncateFields.includes(prop);
     if (shouldTruncate && highlightOptions.maxLength && value.length > highlightOptions.maxLength) {
-      const truncated = value.substring(0, highlightOptions.maxLength - 3) + '...';
-      return escapeHtml(truncated);
+      return escapeHtml(value.substring(0, highlightOptions.maxLength - 3) + '...');
     }
     
     return undefined;

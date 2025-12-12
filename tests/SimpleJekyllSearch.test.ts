@@ -269,13 +269,13 @@ describe('SimpleJekyllSearch', () => {
   });
 
   describe('title highlighting with URL template', () => {
-    it('should not break URL when search term matches url field', async () => {
+    it('should highlight title but not break URL when search term matches both', async () => {
       const highlightMiddleware = createHighlightTemplateMiddleware({
         className: 'search-highlight',
         maxLength: 200
       });
 
-      const searchDataWithMatchingUrl: SearchData[] = [
+      const searchData: SearchData[] = [
         { 
           title: 'This is just a test', 
           url: '/2014/11/02/test.html', 
@@ -287,81 +287,8 @@ describe('SimpleJekyllSearch', () => {
 
       const optionsWithTemplate = {
         ...mockOptions,
-        json: searchDataWithMatchingUrl,
+        json: searchData,
         searchResultTemplate: '<li><a href="{url}?query={query}">{title}</a></li>',
-        templateMiddleware: highlightMiddleware,
-        strategy: 'hybrid' as const
-      };
-
-      searchInstance.init(optionsWithTemplate);
-      searchInstance.search('test');
-
-      await new Promise(resolve => setTimeout(resolve, 50));
-
-      const resultsContainer = mockOptions.resultsContainer;
-      const html = resultsContainer.innerHTML;
-
-      expect(html).toContain('href="/2014/11/02/test.html?query=test"');
-      expect(html).not.toContain('href="/2014/11/02/<span');
-      expect(html).not.toContain('</span>.html');
-    });
-
-    it('should highlight title when it contains the search term', async () => {
-      const highlightMiddleware = createHighlightTemplateMiddleware({
-        className: 'search-highlight',
-        maxLength: 200
-      });
-
-      const searchDataWithMatchingTitle: SearchData[] = [
-        { 
-          title: 'This is just a test', 
-          url: '/2014/11/02/test.html', 
-          category: 'test', 
-          tags: 'test1, test2',
-          content: 'Some content here'
-        }
-      ];
-
-      const optionsWithTemplate = {
-        ...mockOptions,
-        json: searchDataWithMatchingTitle,
-        searchResultTemplate: '<li><a href="{url}">{title}</a></li>',
-        templateMiddleware: highlightMiddleware,
-        strategy: 'hybrid' as const
-      };
-
-      searchInstance.init(optionsWithTemplate);
-      searchInstance.search('test');
-
-      await new Promise(resolve => setTimeout(resolve, 50));
-
-      const resultsContainer = mockOptions.resultsContainer;
-      const html = resultsContainer.innerHTML;
-
-      expect(html).toContain('<span class="search-highlight">test</span>');
-      expect(html).toContain('href="/2014/11/02/test.html"');
-    });
-
-    it('should produce valid clickable links when searching for "test"', async () => {
-      const highlightMiddleware = createHighlightTemplateMiddleware({
-        className: 'search-highlight',
-        maxLength: 200
-      });
-
-      const searchDataWithMatchingUrl: SearchData[] = [
-        { 
-          title: 'This is just a test', 
-          url: '/2014/11/02/test.html', 
-          category: 'test', 
-          tags: 'test1, test2',
-          content: 'Lorem ipsum test content'
-        }
-      ];
-
-      const optionsWithTemplate = {
-        ...mockOptions,
-        json: searchDataWithMatchingUrl,
-        searchResultTemplate: '<li><a href="{url}?query={query}">{title}</a><p>{content}</p></li>',
         templateMiddleware: highlightMiddleware,
         strategy: 'hybrid' as const
       };
@@ -376,7 +303,8 @@ describe('SimpleJekyllSearch', () => {
 
       expect(link).toBeTruthy();
       expect(link?.getAttribute('href')).toBe('/2014/11/02/test.html?query=test');
-      expect(link?.textContent).toContain('test');
+      expect(link?.innerHTML).toContain('<span class="search-highlight">test</span>');
+      expect(resultsContainer.innerHTML).not.toContain('href="/2014/11/02/<span');
     });
   });
 }); 
