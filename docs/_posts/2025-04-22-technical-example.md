@@ -2,7 +2,8 @@
 layout: post
 title: "Technical Example"
 date: 2025-04-22 10:00:00
-categories: [ search ]
+categories: [ search, tutorial ]
+tags: [ regex, json, bash, code ]
 ---
 
 This is an article with more technical content to test the search functionality.
