@@ -1,5 +1,5 @@
 import { MatchInfo } from '../SearchStrategies/types';
-import { highlightWithMatchInfo, HighlightOptions } from './highlighting';
+import { highlightWithMatchInfo, HighlightOptions, escapeHtml } from './highlighting';
 
 export function createHighlightTemplateMiddleware(options: HighlightOptions = {}) {
   const highlightOptions: HighlightOptions = {
@@ -15,10 +15,15 @@ export function createHighlightTemplateMiddleware(options: HighlightOptions = {}
     query?: string, 
     matchInfo?: MatchInfo[]
   ): string | undefined {
-    if ((prop === 'content' || prop === 'desc' || prop === 'description') && query && typeof value === 'string') {
-      if (matchInfo && matchInfo.length > 0) {
+    if ((prop === 'content' || prop === 'desc' || prop === 'description') && typeof value === 'string') {
+      if (matchInfo && matchInfo.length > 0 && query) {
         const highlighted = highlightWithMatchInfo(value, matchInfo, highlightOptions);
         return highlighted !== value ? highlighted : undefined;
+      }
+      
+      if (highlightOptions.maxLength && value.length > highlightOptions.maxLength) {
+        const truncated = value.substring(0, highlightOptions.maxLength - 3) + '...';
+        return escapeHtml(truncated);
       }
     }
     
