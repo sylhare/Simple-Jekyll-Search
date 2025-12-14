@@ -127,17 +127,6 @@ describe('Simple Jekyll Search', () => {
         .should('contain.text', 'Technical');
     });
 
-    it('should highlight multiple occurrences in literal search', () => {
-      cy.get('#search-input')
-        .type('test');
-
-      cy.get('#results-container')
-        .should('be.visible');
-
-      cy.get('#results-container .search-desc .search-highlight')
-        .should('have.length.at.least', 1);
-    });
-
     it('should escape HTML in search results', () => {
       cy.get('#search-input')
         .type('sed');
@@ -148,6 +137,29 @@ describe('Simple Jekyll Search', () => {
       cy.get('#results-container .search-desc')
         .should('exist')
         .and('not.contain', '<script>');
+    });
+
+    it('should highlight matches, preserve valid URLs, and navigate correctly', () => {
+      cy.get('#search-input')
+        .type('test');
+
+      cy.get('#results-container')
+        .should('be.visible');
+
+      cy.get('#results-container .search-desc .search-highlight')
+        .should('have.length.at.least', 1);
+
+      cy.get('#results-container a')
+        .contains('This is just a test')
+        .should('have.attr', 'href')
+        .and('match', /\/2014\/11\/02\/test\.html\?query=test/);
+
+      cy.get('#results-container a')
+        .contains('This is just a test')
+        .click();
+
+      cy.url().should('include', '/2014/11/02/test.html');
+      cy.url().should('include', '?query=test');
     });
   });
 });

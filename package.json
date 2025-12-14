@@ -36,6 +36,9 @@
     "url": "https://github.com/sylhare/Simple-Jekyll-Search/issues"
   },
   "homepage": "https://github.com/sylhare/Simple-Jekyll-Search",
+  "engines": {
+    "node": ">=24"
+  },
   "devDependencies": {
     "@types/jsdom": "^27.0.0",
     "@types/node": "^24.10.1",

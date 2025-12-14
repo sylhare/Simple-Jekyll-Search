@@ -1,36 +1,18 @@
-import { JSDOM } from 'jsdom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import SimpleJekyllSearch from '../src/SimpleJekyllSearch';
 import { SearchData, SearchOptions } from '../src/utils/types';
+import { createHighlightTemplateMiddleware } from '../src/middleware/highlightMiddleware';
 
 describe('SimpleJekyllSearch', () => {
   let searchInstance: SimpleJekyllSearch;
   let mockOptions: SearchOptions;
   let mockSearchData: SearchData[];
-  let dom: JSDOM;
 
   beforeEach(() => {
-    dom = new JSDOM(`
-      <!DOCTYPE html>
-      <html>
-        <body>
-          <input id="search-input" type="text" />
-          <div id="results-container"></div>
-        </body>
-      </html>
-    `);
-
-    Object.defineProperty(global, 'document', {
-      value: dom.window.document,
-      writable: true,
-      configurable: true,
-    });
-
-    Object.defineProperty(global, 'window', {
-      value: dom.window,
-      writable: true,
-      configurable: true,
-    });
+    document.body.innerHTML = `
+      <input id="search-input" type="text" />
+      <div id="results-container"></div>
+    `;
 
     searchInstance = new SimpleJekyllSearch();
 
@@ -101,7 +83,7 @@ describe('SimpleJekyllSearch', () => {
 
     it('should trigger search on non-whitelisted key input', async () => {
       const input = mockOptions.searchInput;
-      const event = new dom.window.KeyboardEvent('input', { key: 't' });
+      const event = new KeyboardEvent('input', { key: 't' });
       input.value = 'Test';
       input.dispatchEvent(event);
 
@@ -112,7 +94,7 @@ describe('SimpleJekyllSearch', () => {
 
     it('should not trigger search on whitelisted key input', async () => {
       const input = mockOptions.searchInput;
-      const event = new dom.window.KeyboardEvent('input', { key: 'Enter' });
+      const event = new KeyboardEvent('input', { key: 'Enter' });
       input.value = 'Test';
       input.dispatchEvent(event);
 
@@ -132,13 +114,13 @@ describe('SimpleJekyllSearch', () => {
       const resultsContainer = mockOptions.resultsContainer;
 
       input.value = 'T';
-      input.dispatchEvent(new dom.window.KeyboardEvent('input', { key: 'T' }));
+      input.dispatchEvent(new KeyboardEvent('input', { key: 'T' }));
 
       input.value = 'Te';
-      input.dispatchEvent(new dom.window.KeyboardEvent('input', { key: 'e' }));
+      input.dispatchEvent(new KeyboardEvent('input', { key: 'e' }));
 
       input.value = 'Tes';
-      input.dispatchEvent(new dom.window.KeyboardEvent('input', { key: 's' }));
+      input.dispatchEvent(new KeyboardEvent('input', { key: 's' }));
 
       await new Promise(resolve => setTimeout(resolve, mockOptions.debounceTime! + 10));
       expect(resultsContainer.innerHTML).toContain('Test Post');
@@ -205,7 +187,7 @@ describe('SimpleJekyllSearch', () => {
       
       const input = mockOptions.searchInput;
       input.value = 'test';
-      input.dispatchEvent(new dom.window.KeyboardEvent('input', { key: 't' }));
+      input.dispatchEvent(new KeyboardEvent('input', { key: 't' }));
 
       await new Promise(resolve => setTimeout(resolve, mockOptions.debounceTime! + 10));
       
@@ -232,7 +214,7 @@ describe('SimpleJekyllSearch', () => {
       
       const input = mockOptions.searchInput;
       input.value = 'Valid';
-      input.dispatchEvent(new dom.window.KeyboardEvent('input', { key: 'V' }));
+      input.dispatchEvent(new KeyboardEvent('input', { key: 'V' }));
 
       await new Promise(resolve => setTimeout(resolve, mockOptions.debounceTime! + 10));
       
@@ -261,7 +243,7 @@ describe('SimpleJekyllSearch', () => {
       
       const input = mockOptions.searchInput;
       input.value = 'test';
-      input.dispatchEvent(new dom.window.KeyboardEvent('input', { key: 't' }));
+      input.dispatchEvent(new KeyboardEvent('input', { key: 't' }));
 
       await new Promise(resolve => setTimeout(resolve, mockOptions.debounceTime! + 10));
       
@@ -277,12 +259,52 @@ describe('SimpleJekyllSearch', () => {
       
       const input = mockOptions.searchInput;
       input.value = 'a'.repeat(10000);
-      input.dispatchEvent(new dom.window.KeyboardEvent('input', { key: 'a' }));
+      input.dispatchEvent(new KeyboardEvent('input', { key: 'a' }));
 
       await new Promise(resolve => setTimeout(resolve, mockOptions.debounceTime! + 10));
       
       expect(mockOptions.resultsContainer.innerHTML).toContain('No results found');
       expect(onErrorSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('title highlighting with URL template', () => {
+    it('should highlight title but not break URL when search term matches both', async () => {
+      const highlightMiddleware = createHighlightTemplateMiddleware({
+        className: 'search-highlight',
+        maxLength: 200
+      });
+
+      const searchData: SearchData[] = [
+        { 
+          title: 'This is just a test', 
+          url: '/2014/11/02/test.html', 
+          category: 'test', 
+          tags: 'test1, test2',
+          content: 'Some test content here'
+        }
+      ];
+
+      const optionsWithTemplate = {
+        ...mockOptions,
+        json: searchData,
+        searchResultTemplate: '<li><a href="{url}?query={query}">{title}</a></li>',
+        templateMiddleware: highlightMiddleware,
+        strategy: 'hybrid' as const
+      };
+
+      searchInstance.init(optionsWithTemplate);
+      searchInstance.search('test');
+
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      const resultsContainer = mockOptions.resultsContainer;
+      const link = resultsContainer.querySelector('a');
+
+      expect(link).toBeTruthy();
+      expect(link?.getAttribute('href')).toBe('/2014/11/02/test.html?query=test');
+      expect(link?.innerHTML).toContain('<span class="search-highlight">test</span>');
+      expect(resultsContainer.innerHTML).not.toContain('href="/2014/11/02/<span');
     });
   });
 }); 

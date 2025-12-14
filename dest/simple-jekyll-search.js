@@ -645,18 +645,34 @@
     }
     return result;
   }
+  const DEFAULT_TRUNCATE_FIELDS = ["content", "desc", "description"];
+  const DEFAULT_NO_HIGHLIGHT_FIELDS = ["url", "link", "href", "query"];
   function createHighlightTemplateMiddleware(options2 = {}) {
     const highlightOptions = {
       className: options2.className || "search-highlight",
       maxLength: options2.maxLength,
       contextLength: options2.contextLength || 30
     };
+    const truncateFields = options2.truncateFields || DEFAULT_TRUNCATE_FIELDS;
+    const noHighlightFields = options2.noHighlightFields || DEFAULT_NO_HIGHLIGHT_FIELDS;
     return function(prop, value, _template, query, matchInfo) {
-      if ((prop === "content" || prop === "desc" || prop === "description") && query && typeof value === "string") {
-        if (matchInfo && matchInfo.length > 0) {
-          const highlighted = highlightWithMatchInfo(value, matchInfo, highlightOptions);
-          return highlighted !== value ? highlighted : void 0;
-        }
+      if (typeof value !== "string") {
+        return void 0;
+      }
+      if (noHighlightFields.includes(prop)) {
+        return void 0;
+      }
+      const shouldTruncate = truncateFields.includes(prop);
+      if (matchInfo && matchInfo.length > 0 && query) {
+        const fieldOptions = {
+          ...highlightOptions,
+          maxLength: shouldTruncate ? highlightOptions.maxLength : void 0
+        };
+        const highlighted = highlightWithMatchInfo(value, matchInfo, fieldOptions);
+        return highlighted !== value ? highlighted : void 0;
+      }
+      if (shouldTruncate && highlightOptions.maxLength && value.length > highlightOptions.maxLength) {
+        return escapeHtml(value.substring(0, highlightOptions.maxLength - 3) + "...");
       }
       return void 0;
     };

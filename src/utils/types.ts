@@ -14,6 +14,7 @@ export interface SearchData {
   category?: string;
   tags?: string;
   date?: string;
+  content?: string;
 }
 
 export interface RepositoryOptions {
