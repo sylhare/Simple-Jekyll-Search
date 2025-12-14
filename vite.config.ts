@@ -24,6 +24,13 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    pool: 'threads',
+    poolOptions: {
+      threads: {
+        maxThreads: 4,
+        minThreads: 1
+      }
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],
