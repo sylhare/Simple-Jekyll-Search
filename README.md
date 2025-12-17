@@ -1,6 +1,7 @@
 # Simple-Jekyll-Search
 
 A JavaScript library to add search functionality to any Jekyll blog.
+A replacement for the archived [Simple Jekyll Search](https://github.com/christian-fei/Simple-Jekyll-Search) from Christian Fei.
 
 ## Use case
 
