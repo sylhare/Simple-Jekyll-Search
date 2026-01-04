@@ -46,12 +46,12 @@
     "@typescript-eslint/parser": "^8.48.0",
     "@vitest/coverage-v8": "^3.2.4",
     "cypress": "^15.7.1",
-    "eslint": "^9.39.1",
+    "eslint": "^9.39.2",
     "jsdom": "^27.2.0",
     "terser": "^5.44.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
-    "vite": "7.2.6",
+    "vite": "7.3.0",
     "vitest": "^3.2.4"
   },
   "ts-node": {
