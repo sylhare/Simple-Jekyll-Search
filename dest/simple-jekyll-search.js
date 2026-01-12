@@ -1,6 +1,6 @@
 (function(global, factory) {
   typeof exports === "object" && typeof module !== "undefined" ? factory(exports) : typeof define === "function" && define.amd ? define(["exports"], factory) : (global = typeof globalThis !== "undefined" ? globalThis : global || self, factory(global.SimpleJekyllSearch = {}));
-})(this, function(exports2) {
+})(this, (function(exports2) {
   "use strict";
   function load(location, callback) {
     const xhr = getXHR();
@@ -699,4 +699,4 @@
   exports2.highlightWithMatchInfo = highlightWithMatchInfo;
   exports2.mergeOverlappingMatches = mergeOverlappingMatches;
   Object.defineProperties(exports2, { __esModule: { value: true }, [Symbol.toStringTag]: { value: "Module" } });
-});
+}));
