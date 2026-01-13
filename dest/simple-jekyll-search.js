@@ -512,6 +512,9 @@
       };
       this.options.searchInput.addEventListener("input", this.eventHandler);
       this.restoreSearchState();
+      window.addEventListener("pageshow", () => {
+        this.restoreSearchState();
+      });
     }
     restoreSearchState() {
       const existingValue = this.options.searchInput.value;

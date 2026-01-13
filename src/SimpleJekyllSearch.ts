@@ -79,6 +79,11 @@ class SimpleJekyllSearch {
     
     this.options.searchInput.addEventListener('input', this.eventHandler);
     this.restoreSearchState();
+
+    // Restore search state when navigating back (bfcache or browser form restoration)
+    window.addEventListener('pageshow', () => {
+      this.restoreSearchState();
+    });
   }
 
   private restoreSearchState(): void {
