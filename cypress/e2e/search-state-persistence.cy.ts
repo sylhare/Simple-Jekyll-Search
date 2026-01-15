@@ -9,11 +9,9 @@ describe('Search State Persistence (Cross-Browser)', () => {
   describe('sessionStorage integration', () => {
     it('stores search state with correct structure', () => {
       cy.get('#search-input').type('Lorem');
-
       cy.window().then(win => {
         const stored = win.sessionStorage.getItem(STORAGE_KEY);
         expect(stored).to.not.be.null;
-
         const state = JSON.parse(stored!);
         expect(state.query).to.equal('Lorem');
         expect(state.timestamp).to.be.a('number');
@@ -29,24 +27,19 @@ describe('Search State Persistence (Cross-Browser)', () => {
           path: '/Simple-Jekyll-Search/'
         }));
       });
-
       cy.reload();
-
       cy.get('#search-input').should('have.value', 'Lorem ipsum');
       cy.get('#results-container').should('not.be.empty');
     });
 
     it('clears storage when search is cleared', () => {
       cy.get('#search-input').type('Lorem');
-
       cy.window().then(win => {
         expect(win.sessionStorage.getItem(STORAGE_KEY)).to.not.be.null;
       });
-
       cy.get('#search-input').clear();
       cy.get('#search-input').type(' ').clear();
       cy.wait(200);
-
       cy.window().then(win => {
         expect(win.sessionStorage.getItem(STORAGE_KEY)).to.be.null;
       });
@@ -58,16 +51,12 @@ describe('Search State Persistence (Cross-Browser)', () => {
       cy.window().then(win => {
         win.sessionStorage.setItem(STORAGE_KEY, '{broken json');
       });
-
       cy.reload();
-
       cy.get('#search-input').should('have.value', '');
       cy.get('#results-container').should('be.empty');
-
       cy.get('#search-input').type('test');
       cy.get('#results-container').should('not.be.empty');
       cy.get('#search-input').clear();
-
       cy.window().should(win => {
         expect(win.sessionStorage.getItem(STORAGE_KEY)).to.be.null;
       });
@@ -81,16 +70,12 @@ describe('Search State Persistence (Cross-Browser)', () => {
           path: '/Simple-Jekyll-Search/'
         }));
       });
-
       cy.reload();
-
       cy.get('#search-input').should('have.value', '');
       cy.get('#results-container').should('be.empty');
-
       cy.get('#search-input').type('test');
       cy.get('#results-container').should('not.be.empty');
       cy.get('#search-input').clear();
-
       cy.window().should(win => {
         expect(win.sessionStorage.getItem(STORAGE_KEY)).to.be.null;
       });
@@ -104,15 +89,11 @@ describe('Search State Persistence (Cross-Browser)', () => {
           path: '/different-page/'
         }));
       });
-
       cy.reload();
-
       cy.get('#search-input').should('have.value', '');
-
       cy.get('#search-input').type('test');
       cy.get('#results-container').should('not.be.empty');
       cy.get('#search-input').clear();
-
       cy.window().should(win => {
         expect(win.sessionStorage.getItem(STORAGE_KEY)).to.be.null;
       });
@@ -125,9 +106,7 @@ describe('Search State Persistence (Cross-Browser)', () => {
           path: '/Simple-Jekyll-Search/'
         }));
       });
-
       cy.reload();
-
       cy.get('#search-input').should('have.value', '');
     });
 
@@ -139,48 +118,46 @@ describe('Search State Persistence (Cross-Browser)', () => {
           path: '/Simple-Jekyll-Search/'
         }));
       });
-
       cy.reload();
-
       cy.get('#search-input').should('have.value', '');
     });
   });
 
   describe('back navigation flow', () => {
-    it('restores search after navigating back', () => {
-      cy.get('#search-input').type('Lorem ipsum');
-
+    it('preserves search input and results after navigating back from a result link', () => {
+      const searchQuery = 'Lorem ipsum';
+      cy.get('#search-input').type(searchQuery);
+      cy.get('#results-container')
+        .should('be.visible')
+        .contains('This is just a test')
+        .should('exist');
+      cy.get('#results-container').invoke('html').as('originalResults');
+      cy.get('#results-container')
+        .contains('This is just a test')
+        .click();
+      cy.url().should('include', '?query=Lorem%20ipsum');
+      cy.url().should('not.eq', Cypress.config().baseUrl + '/');
+      cy.go('back');
+      cy.url().should('include', '/Simple-Jekyll-Search');
+      cy.get('#search-input').should('have.value', searchQuery);
       cy.get('#results-container')
         .should('be.visible')
         .should('not.be.empty');
-
-      cy.get('#results-container a')
-        .first()
-        .click();
-
-      cy.url().should('not.eq', Cypress.config().baseUrl);
-
-      cy.go('back');
-
-      cy.get('#search-input').should('have.value', 'Lorem ipsum');
-      cy.get('#results-container').should('not.be.empty');
+      cy.get('#results-container')
+        .contains('This is just a test')
+        .should('exist');
     });
 
     it('preserves highlighted search results after navigating back', () => {
-      cy.get('#search-input').type('Lorem');
-
-      cy.get('#results-container .search-desc .search-highlight')
-        .should('exist');
-
+      const searchQuery = 'Lorem';
+      cy.get('#search-input').type(searchQuery);
+      cy.get('#results-container .search-desc .search-highlight').should('exist');
       cy.get('#results-container a')
         .first()
         .click();
-
       cy.go('back');
-
-      cy.get('#search-input').should('have.value', 'Lorem');
-      cy.get('#results-container .search-desc .search-highlight')
-        .should('exist');
+      cy.get('#search-input').should('have.value', searchQuery);
+      cy.get('#results-container .search-desc .search-highlight').should('exist');
     });
   });
 
@@ -193,9 +170,7 @@ describe('Search State Persistence (Cross-Browser)', () => {
           path: '/Simple-Jekyll-Search/'
         }));
       });
-
       cy.reload();
-
       cy.get('#search-input').should('have.value', 'Lorem');
       cy.get('#results-container').should('not.be.empty');
     });
