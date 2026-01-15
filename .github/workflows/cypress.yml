@@ -3,6 +3,10 @@ on: [push]
 jobs:
   cypress:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chrome, firefox]
     steps:
       - uses: actions/checkout@v6
       - name: Setup Node.js
@@ -27,7 +31,7 @@ jobs:
         run: |
           cd docs
           bundle exec jekyll build
-      - name: Run Cypress (start Jekyll, run tests, kill Jekyll)
+      - name: Run Cypress on ${{ matrix.browser }}
         shell: bash
         run: |
           set -o pipefail
@@ -36,7 +40,7 @@ jobs:
 
           sleep 8
 
-          yarn cypress run
+          yarn cypress run --browser ${{ matrix.browser }}
           CYPRESS_EXIT_CODE=$?
 
           node scripts/kill-jekyll.js || true
