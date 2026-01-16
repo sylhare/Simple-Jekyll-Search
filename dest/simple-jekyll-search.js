@@ -454,8 +454,10 @@
     constructor() {
       this.debounceTimerHandle = null;
       this.eventHandler = null;
+      this.pageShowHandler = null;
       this.pendingRequest = null;
       this.isInitialized = false;
+      this.STORAGE_KEY = "sjs-search-state";
       this.options = { ...DEFAULT_OPTIONS };
       this.repository = new Repository();
       this.optionsValidator = new OptionsValidator({
@@ -511,24 +513,75 @@
         }
       };
       this.options.searchInput.addEventListener("input", this.eventHandler);
-      this.restoreSearchState();
-      window.addEventListener("pageshow", () => {
+      this.pageShowHandler = () => {
         this.restoreSearchState();
-      });
+      };
+      window.addEventListener("pageshow", this.pageShowHandler);
+      this.restoreSearchState();
+    }
+    saveSearchState(query) {
+      if (!query?.trim()) {
+        this.clearSearchState();
+        return;
+      }
+      try {
+        const state = {
+          query: query.trim(),
+          timestamp: Date.now(),
+          path: window.location.pathname
+        };
+        sessionStorage.setItem(this.STORAGE_KEY, JSON.stringify(state));
+      } catch {
+      }
+    }
+    getStoredSearchState() {
+      try {
+        const raw = sessionStorage.getItem(this.STORAGE_KEY);
+        if (!raw) return null;
+        const state = JSON.parse(raw);
+        if (typeof state?.query !== "string") return null;
+        const MAX_AGE_MS = 30 * 60 * 1e3;
+        if (Date.now() - state.timestamp > MAX_AGE_MS) {
+          this.clearSearchState();
+          return null;
+        }
+        if (state.path && state.path !== window.location.pathname) {
+          this.clearSearchState();
+          return null;
+        }
+        return state.query;
+      } catch {
+        this.clearSearchState();
+        return null;
+      }
+    }
+    clearSearchState() {
+      try {
+        sessionStorage.removeItem(this.STORAGE_KEY);
+      } catch {
+      }
     }
     restoreSearchState() {
-      const existingValue = this.options.searchInput.value;
       const hasExistingResults = this.options.resultsContainer.children.length > 0;
-      if (existingValue?.trim().length > 0 && !hasExistingResults) {
-        this.search(existingValue);
+      if (hasExistingResults) return;
+      let query = this.options.searchInput.value?.trim();
+      if (!query) {
+        query = this.getStoredSearchState() || "";
+      }
+      if (query.length > 0) {
+        this.options.searchInput.value = query;
+        this.search(query);
       }
     }
     search(query) {
       if (query?.trim().length > 0) {
+        this.saveSearchState(query);
         this.emptyResultsContainer();
         const results = this.repository.search(query);
         this.render(results, query);
         this.options.onSearch?.();
+      } else {
+        this.clearSearchState();
       }
     }
     render(results, query) {
@@ -544,6 +597,21 @@
         fragment.appendChild(div);
       });
       this.options.resultsContainer.appendChild(fragment);
+    }
+    destroy() {
+      if (this.eventHandler) {
+        this.options.searchInput.removeEventListener("input", this.eventHandler);
+        this.eventHandler = null;
+      }
+      if (this.pageShowHandler) {
+        window.removeEventListener("pageshow", this.pageShowHandler);
+        this.pageShowHandler = null;
+      }
+      if (this.debounceTimerHandle) {
+        clearTimeout(this.debounceTimerHandle);
+        this.debounceTimerHandle = null;
+      }
+      this.clearSearchState();
     }
     init(_options) {
       const errors = this.optionsValidator.validate(_options);
@@ -567,7 +635,8 @@
         this.initWithURL(this.options.json);
       }
       const rv = {
-        search: this.search.bind(this)
+        search: this.search.bind(this),
+        destroy: this.destroy.bind(this)
       };
       this.options.success?.call(rv);
       return rv;
