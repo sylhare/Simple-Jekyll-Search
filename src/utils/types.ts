@@ -53,4 +53,5 @@ export interface SearchOptions extends Omit<RepositoryOptions, 'searchStrategy'>
 
 export interface SimpleJekyllSearchInstance {
   search: (query: string) => void;
+  destroy: () => void;
 } 

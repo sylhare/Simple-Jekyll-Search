@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "cypress": "cypress run",
+    "cypress:browser": "cypress run --browser",
     "cypress:run": "node scripts/start-jekyll.js && sleep 8 && cypress run; node scripts/kill-jekyll.js",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",

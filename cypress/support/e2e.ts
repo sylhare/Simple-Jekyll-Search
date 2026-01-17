@@ -5,4 +5,4 @@ import './commands';
 const app = window.top as Window & typeof globalThis;
 if (app) {
   app.console.log = () => {};
-} 
+}

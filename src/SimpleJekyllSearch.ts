@@ -12,8 +12,10 @@ class SimpleJekyllSearch {
   private optionsValidator: OptionsValidator;
   private debounceTimerHandle: NodeJS.Timeout | null = null;
   private eventHandler: ((e: Event) => void) | null = null;
+  private pageShowHandler: (() => void) | null = null;
   private pendingRequest: XMLHttpRequest | null = null;
   private isInitialized: boolean = false;
+  private readonly STORAGE_KEY = 'sjs-search-state';
 
   constructor() {
     this.options = { ...DEFAULT_OPTIONS };
@@ -78,23 +80,90 @@ class SimpleJekyllSearch {
     };
     
     this.options.searchInput.addEventListener('input', this.eventHandler);
+
+    this.pageShowHandler = () => {
+      this.restoreSearchState();
+    };
+    window.addEventListener('pageshow', this.pageShowHandler);
+
     this.restoreSearchState();
   }
 
+  private saveSearchState(query: string): void {
+    if (!query?.trim()) {
+      this.clearSearchState();
+      return;
+    }
+    try {
+      const state = {
+        query: query.trim(),
+        timestamp: Date.now(),
+        path: window.location.pathname
+      };
+      sessionStorage.setItem(this.STORAGE_KEY, JSON.stringify(state));
+    } catch {
+    }
+  }
+
+  private getStoredSearchState(): string | null {
+    try {
+      const raw = sessionStorage.getItem(this.STORAGE_KEY);
+      if (!raw) return null;
+
+      const state = JSON.parse(raw);
+
+      if (typeof state?.query !== 'string') return null;
+
+      const MAX_AGE_MS = 30 * 60 * 1000;
+      if (Date.now() - state.timestamp > MAX_AGE_MS) {
+        this.clearSearchState();
+        return null;
+      }
+
+      if (state.path && state.path !== window.location.pathname) {
+        this.clearSearchState();
+        return null;
+      }
+
+      return state.query;
+    } catch {
+      this.clearSearchState();
+      return null;
+    }
+  }
+
+  private clearSearchState(): void {
+    try {
+      sessionStorage.removeItem(this.STORAGE_KEY);
+    } catch {
+    }
+  }
+
   private restoreSearchState(): void {
-    const existingValue = this.options.searchInput.value;
     const hasExistingResults = this.options.resultsContainer.children.length > 0;
-    if (existingValue?.trim().length > 0 && !hasExistingResults) {
-      this.search(existingValue);
+    if (hasExistingResults) return;
+
+    let query = this.options.searchInput.value?.trim();
+
+    if (!query) {
+      query = this.getStoredSearchState() || '';
+    }
+
+    if (query.length > 0) {
+      this.options.searchInput.value = query;
+      this.search(query);
     }
   }
 
   public search(query: string): void {
     if (query?.trim().length > 0) {
+      this.saveSearchState(query);
       this.emptyResultsContainer();
       const results = this.repository.search(query) as SearchResult[];
       this.render(results, query);
       this.options.onSearch?.();
+    } else {
+      this.clearSearchState();
     }
   }
 
@@ -113,6 +182,25 @@ class SimpleJekyllSearch {
     });
 
     this.options.resultsContainer.appendChild(fragment);
+  }
+
+  public destroy(): void {
+    if (this.eventHandler) {
+      this.options.searchInput.removeEventListener('input', this.eventHandler);
+      this.eventHandler = null;
+    }
+
+    if (this.pageShowHandler) {
+      window.removeEventListener('pageshow', this.pageShowHandler);
+      this.pageShowHandler = null;
+    }
+
+    if (this.debounceTimerHandle) {
+      clearTimeout(this.debounceTimerHandle);
+      this.debounceTimerHandle = null;
+    }
+
+    this.clearSearchState();
   }
 
   public init(_options: SearchOptions): SimpleJekyllSearchInstance {
@@ -143,6 +231,7 @@ class SimpleJekyllSearch {
 
     const rv = {
       search: this.search.bind(this),
+      destroy: this.destroy.bind(this),
     };
 
     this.options.success?.call(rv);
