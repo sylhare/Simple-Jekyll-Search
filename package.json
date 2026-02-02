@@ -45,15 +45,15 @@
     "@types/node": "^25.2.0",
     "@typescript-eslint/eslint-plugin": "^8.54.0",
     "@typescript-eslint/parser": "^8.54.0",
-    "@vitest/coverage-v8": "^4.0.16",
-    "cypress": "^15.8.2",
+    "@vitest/coverage-v8": "^4.0.18",
+    "cypress": "^15.9.0",
     "eslint": "^9.39.2",
     "jsdom": "^27.4.0",
     "terser": "^5.46.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
     "vite": "7.3.1",
-    "vitest": "^4.0.16"
+    "vitest": "^4.0.18"
   },
   "ts-node": {
     "esm": true,
