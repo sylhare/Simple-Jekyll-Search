@@ -1,6 +1,6 @@
 {
   "name": "simple-jekyll-search",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "A simple JavaScript library to add search functionality to any Jekyll blog - Fast, lightweight, client-side search. Fork of Simple Jekyll Search from https://github.com/christian-fei/Simple-Jekyll-Search",
   "main": "dest/simple-jekyll-search.js",
   "type": "module",
