@@ -46,7 +46,7 @@
     "@typescript-eslint/eslint-plugin": "^8.56.1",
     "@typescript-eslint/parser": "^8.56.1",
     "@vitest/coverage-v8": "^4.0.18",
-    "cypress": "^15.9.0",
+    "cypress": "^15.11.0",
     "eslint": "^9.39.2",
     "jsdom": "^28.1.0",
     "terser": "^5.46.0",
