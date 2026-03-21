@@ -4,6 +4,7 @@
   "description": "A simple JavaScript library to add search functionality to any Jekyll blog - Fast, lightweight, client-side search. Fork of Simple Jekyll Search from https://github.com/christian-fei/Simple-Jekyll-Search",
   "main": "dest/simple-jekyll-search.js",
   "type": "module",
+  "packageManager": "yarn@4.12.0",
   "scripts": {
     "cypress": "cypress run",
     "cypress:browser": "cypress run --browser",

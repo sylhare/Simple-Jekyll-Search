@@ -11,3 +11,4 @@ cypress/screenshots/
 package-lock.json
 .jekyll-cache
 coverage/**
+.yarn
