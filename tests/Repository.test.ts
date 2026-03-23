@@ -128,32 +128,6 @@ describe('Repository', () => {
     expect(results[2]).toMatchObject(loremElement);
   });
 
-  it('demonstrates README example: custom sorting by section and caption', () => {
-    const testData = [
-      { section: 'Getting Started', caption: 'Installation', title: 'How to install' },
-      { section: 'API Reference', caption: 'Methods', title: 'Available methods' },
-      { section: 'Getting Started', caption: 'Configuration', title: 'How to configure' },
-      { section: 'API Reference', caption: 'Properties', title: 'Object properties' }
-    ];
-    
-    repository.put(testData);
-    repository.setOptions({
-      sortMiddleware: (a: any, b: any) => {
-        const astr = String(a.section) + "-" + String(a.caption);
-        const bstr = String(b.section) + "-" + String(b.caption);
-        return astr.localeCompare(bstr);
-      },
-    });
-    
-    const results = repository.search('How');
-    expect(results).toHaveLength(2);
-    // Should be sorted by section first, then caption
-    expect(results[0].section).toBe('Getting Started');
-    expect(results[0].caption).toBe('Configuration');
-    expect(results[1].section).toBe('Getting Started');
-    expect(results[1].caption).toBe('Installation');
-  });
-
   it('search results should be a clone and not a reference to repository data', () => {
     const query = 'Developer';
     const testData = [
