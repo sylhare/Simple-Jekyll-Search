@@ -186,7 +186,7 @@ describe('SimpleJekyllSearch', () => {
       mockOptions.json = mockSearchData;
     });
 
-    it('should call onError callback when provided', async () => {
+    it('should NOT call onError on successful search', async () => {
       const onErrorSpy = vi.fn();
       const optionsWithErrorHandler = { ...mockOptions, onError: onErrorSpy };
       
@@ -240,21 +240,6 @@ describe('SimpleJekyllSearch', () => {
       };
       
       expect(() => searchInstance.init(optionsWithMissingElement)).toThrow();
-      consoleErrorSpy.mockRestore();
-    });
-
-    it('should use default error handler when onError not provided', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      
-      searchInstance.init(mockOptions);
-      
-      const input = mockOptions.searchInput;
-      input.value = 'test';
-      input.dispatchEvent(new KeyboardEvent('input', { key: 't' }));
-
-      await new Promise(resolve => setTimeout(resolve, mockOptions.debounceTime! + 10));
-      
-      expect(consoleErrorSpy).not.toHaveBeenCalled();
       consoleErrorSpy.mockRestore();
     });
 

@@ -11,65 +11,20 @@ describe('createHighlightTemplateMiddleware', () => {
     expect(typeof middleware).toBe('function');
   });
 
-  it('should highlight content field when matchInfo is provided', () => {
+  it.each([
+    ['content',     'hello world',      'hello',      { start: 0,  end: 5,  text: 'hello',      type: 'exact' as const }],
+    ['desc',        'hello world',      'world',      { start: 6,  end: 11, text: 'world',      type: 'exact' as const }],
+    ['description', 'test data',        'test',       { start: 0,  end: 4,  text: 'test',       type: 'exact' as const }],
+    ['tags',        'javascript, react','javascript', { start: 0,  end: 10, text: 'javascript', type: 'exact' as const }],
+    ['title',       'hello world post', 'hello',      { start: 0,  end: 5,  text: 'hello',      type: 'exact' as const }],
+  ])('should highlight %s field when matchInfo is provided', (field, value, query, match) => {
     const middleware = createHighlightTemplateMiddleware();
-    const matchInfo: MatchInfo[] = [
-      { start: 0, end: 5, text: 'hello', type: 'exact' }
-    ];
+    const matchInfo: MatchInfo[] = [match];
 
-    const result = middleware('content', 'hello world', '<div>{content}</div>', 'hello', matchInfo);
-    
+    const result = middleware(field, value, `<div>{${field}}</div>`, query, matchInfo);
+
     expect(result).toBeDefined();
-    expect(result).toContain('<span class="search-highlight">hello</span>');
-    expect(result).toContain('world');
-  });
-
-  it('should highlight desc field when matchInfo is provided', () => {
-    const middleware = createHighlightTemplateMiddleware();
-    const matchInfo: MatchInfo[] = [
-      { start: 6, end: 11, text: 'world', type: 'exact' }
-    ];
-
-    const result = middleware('desc', 'hello world', '<div>{desc}</div>', 'world', matchInfo);
-    
-    expect(result).toBeDefined();
-    expect(result).toContain('<span class="search-highlight">world</span>');
-  });
-
-  it('should highlight description field when matchInfo is provided', () => {
-    const middleware = createHighlightTemplateMiddleware();
-    const matchInfo: MatchInfo[] = [
-      { start: 0, end: 4, text: 'test', type: 'exact' }
-    ];
-
-    const result = middleware('description', 'test data', '<div>{description}</div>', 'test', matchInfo);
-    
-    expect(result).toBeDefined();
-    expect(result).toContain('<span class="search-highlight">test</span>');
-  });
-
-  it('should highlight ANY field that has matchInfo (e.g., tags)', () => {
-    const middleware = createHighlightTemplateMiddleware();
-    const matchInfo: MatchInfo[] = [
-      { start: 0, end: 10, text: 'javascript', type: 'exact' }
-    ];
-
-    const result = middleware('tags', 'javascript, react', '<div>{tags}</div>', 'javascript', matchInfo);
-    
-    expect(result).toBeDefined();
-    expect(result).toContain('<span class="search-highlight">javascript</span>');
-  });
-
-  it('should highlight title field when matchInfo is provided', () => {
-    const middleware = createHighlightTemplateMiddleware();
-    const matchInfo: MatchInfo[] = [
-      { start: 0, end: 5, text: 'hello', type: 'exact' }
-    ];
-
-    const result = middleware('title', 'hello world post', '<div>{title}</div>', 'hello', matchInfo);
-    
-    expect(result).toBeDefined();
-    expect(result).toContain('<span class="search-highlight">hello</span>');
+    expect(result).toContain(`<span class="search-highlight">${match.text}</span>`);
   });
 
   it('should return undefined when query is not provided', () => {

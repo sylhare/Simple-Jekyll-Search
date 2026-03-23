@@ -30,11 +30,7 @@ export function findFuzzyMatches(text: string, criteria: string): MatchInfo[] {
   if (criteriaIndex !== criteria.length) {
     return [];
   }
-  
-  if (matchedIndices.length === 0) {
-    return [];
-  }
-  
+
   const start = matchedIndices[0];
   const end = matchedIndices[matchedIndices.length - 1] + 1;
   
