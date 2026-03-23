@@ -39,8 +39,7 @@ describe('Search State Persistence (Cross-Browser)', () => {
       });
       cy.get('#search-input').clear();
       cy.get('#search-input').type(' ').clear();
-      cy.wait(200);
-      cy.window().then(win => {
+      cy.window().should(win => {
         expect(win.sessionStorage.getItem(STORAGE_KEY)).to.be.null;
       });
     });
@@ -131,7 +130,6 @@ describe('Search State Persistence (Cross-Browser)', () => {
         .should('be.visible')
         .contains('This is just a test')
         .should('exist');
-      cy.get('#results-container').invoke('html').as('originalResults');
       cy.get('#results-container')
         .contains('This is just a test')
         .click();
