@@ -13,6 +13,16 @@ export default defineConfig({
     minify: false,
     sourcemap: false,
     rollupOptions: {
+      plugins: [
+        {
+          name: 'strip-comments',
+          renderChunk(code) {
+            return code
+              .replace(/\/\*\*[\s\S]*?\*\//g, '')  // JSDoc blocks
+              .replace(/\/\/#region.*|\/\/#endregion.*/g, '');  // region markers
+          }
+        }
+      ],
       output: {
         generatedCode: {
           preset: 'es2015',
