@@ -1,5 +1,5 @@
 import { Matcher, StrategyConfig } from '../SearchStrategies/types';
-import { StrategyType } from '../SearchStrategies/StrategyFactory';
+import type { StrategyType } from '../SearchStrategies/StrategyFactory';
 
 export interface SearchResult {
   url: string;

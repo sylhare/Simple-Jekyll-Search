@@ -13,7 +13,7 @@
     "lint:fix": "eslint . --ext .ts --fix",
     "pretest": "yarn run lint",
     "prebuild": "yarn run test",
-    "build": "yarn run prebuild && tsc && vite build && terser dest/simple-jekyll-search.js -o dest/simple-jekyll-search.min.js && yarn run postbuild",
+    "build": "yarn run prebuild && tsc && vite build && cp dest/simple-jekyll-search.js dest/simple-jekyll-search.min.js && yarn run postbuild",
     "postbuild": "node scripts/stamp.js < dest/simple-jekyll-search.min.js > dest/simple-jekyll-search.min.js.tmp && mv dest/simple-jekyll-search.min.js.tmp dest/simple-jekyll-search.min.js && yarn run copy-example-code",
     "copy-example-code": "cp dest/simple-jekyll-search.min.js docs/assets/js/",
     "test": "yarn run pretest && vitest run --coverage",

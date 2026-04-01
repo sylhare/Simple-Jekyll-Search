@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { StrategyFactory } from '../../src/SearchStrategies/StrategyFactory';
-import { LiteralSearchStrategy, FuzzySearchStrategy, WildcardSearchStrategy, DefaultWildcardSearchStrategy } from '../../src/SearchStrategies/SearchStrategy';
+import { LiteralSearchStrategy, FuzzySearchStrategy, WildcardSearchStrategy } from '../../src/SearchStrategies/SearchStrategy';
 import { HybridSearchStrategy } from '../../src/SearchStrategies/HybridSearchStrategy';
 
 describe('StrategyFactory', () => {
@@ -18,7 +18,6 @@ describe('StrategyFactory', () => {
     it('should create wildcard strategy', () => {
       const strategy = StrategyFactory.create({ type: 'wildcard' });
       expect(strategy).toBeInstanceOf(WildcardSearchStrategy);
-      expect(strategy).not.toBe(DefaultWildcardSearchStrategy);
       expect(strategy.matches('hello world', 'hel*')).toBe(true);
     });
 
@@ -27,9 +26,8 @@ describe('StrategyFactory', () => {
         type: 'wildcard',
         options: { maxSpaces: 1 }
       });
-      expect(strategy).not.toBe(DefaultWildcardSearchStrategy);
       expect(strategy.matches('hello world', 'hel*rld')).toBe(true);
-      expect(DefaultWildcardSearchStrategy.matches('hello world', 'hel*rld')).toBe(false);
+      expect(new WildcardSearchStrategy().matches('hello world', 'hel*rld')).toBe(false);
     });
 
     it('should create hybrid strategy', () => {

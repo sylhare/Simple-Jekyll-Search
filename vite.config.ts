@@ -10,7 +10,21 @@ export default defineConfig({
       fileName: (_format) => 'simple-jekyll-search.js',
       formats: ['umd'],
     },
-    minify: false,
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        passes: 2,
+        unsafe_arrows: true,
+        unsafe_methods: true,
+      },
+      mangle: {
+        toplevel: false,
+        properties: false,
+      },
+      format: {
+        comments: false,
+      },
+    },
     sourcemap: false,
     rollupOptions: {
       plugins: [
