@@ -41,6 +41,8 @@ export interface StrategyConfig {
   options?: StrategyOptions;
 }
 
+export type StrategyResolver = (config: StrategyConfig) => Matcher;
+
 export class SearchStrategy implements Matcher {
   private readonly findMatchesFunction: (text: string, criteria: string) => MatchInfo[];
 

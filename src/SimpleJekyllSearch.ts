@@ -1,6 +1,7 @@
 import { load as loadJSON } from './JSONLoader';
 import { OptionsValidator } from './OptionsValidator';
 import { Repository } from './Repository';
+import { StrategyResolver } from './SearchStrategies/types';
 import { compile as compileTemplate, setOptions as setTemplaterOptions } from './Templater';
 import { isJSON, merge } from './utils';
 import { DEFAULT_OPTIONS, REQUIRED_OPTIONS, WHITELISTED_KEYS } from './utils/default';
@@ -17,9 +18,9 @@ class SimpleJekyllSearch {
   private isInitialized: boolean = false;
   private readonly STORAGE_KEY = 'sjs-search-state';
 
-  constructor() {
+  constructor(strategyResolver?: StrategyResolver) {
     this.options = { ...DEFAULT_OPTIONS };
-    this.repository = new Repository();
+    this.repository = new Repository({}, strategyResolver);
     this.optionsValidator = new OptionsValidator({
       required: REQUIRED_OPTIONS,
     });

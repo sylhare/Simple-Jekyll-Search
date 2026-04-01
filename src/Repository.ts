@@ -1,6 +1,6 @@
 import { LiteralSearchStrategy } from './SearchStrategies/SearchStrategy';
-import { Matcher, StrategyConfig } from './SearchStrategies/types';
-import { StrategyFactory, StrategyType } from './SearchStrategies/StrategyFactory';
+import { Matcher, StrategyConfig, StrategyResolver } from './SearchStrategies/types';
+import type { StrategyType } from './SearchStrategies/StrategyFactory';
 import { isObject } from './utils';
 import { DEFAULT_OPTIONS } from './utils/default';
 import { RepositoryData, RepositoryOptions } from './utils/types';
@@ -9,8 +9,10 @@ export class Repository {
   private data: RepositoryData[] = [];
   private options!: Required<Omit<RepositoryOptions, 'fuzzy'>> & Pick<RepositoryOptions, 'fuzzy'>;
   private excludePatterns: RegExp[] = [];
+  private readonly strategyResolver: StrategyResolver;
 
-  constructor(initialOptions: RepositoryOptions = {}) {
+  constructor(initialOptions: RepositoryOptions = {}, strategyResolver: StrategyResolver = () => LiteralSearchStrategy) {
+    this.strategyResolver = strategyResolver;
     this.setOptions(initialOptions);
   }
 
@@ -110,11 +112,7 @@ export class Repository {
   }
 
   private searchStrategy(strategy: StrategyConfig): Matcher {
-    if (!strategy?.type || !StrategyFactory.isValidStrategy(strategy.type)) {
-      return LiteralSearchStrategy;
-    }
-
-    return StrategyFactory.create(strategy);
+    return this.strategyResolver(strategy);
   }
 
   private normalizeStrategyOption(strategy?: StrategyType | StrategyConfig): StrategyConfig {

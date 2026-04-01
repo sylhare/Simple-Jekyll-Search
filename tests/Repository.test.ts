@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Repository } from '../src/Repository';
+import { StrategyFactory } from '../src/SearchStrategies/StrategyFactory';
 
 interface TestElement {
   title: string;
@@ -16,7 +17,7 @@ describe('Repository', () => {
   let repository: Repository;
 
   beforeEach(() => {
-    repository = new Repository();
+    repository = new Repository({}, (config) => StrategyFactory.create(config));
     repository.put(data);
   });
 

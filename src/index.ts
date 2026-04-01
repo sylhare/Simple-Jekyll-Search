@@ -1,9 +1,10 @@
 import SimpleJekyllSearchClass from './SimpleJekyllSearch';
+import { StrategyFactory } from './SearchStrategies/StrategyFactory';
 import { SearchOptions, SimpleJekyllSearchInstance } from './utils/types';
 import { createHighlightTemplateMiddleware } from './middleware/highlightMiddleware';
 
 function SimpleJekyllSearch(options: SearchOptions): SimpleJekyllSearchInstance {
-  const instance = new SimpleJekyllSearchClass();
+  const instance = new SimpleJekyllSearchClass((config) => StrategyFactory.create(config));
   return instance.init(options);
 }
 
