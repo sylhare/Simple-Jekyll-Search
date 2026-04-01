@@ -36,5 +36,3 @@ export class WildcardSearchStrategy extends SearchStrategy {
     return { ...this.config };
   }
 }
-
-export const DefaultWildcardSearchStrategy = new WildcardSearchStrategy();
