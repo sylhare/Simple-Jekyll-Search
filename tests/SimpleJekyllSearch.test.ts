@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import SimpleJekyllSearch from '../src/SimpleJekyllSearch';
 import { SearchData, SearchOptions } from '../src/utils/types';
 import { createHighlightTemplateMiddleware } from '../src/middleware/highlightMiddleware';
+import { RelevanceSort } from '../src/utils';
 
 describe('SimpleJekyllSearch', () => {
   let searchInstance: SimpleJekyllSearch;
@@ -258,6 +259,73 @@ describe('SimpleJekyllSearch', () => {
       expect(mockOptions.resultsContainer.innerHTML).toContain('No results found');
       expect(onErrorSpy).not.toHaveBeenCalled();
     });
+  });
+
+  describe('relevance sorting', () => {
+    it('should return title matches before content-only matches', () => {
+      const searchData: SearchData[] = [
+        { title: 'Getting Started', url: '/started', content: 'Learn about jekyll setup' },
+        { title: 'Jekyll Guide', url: '/jekyll', content: 'A complete guide' },
+        { title: 'Advanced Tips', url: '/tips', content: 'Some advanced jekyll tricks' },
+      ];
+
+      const options = {
+        ...mockOptions,
+        json: searchData,
+        searchResultTemplate: '<li>{title}</li>',
+        sortMiddleware: RelevanceSort,
+      };
+
+      searchInstance.init(options);
+      searchInstance.search('jekyll');
+
+      const items = mockOptions.resultsContainer.querySelectorAll('li');
+      expect(items).toHaveLength(3);
+      expect(items[0].textContent).toBe('Jekyll Guide');
+    });
+
+    it('should return earlier position matches first among same-field matches', () => {
+      const searchData: SearchData[] = [
+        { title: 'Why use Ruby', url: '/why-ruby' },
+        { title: 'Ruby on Rails', url: '/ruby-rails' },
+      ];
+
+      const options = {
+        ...mockOptions,
+        json: searchData,
+        searchResultTemplate: '<li>{title}</li>',
+        sortMiddleware: RelevanceSort,
+      };
+
+      searchInstance.init(options);
+      searchInstance.search('ruby');
+
+      const items = mockOptions.resultsContainer.querySelectorAll('li');
+      expect(items).toHaveLength(2);
+      expect(items[0].textContent).toBe('Ruby on Rails');
+    });
+
+    it('should rank adjacent multi-word matches higher than spread-out ones', () => {
+      const searchData: SearchData[] = [
+        { title: 'About computers', url: '/spread', content: 'this is a mac and here are some good tips for you' },
+        { title: 'About computers', url: '/adjacent', content: 'here are some mac tips for beginners' },
+      ];
+
+      const options = {
+        ...mockOptions,
+        json: searchData,
+        searchResultTemplate: '<li><a href="{url}">{title}</a></li>',
+        sortMiddleware: RelevanceSort,
+      };
+
+      searchInstance.init(options);
+      searchInstance.search('mac tips');
+
+      const links = mockOptions.resultsContainer.querySelectorAll('a');
+      expect(links).toHaveLength(2);
+      expect(links[0].getAttribute('href')).toBe('/adjacent');
+    });
+
   });
 
   describe('title highlighting with URL template', () => {
