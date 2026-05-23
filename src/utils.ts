@@ -1,5 +1,7 @@
 import { RepositoryData } from './utils/types';
 
+export { RelevanceSort } from './utils/RelevanceSort';
+
 export function merge<T>(target: T, source: Partial<T>): T {
   return { ...target, ...source } as T;
 }

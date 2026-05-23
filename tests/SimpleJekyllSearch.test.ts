@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import SimpleJekyllSearch from '../src/SimpleJekyllSearch';
+import { StrategyFactory } from '../src/SearchStrategies/StrategyFactory';
 import { SearchData, SearchOptions } from '../src/utils/types';
 import { createHighlightTemplateMiddleware } from '../src/middleware/highlightMiddleware';
+import { RelevanceSort } from '../src/utils';
 
 describe('SimpleJekyllSearch', () => {
   let searchInstance: SimpleJekyllSearch;
@@ -15,7 +17,7 @@ describe('SimpleJekyllSearch', () => {
       <div id="results-container"></div>
     `;
 
-    searchInstance = new SimpleJekyllSearch();
+    searchInstance = new SimpleJekyllSearch((config) => StrategyFactory.create(config));
 
     mockOptions = {
       searchInput: document.getElementById('search-input') as HTMLInputElement,
@@ -37,6 +39,26 @@ describe('SimpleJekyllSearch', () => {
   afterEach(() => {
     sessionStorage.clear();
   });
+
+  function waitForDebounce() {
+    return new Promise(resolve => setTimeout(resolve, mockOptions.debounceTime! + 10));
+  }
+
+  function storeState(overrides: Record<string, unknown> = {}) {
+    const state = {
+      query: 'Test',
+      timestamp: Date.now(),
+      path: window.location.pathname,
+      ...overrides,
+    };
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  function initWithData(inputValue = '', extraOptions: Partial<SearchOptions> = {}) {
+    mockOptions.searchInput.value = inputValue;
+    mockOptions.json = mockSearchData;
+    searchInstance.init({ ...mockOptions, ...extraOptions });
+  }
 
   describe('initialization', () => {
     it('should throw error when required options are missing', () => {
@@ -94,7 +116,7 @@ describe('SimpleJekyllSearch', () => {
       input.value = 'Test';
       input.dispatchEvent(event);
 
-      await new Promise(resolve => setTimeout(resolve, mockOptions.debounceTime! + 10));
+      await waitForDebounce();
       expect(mockOptions.resultsContainer.innerHTML).toContain('Test Post');
       expect(input.value).toBe('Test');
     });
@@ -105,7 +127,7 @@ describe('SimpleJekyllSearch', () => {
       input.value = 'Test';
       input.dispatchEvent(event);
 
-      await new Promise(resolve => setTimeout(resolve, mockOptions.debounceTime! + 10));
+      await waitForDebounce();
       expect(mockOptions.resultsContainer.innerHTML).toBe('');
     });
   });
@@ -129,55 +151,35 @@ describe('SimpleJekyllSearch', () => {
       input.value = 'Tes';
       input.dispatchEvent(new KeyboardEvent('input', { key: 's' }));
 
-      await new Promise(resolve => setTimeout(resolve, mockOptions.debounceTime! + 10));
+      await waitForDebounce();
       expect(resultsContainer.innerHTML).toContain('Test Post');
     });
   });
 
   describe('search state restoration', () => {
     it('should restore search when input has value but results are empty', () => {
-      const input = mockOptions.searchInput;
-      const resultsContainer = mockOptions.resultsContainer;
-      
-      input.value = 'Test';
-      mockOptions.json = mockSearchData;
-      searchInstance.init(mockOptions);
-      
-      expect(resultsContainer.innerHTML).toContain('Test Post');
+      initWithData('Test');
+
+      expect(mockOptions.resultsContainer.innerHTML).toContain('Test Post');
     });
 
     it('should not restore search when input is empty', () => {
-      const input = mockOptions.searchInput;
-      const resultsContainer = mockOptions.resultsContainer;
-      
-      input.value = '';
-      mockOptions.json = mockSearchData;
-      searchInstance.init(mockOptions);
-      
-      expect(resultsContainer.innerHTML).toBe('');
+      initWithData();
+
+      expect(mockOptions.resultsContainer.innerHTML).toBe('');
     });
 
     it('should not restore search when results already exist', () => {
-      const input = mockOptions.searchInput;
-      const resultsContainer = mockOptions.resultsContainer;
-      
-      resultsContainer.innerHTML = '<li>Existing Result</li>';
-      input.value = 'Test';
-      mockOptions.json = mockSearchData;
-      searchInstance.init(mockOptions);
-      
-      expect(resultsContainer.innerHTML).toBe('<li>Existing Result</li>');
+      mockOptions.resultsContainer.innerHTML = '<li>Existing Result</li>';
+      initWithData('Test');
+
+      expect(mockOptions.resultsContainer.innerHTML).toBe('<li>Existing Result</li>');
     });
 
     it('should not restore search when input has only whitespace', () => {
-      const input = mockOptions.searchInput;
-      const resultsContainer = mockOptions.resultsContainer;
-      
-      input.value = '   ';
-      mockOptions.json = mockSearchData;
-      searchInstance.init(mockOptions);
-      
-      expect(resultsContainer.innerHTML).toBe('');
+      initWithData('   ');
+
+      expect(mockOptions.resultsContainer.innerHTML).toBe('');
     });
   });
 
@@ -196,7 +198,7 @@ describe('SimpleJekyllSearch', () => {
       input.value = 'test';
       input.dispatchEvent(new KeyboardEvent('input', { key: 't' }));
 
-      await new Promise(resolve => setTimeout(resolve, mockOptions.debounceTime! + 10));
+      await waitForDebounce();
       
       expect(onErrorSpy).not.toHaveBeenCalled();
     });
@@ -223,7 +225,7 @@ describe('SimpleJekyllSearch', () => {
       input.value = 'Valid';
       input.dispatchEvent(new KeyboardEvent('input', { key: 'V' }));
 
-      await new Promise(resolve => setTimeout(resolve, mockOptions.debounceTime! + 10));
+      await waitForDebounce();
       
       expect(onErrorSpy).toHaveBeenCalledWith(expect.any(Error));
       consoleErrorSpy.mockRestore();
@@ -253,10 +255,58 @@ describe('SimpleJekyllSearch', () => {
       input.value = 'a'.repeat(10000);
       input.dispatchEvent(new KeyboardEvent('input', { key: 'a' }));
 
-      await new Promise(resolve => setTimeout(resolve, mockOptions.debounceTime! + 10));
+      await waitForDebounce();
       
       expect(mockOptions.resultsContainer.innerHTML).toContain('No results found');
       expect(onErrorSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('relevance sorting', () => {
+    function initWithRelevance(searchData: SearchData[], template = '<li>{title}</li>') {
+      searchInstance.init({
+        ...mockOptions,
+        json: searchData,
+        searchResultTemplate: template,
+        sortMiddleware: RelevanceSort,
+      });
+    }
+
+    it('should return title matches before content-only matches', () => {
+      initWithRelevance([
+        { title: 'Getting Started', url: '/started', content: 'Learn about jekyll setup' },
+        { title: 'Jekyll Guide', url: '/jekyll', content: 'A complete guide' },
+        { title: 'Advanced Tips', url: '/tips', content: 'Some advanced jekyll tricks' },
+      ]);
+      searchInstance.search('jekyll');
+
+      const items = mockOptions.resultsContainer.querySelectorAll('li');
+      expect(items).toHaveLength(3);
+      expect(items[0].textContent).toBe('Jekyll Guide');
+    });
+
+    it('should return earlier position matches first among same-field matches', () => {
+      initWithRelevance([
+        { title: 'Why use Ruby', url: '/why-ruby' },
+        { title: 'Ruby on Rails', url: '/ruby-rails' },
+      ]);
+      searchInstance.search('ruby');
+
+      const items = mockOptions.resultsContainer.querySelectorAll('li');
+      expect(items).toHaveLength(2);
+      expect(items[0].textContent).toBe('Ruby on Rails');
+    });
+
+    it('should rank adjacent multi-word matches higher than spread-out ones', () => {
+      initWithRelevance([
+        { title: 'About computers', url: '/spread', content: 'this is a mac and here are some good tips for you' },
+        { title: 'About computers', url: '/adjacent', content: 'here are some mac tips for beginners' },
+      ], '<li><a href="{url}">{title}</a></li>');
+      searchInstance.search('mac tips');
+
+      const links = mockOptions.resultsContainer.querySelectorAll('a');
+      expect(links).toHaveLength(2);
+      expect(links[0].getAttribute('href')).toBe('/adjacent');
     });
   });
 
@@ -288,15 +338,14 @@ describe('SimpleJekyllSearch', () => {
       searchInstance.init(optionsWithTemplate);
       searchInstance.search('test');
 
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await waitForDebounce();
 
-      const resultsContainer = mockOptions.resultsContainer;
-      const link = resultsContainer.querySelector('a');
+      const link = mockOptions.resultsContainer.querySelector('a');
 
       expect(link).toBeTruthy();
       expect(link?.getAttribute('href')).toBe('/2014/11/02/test.html?query=test');
       expect(link?.innerHTML).toContain('<span class="search-highlight">test</span>');
-      expect(resultsContainer.innerHTML).not.toContain('href="/2014/11/02/<span');
+      expect(mockOptions.resultsContainer.innerHTML).not.toContain('href="/2014/11/02/<span');
     });
   });
 
@@ -363,145 +412,78 @@ describe('SimpleJekyllSearch', () => {
 
   describe('getStoredSearchState', () => {
     it('returns query string for valid stored state', () => {
-      const state = {
-        query: 'Test',
-        timestamp: Date.now(),
-        path: window.location.pathname
-      };
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      
-      mockOptions.json = mockSearchData;
-      const input = mockOptions.searchInput;
-      input.value = '';
-      searchInstance.init(mockOptions);
-      
-      expect(input.value).toBe('Test');
+      storeState();
+      initWithData();
+
+      expect(mockOptions.searchInput.value).toBe('Test');
     });
 
     it('returns null when no state is stored', () => {
-      mockOptions.json = mockSearchData;
-      const input = mockOptions.searchInput;
-      input.value = '';
-      searchInstance.init(mockOptions);
-      
-      expect(input.value).toBe('');
+      initWithData();
+
+      expect(mockOptions.searchInput.value).toBe('');
       expect(mockOptions.resultsContainer.innerHTML).toBe('');
     });
 
     it('returns null and clears for corrupted JSON', () => {
       sessionStorage.setItem(STORAGE_KEY, '{broken json');
-      
-      mockOptions.json = mockSearchData;
-      const input = mockOptions.searchInput;
-      input.value = '';
-      searchInstance.init(mockOptions);
-      
-      expect(input.value).toBe('');
+      initWithData();
+
+      expect(mockOptions.searchInput.value).toBe('');
       expect(sessionStorage.getItem(STORAGE_KEY)).toBeNull();
     });
 
     it('returns null and clears for missing query field', () => {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
-        timestamp: Date.now(),
-        path: window.location.pathname
-      }));
-      
-      mockOptions.json = mockSearchData;
-      const input = mockOptions.searchInput;
-      input.value = '';
-      searchInstance.init(mockOptions);
-      
-      expect(input.value).toBe('');
+      storeState({ query: undefined });
+      initWithData();
+
+      expect(mockOptions.searchInput.value).toBe('');
     });
 
     it('returns null and clears for non-string query field', () => {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
-        query: 123,
-        timestamp: Date.now(),
-        path: window.location.pathname
-      }));
-      
-      mockOptions.json = mockSearchData;
-      const input = mockOptions.searchInput;
-      input.value = '';
-      searchInstance.init(mockOptions);
-      
-      expect(input.value).toBe('');
+      storeState({ query: 123 });
+      initWithData();
+
+      expect(mockOptions.searchInput.value).toBe('');
     });
 
     it('returns null and clears for stale data (>30 min)', () => {
-      const state = {
-        query: 'Test',
-        timestamp: Date.now() - (31 * 60 * 1000), // 31 minutes ago
-        path: window.location.pathname
-      };
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      
-      mockOptions.json = mockSearchData;
-      const input = mockOptions.searchInput;
-      input.value = '';
-      searchInstance.init(mockOptions);
-      
-      expect(input.value).toBe('');
+      storeState({ timestamp: Date.now() - (31 * 60 * 1000) });
+      initWithData();
+
+      expect(mockOptions.searchInput.value).toBe('');
       expect(sessionStorage.getItem(STORAGE_KEY)).toBeNull();
     });
 
     it('returns query for data within 30 min threshold', () => {
-      const state = {
-        query: 'Test',
-        timestamp: Date.now() - (29 * 60 * 1000), // 29 minutes ago
-        path: window.location.pathname
-      };
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      
-      mockOptions.json = mockSearchData;
-      const input = mockOptions.searchInput;
-      input.value = '';
-      searchInstance.init(mockOptions);
-      
-      expect(input.value).toBe('Test');
+      storeState({ timestamp: Date.now() - (29 * 60 * 1000) });
+      initWithData();
+
+      expect(mockOptions.searchInput.value).toBe('Test');
     });
 
     it('returns null and clears for different page path', () => {
-      const state = {
-        query: 'Test',
-        timestamp: Date.now(),
-        path: '/different-page/'
-      };
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      
-      mockOptions.json = mockSearchData;
-      const input = mockOptions.searchInput;
-      input.value = '';
-      searchInstance.init(mockOptions);
-      
-      expect(input.value).toBe('');
+      storeState({ path: '/different-page/' });
+      initWithData();
+
+      expect(mockOptions.searchInput.value).toBe('');
       expect(sessionStorage.getItem(STORAGE_KEY)).toBeNull();
     });
 
     it('returns query when path matches current location', () => {
-      const state = {
-        query: 'Test',
-        timestamp: Date.now(),
-        path: window.location.pathname
-      };
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      
-      mockOptions.json = mockSearchData;
-      const input = mockOptions.searchInput;
-      input.value = '';
-      searchInstance.init(mockOptions);
-      
-      expect(input.value).toBe('Test');
+      storeState();
+      initWithData();
+
+      expect(mockOptions.searchInput.value).toBe('Test');
     });
 
     it('fails silently when sessionStorage is unavailable', () => {
       const originalGetItem = sessionStorage.getItem;
       sessionStorage.getItem = () => { throw new Error('Storage unavailable'); };
-      
+
       mockOptions.json = mockSearchData;
       expect(() => searchInstance.init(mockOptions)).not.toThrow();
-      
+
       sessionStorage.getItem = originalGetItem;
     });
   });
@@ -534,80 +516,39 @@ describe('SimpleJekyllSearch', () => {
 
   describe('restoreSearchState (with sessionStorage)', () => {
     it('does nothing when results already exist', () => {
-      const resultsContainer = mockOptions.resultsContainer;
-      resultsContainer.innerHTML = '<li>Existing Result</li>';
-      
-      const state = {
-        query: 'Test',
-        timestamp: Date.now(),
-        path: window.location.pathname
-      };
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      
-      mockOptions.json = mockSearchData;
-      const input = mockOptions.searchInput;
-      input.value = '';
-      searchInstance.init(mockOptions);
-      
-      expect(resultsContainer.innerHTML).toBe('<li>Existing Result</li>');
+      mockOptions.resultsContainer.innerHTML = '<li>Existing Result</li>';
+      storeState();
+      initWithData();
+
+      expect(mockOptions.resultsContainer.innerHTML).toBe('<li>Existing Result</li>');
     });
 
     it('uses browser-restored input value over storage', () => {
-      const state = {
-        query: 'StoredQuery',
-        timestamp: Date.now(),
-        path: window.location.pathname
-      };
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      
-      mockOptions.json = mockSearchData;
-      const input = mockOptions.searchInput;
-      input.value = 'Test'; // Browser restored this
-      searchInstance.init(mockOptions);
-      
+      storeState({ query: 'StoredQuery' });
+      initWithData('Test');
+
       expect(mockOptions.resultsContainer.innerHTML).toContain('Test Post');
     });
 
     it('falls back to storage when input is empty', () => {
-      const state = {
-        query: 'Test',
-        timestamp: Date.now(),
-        path: window.location.pathname
-      };
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      
-      mockOptions.json = mockSearchData;
-      const input = mockOptions.searchInput;
-      input.value = '';
-      searchInstance.init(mockOptions);
-      
-      expect(input.value).toBe('Test');
+      storeState();
+      initWithData();
+
+      expect(mockOptions.searchInput.value).toBe('Test');
       expect(mockOptions.resultsContainer.innerHTML).toContain('Test Post');
     });
 
     it('syncs input value when restoring from storage', () => {
-      const state = {
-        query: 'Test',
-        timestamp: Date.now(),
-        path: window.location.pathname
-      };
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      
-      mockOptions.json = mockSearchData;
-      const input = mockOptions.searchInput;
-      input.value = '';
-      searchInstance.init(mockOptions);
-      
-      expect(input.value).toBe('Test');
+      storeState();
+      initWithData();
+
+      expect(mockOptions.searchInput.value).toBe('Test');
     });
 
     it('does nothing when both input and storage are empty', () => {
-      mockOptions.json = mockSearchData;
-      const input = mockOptions.searchInput;
-      input.value = '';
-      searchInstance.init(mockOptions);
-      
-      expect(input.value).toBe('');
+      initWithData();
+
+      expect(mockOptions.searchInput.value).toBe('');
       expect(mockOptions.resultsContainer.innerHTML).toBe('');
     });
   });
@@ -663,7 +604,7 @@ describe('SimpleJekyllSearch', () => {
       
       instance.destroy();
       
-      await new Promise(resolve => setTimeout(resolve, mockOptions.debounceTime! + 10));
+      await waitForDebounce();
       
       expect(mockOptions.resultsContainer.innerHTML).toBe('');
     });
