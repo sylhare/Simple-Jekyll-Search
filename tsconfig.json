@@ -7,7 +7,6 @@
     "outDir": "./dest",
     "rootDir": "./src",
     "strict": true,
-    "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "bundler",
@@ -15,6 +14,7 @@
     "isolatedModules": true,
     "noEmit": false,
     "sourceMap": false,
+    "types": ["node"],
     "typeRoots": ["./node_modules/@types", "./src/types"]
   },
   "files": ["src/index.ts"],
