@@ -2,7 +2,7 @@ import SimpleJekyllSearchClass from './SimpleJekyllSearch';
 import { StrategyFactory } from './SearchStrategies/StrategyFactory';
 import { SearchOptions, SimpleJekyllSearchInstance } from './utils/types';
 import { createHighlightTemplateMiddleware } from './middleware/highlightMiddleware';
-import { RelevanceSort as _RelevanceSort } from './utils';
+import { RelevanceSort } from './utils';
 
 function SimpleJekyllSearch(options: SearchOptions): SimpleJekyllSearchInstance {
   const instance = new SimpleJekyllSearchClass((config) => StrategyFactory.create(config));
@@ -26,5 +26,5 @@ export { RelevanceSort } from './utils';
 if (typeof window !== 'undefined') {
   (window as any).SimpleJekyllSearch = SimpleJekyllSearch;
   (window as any).createHighlightTemplateMiddleware = createHighlightTemplateMiddleware;
-  (window as any).RelevanceSort = _RelevanceSort;
+  (window as any).RelevanceSort = RelevanceSort;
 }

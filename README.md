@@ -97,6 +97,7 @@ Here is a table for the available options, usage questions, troubleshooting & gu
 | `exclude`              | Array          | No       | Pass in a list of terms you want to exclude (terms will be matched against a regex, so URLs, words are allowed).                                                                   |
 | `success`              | Function       | No       | A function called once the data has been loaded.                                                                                                                                   |
 | `debounceTime`         | Number         | No       | Limit how many times the search function can be executed over the given time window. If no `debounceTime` (milliseconds) is provided a search will be triggered on each keystroke. |
+| `sortMiddleware`       | Function       | No       | Comparator used to sort results.                                                                                                                                                   |
 | `searchResultTemplate` | String         | No       | The template of a single rendered search result. (match liquid value eg: `'<li><a href="{{ site.url }}{url}">{title}</a></li>'`                                                    |
 
 ### Configurable strategies
@@ -162,16 +163,27 @@ SimpleJekyllSearch({
 
 ### sortMiddleware (Function) [optional]
 
-A function that will be used to sort the filtered results.
+A comparator function used to sort the filtered results.
 
-By setting custom values in the search.json file, you can group the results by section or any other property.
+**Built-in `RelevanceSort`** ranks results by "relevance" where best matches appear first based on
+match type (exact > fuzzy > wildcard), field (title matches rank higher), position (earlier matches rank higher), 
+and proximity (words closer together rank higher).
 
-Example:
+```js
+import SimpleJekyllSearch, { RelevanceSort } from 'simple-jekyll-search'
+
+SimpleJekyllSearch({
+  // ...other config
+  sortMiddleware: RelevanceSort,
+})
+```
+
+You can also provide a custom comparator to sort by section, date, or any other property:
 
 ```js
 SimpleJekyllSearch({
   // ...other config
-  sortMiddleware: function(a, b) {
+  sortMiddleware: function (a, b) {
     var astr = String(a.section) + "-" + String(a.caption);
     var bstr = String(b.section) + "-" + String(b.caption);
     return astr.localeCompare(bstr)
