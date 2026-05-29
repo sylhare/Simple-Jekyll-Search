@@ -11,4 +11,7 @@ cypress/screenshots/
 package-lock.json
 .jekyll-cache
 coverage/**
+dest/*
+!dest/simple-jekyll-search.js
+!dest/simple-jekyll-search.min.js
 .yarn
