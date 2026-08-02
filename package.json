@@ -48,11 +48,11 @@
     "@typescript-eslint/parser": "^8.64.0",
     "@vitest/coverage-v8": "^4.1.10",
     "cypress": "^15.18.1",
-    "eslint": "^10.7.0",
+    "eslint": "^10.8.0",
     "jsdom": "^30.0.1",
     "terser": "^5.49.0",
     "typescript": "^6.0.3",
-    "vite": "8.1.5",
+    "vite": "8.2.0",
     "vitest": "^4.1.10"
   },
   "resolutions": {
