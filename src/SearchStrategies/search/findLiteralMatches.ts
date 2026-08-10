@@ -10,7 +10,7 @@ import { MatchInfo } from '../types';
  * @returns Array of MatchInfo objects for each word found
  */
 export function findLiteralMatches(text: string, criteria: string): MatchInfo[] {
-  const lowerText = text.trim().toLowerCase();
+  const lowerText = text.toLowerCase();
   const pattern = criteria.endsWith(' ') 
     ? [criteria.toLowerCase()] 
     : criteria.trim().toLowerCase().split(' ');

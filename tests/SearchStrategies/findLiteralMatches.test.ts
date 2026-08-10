@@ -58,5 +58,13 @@ describe('findLiteralMatches', () => {
     expect(matches).toHaveLength(1);
     expect(matches[0].text).toBe('@world');
   });
+
+  it('returns correct positions when the text has leading whitespace', () => {
+    const matches = findLiteralMatches('  hello world', 'hello');
+    expect(matches).toHaveLength(1);
+    expect(matches[0].start).toBe(2);
+    expect(matches[0].end).toBe(7);
+    expect(matches[0].text).toBe('hello');
+  });
 });
 
