@@ -29,8 +29,10 @@ export class HybridSearchStrategy extends SearchStrategy {
       if (wildcardMatches.length > 0) return wildcardMatches;
     }
 
-    if (criteria.includes(' ') || criteria.length < this.config.minFuzzyLength) {
-      const literalMatches = findLiteralMatches(text, criteria);
+    const literalTried = criteria.includes(' ') || criteria.length < this.config.minFuzzyLength;
+    let literalMatches: MatchInfo[] = [];
+    if (literalTried) {
+      literalMatches = findLiteralMatches(text, criteria);
       if (literalMatches.length > 0) return literalMatches;
     }
 
@@ -42,7 +44,7 @@ export class HybridSearchStrategy extends SearchStrategy {
       }
     }
 
-    return findLiteralMatches(text, criteria);
+    return literalTried ? literalMatches : findLiteralMatches(text, criteria);
   }
 
   private applyFuzzyConstraints(matches: MatchInfo[], criteria: string): MatchInfo[] {

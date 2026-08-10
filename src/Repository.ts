@@ -1,5 +1,5 @@
 import { LiteralSearchStrategy } from './SearchStrategies/SearchStrategy';
-import { Matcher, StrategyConfig, StrategyResolver } from './SearchStrategies/types';
+import { Matcher, MatchInfo, StrategyConfig, StrategyResolver } from './SearchStrategies/types';
 import type { StrategyType } from './SearchStrategies/StrategyFactory';
 import { isObject } from './utils';
 import { DEFAULT_OPTIONS } from './utils/default';
@@ -86,24 +86,34 @@ export class Repository {
   }
 
   private findMatchesInObject(obj: RepositoryData, criteria: string): RepositoryData | undefined {
+    const strategy = this.options.searchStrategy;
+    const matchInfoMap: Record<string, MatchInfo[]> = {};
     let hasMatch = false;
-    const result = { ...obj };
-    result._matchInfo = {};
 
     for (const key in obj) {
-      if (!this.isExcluded(obj[key]) && this.options.searchStrategy.matches(obj[key], criteria)) {
-        hasMatch = true;
-        
-        if (this.options.searchStrategy.findMatches) {
-          const matchInfo = this.options.searchStrategy.findMatches(obj[key], criteria);
-          if (matchInfo && matchInfo.length > 0) {
-            result._matchInfo[key] = matchInfo;
-          }
-        }
+      if (this.isExcluded(obj[key])) {
+        continue;
       }
+
+      if (strategy.findMatches) {
+        const matchInfo = strategy.findMatches(obj[key], criteria);
+        if (matchInfo.length === 0) {
+          continue;
+        }
+        matchInfoMap[key] = matchInfo;
+      } else if (!strategy.matches(obj[key], criteria)) {
+        continue;
+      }
+      hasMatch = true;
     }
 
-    return hasMatch ? result : undefined;
+    if (!hasMatch) {
+      return undefined;
+    }
+
+    const result = { ...obj };
+    result._matchInfo = matchInfoMap;
+    return result;
   }
 
   private isExcluded(term: any): boolean {
@@ -115,19 +125,7 @@ export class Repository {
     return this.strategyResolver(strategy);
   }
 
-  private normalizeStrategyOption(strategy?: StrategyType | StrategyConfig): StrategyConfig {
-    if (!strategy) {
-      return this.getDefaultStrategyConfig();
-    }
-
+  private normalizeStrategyOption(strategy: StrategyType | StrategyConfig = DEFAULT_OPTIONS.strategy): StrategyConfig {
     return typeof strategy === 'string' ? { type: strategy } : strategy;
-  }
-
-  private getDefaultStrategyConfig(): StrategyConfig {
-    const defaultStrategy = DEFAULT_OPTIONS.strategy;
-    if (typeof defaultStrategy === 'string') {
-      return { type: defaultStrategy };
-    }
-    return defaultStrategy;
   }
 }
