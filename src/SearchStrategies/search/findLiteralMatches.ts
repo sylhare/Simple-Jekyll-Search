@@ -15,16 +15,14 @@ export function findLiteralMatches(text: string, criteria: string): MatchInfo[] 
     ? [criteria.toLowerCase()] 
     : criteria.trim().toLowerCase().split(' ');
 
-  const wordsFound = pattern.filter((word: string) => lowerText.indexOf(word) >= 0).length;
-  
-  if (wordsFound !== pattern.length) {
+  if (!pattern.every((word: string) => lowerText.includes(word))) {
     return [];
   }
 
   const matches: MatchInfo[] = [];
-  
+
   for (const word of pattern) {
-    if (!word || word.length === 0) continue;
+    if (word === '') continue;
     
     let startIndex = 0;
     while ((startIndex = lowerText.indexOf(word, startIndex)) !== -1) {
