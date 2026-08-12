@@ -1,4 +1,12 @@
 import { MatchInfo } from '../types';
+import { memoizeLast } from '../../utils';
+
+/** Memoizes the word-split/lowercase of the criteria, reused across every item in a search. */
+const normalizePattern = memoizeLast((criteria: string): string[] =>
+  criteria.endsWith(' ')
+    ? [criteria.toLowerCase()]
+    : criteria.trim().toLowerCase().split(' '),
+);
 
 /**
  * Finds all literal matches of a search criteria in the text.
@@ -11,9 +19,7 @@ import { MatchInfo } from '../types';
  */
 export function findLiteralMatches(text: string, criteria: string): MatchInfo[] {
   const lowerText = text.toLowerCase();
-  const pattern = criteria.endsWith(' ') 
-    ? [criteria.toLowerCase()] 
-    : criteria.trim().toLowerCase().split(' ');
+  const pattern = normalizePattern(criteria);
 
   if (!pattern.every((word: string) => lowerText.includes(word))) {
     return [];

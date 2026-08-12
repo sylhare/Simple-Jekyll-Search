@@ -8,7 +8,7 @@ describe('OptionsValidator', () => {
       required: requiredOptions
     });
 
-    expect(optionsValidator.getRequiredOptions()).toEqual(requiredOptions);
+    expect(optionsValidator.validate({})).toEqual(requiredOptions);
   });
 
   it('returns empty errors array for valid options', () => {

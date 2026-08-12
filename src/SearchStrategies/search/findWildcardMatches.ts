@@ -1,4 +1,18 @@
 import { MatchInfo, WildcardConfig } from '../types';
+import { memoizeLast } from '../../utils';
+
+/** Memoizes the compiled regex for the last (pattern, maxSpaces), reused across every item in a search. */
+const buildWildcardRegex = memoizeLast(
+  (pattern: string, config: WildcardConfig) =>
+    new RegExp(pattern.replace(/\*/g, buildWildcardFragment(config)), 'gi'),
+  (pattern, config) => `${pattern} ${config.maxSpaces ?? ''}`,
+);
+
+function getWildcardRegex(pattern: string, config: WildcardConfig): RegExp {
+  const regex = buildWildcardRegex(pattern, config);
+  regex.lastIndex = 0;
+  return regex;
+}
 
 /**
  * Finds matches using wildcard patterns (* matches any non-space characters).
@@ -11,10 +25,9 @@ import { MatchInfo, WildcardConfig } from '../types';
  * @returns Array of MatchInfo objects for each wildcard match
  */
 export function findWildcardMatches(text: string, pattern: string, config: WildcardConfig = {}): MatchInfo[] {
-  const regexPattern = pattern.replace(/\*/g, buildWildcardFragment(config));
-  const regex = new RegExp(regexPattern, 'gi');
+  const regex = getWildcardRegex(pattern, config);
   const matches: MatchInfo[] = [];
-  
+
   let match;
   while ((match = regex.exec(text)) !== null) {
     matches.push({
@@ -23,12 +36,12 @@ export function findWildcardMatches(text: string, pattern: string, config: Wildc
       text: match[0],
       type: 'wildcard'
     });
-    
+
     if (regex.lastIndex === match.index) {
       regex.lastIndex++;
     }
   }
-  
+
   return matches;
 }
 
@@ -56,4 +69,3 @@ function normalizeMaxSpaces(value: number | undefined): number {
 
   return Math.floor(value);
 }
-
