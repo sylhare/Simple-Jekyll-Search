@@ -1,14 +1,6 @@
 import { MatchInfo } from '../types';
 
-/**
- * UNUSED / NOT WIRED IN — kept for reference and benchmarking only.
- *
- * Not reachable from any strategy or the public entry, so it is tree-shaken out of
- * the bundle. Replaced by {@link findFuzzyMatches}: this edit-distance matcher
- * compares the query against the whole field (`similarity = 1 - distance / maxLen`),
- * so it only matches when the query length is close to the field length — unsuitable
- * for in-document search. Benchmarked in `tests/performance/strategy.bench.ts`.
- */
+/** Unused — not wired into any strategy (tree-shaken from the bundle). See `tests/performance/README.md`. */
 
 /**
  * Calculates the Levenshtein distance between two strings.
