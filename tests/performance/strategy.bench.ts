@@ -1,47 +1,65 @@
 /**
- * Throughput benchmark for every search strategy, scanning a synthetic corpus.
- * Run with `yarn test:benchmark`. See ./README.md for results and the history of
- * algorithms that were tried, kept, or removed (Levenshtein, regex-fuzzy, unified).
+ * Throughput benchmark for the search strategies, scanning a synthetic corpus.
+ * Run with `yarn test:benchmark`.
+ *
+ * Rows are the strategies as the factory actually builds them (what `strategy: 'x'`
+ * gives you), plus the tried-but-unused matchers so their cost is measured rather
+ * than described:
+ *   - wildcard (legacy): the previous wildcard engine, replaced by unified
+ *   - levenshtein:        removed edit-distance matcher (kept for reference)
+ *   - regex-fuzzy:        rejected lazy-`.*?` fuzzy matcher
+ * `'unified'` is not shown separately: the `'hybrid'` type resolves to the same
+ * default UnifiedSearchStrategy.
+ * See ./README.md for results and rationale.
  */
 import { bench, describe } from 'vitest';
-import { LiteralSearchStrategy, FuzzySearchStrategy, WildcardSearchStrategy } from '../../src/SearchStrategies/SearchStrategy';
-import { HybridSearchStrategy } from '../../src/SearchStrategies/HybridSearchStrategy';
-import { UnifiedSearchStrategy } from '../../src/SearchStrategies/UnifiedSearchStrategy';
-import { Matcher } from '../../src/SearchStrategies/types';
+import { StrategyFactory } from '../../src/SearchStrategies/StrategyFactory';
+import { WildcardSearchStrategy } from '../../src/SearchStrategies/SearchStrategy';
+import { SearchStrategy, Matcher } from '../../src/SearchStrategies/types';
+import { findLevenshteinMatches } from '../../src/SearchStrategies/search/findLevenshteinMatches';
+import { findRegexFuzzyMatches } from '../../src/SearchStrategies/search/findRegexFuzzyMatches';
 
-// Deterministic corpus so every strategy sees identical input every run.
-const WORDS = (
+// Themed words keep the scenario queries hitting some documents; the filler tokens
+// widen the vocabulary so a query word only appears in a realistic fraction of docs
+// (a common word here lands in ~6-7% of bodies, not ~50% as with a tiny vocabulary).
+const THEMED = (
   'the quick brown fox jumps over a lazy dog client side search library javascript ' +
   'jekyll static site content article technical functionality command regex special ' +
   'characters testing performance benchmark hybrid unified strategy matcher fuzzy exact ' +
   'wildcard token document title body index relevance sort highlight middleware repository'
 ).split(' ');
+const FILLER = Array.from({ length: 500 }, (_, i) => `term${String(i).padStart(4, '0')}`);
+const VOCAB = [...THEMED, ...FILLER];
 
+// Deterministic PRNG so every strategy sees identical input every run.
 function lcg(seed: number): () => number {
   let s = seed >>> 0;
   return () => (s = (s * 1664525 + 1013904223) >>> 0) / 0xffffffff;
 }
 
-function makeCorpus(docs: number, wordsPerBody: number): Array<{ title: string; body: string }> {
+function makeCorpus(docs: number): Array<{ title: string; body: string }> {
   const rand = lcg(42);
-  const pick = () => WORDS[Math.floor(rand() * WORDS.length)];
+  const pick = () => VOCAB[Math.floor(rand() * VOCAB.length)];
   const corpus: Array<{ title: string; body: string }> = [];
   for (let i = 0; i < docs; i++) {
     const title = `${pick()} ${pick()} ${pick()}`;
-    const body = Array.from({ length: wordsPerBody }, pick).join(' ') + '.';
+    const bodyLength = 20 + Math.floor(rand() * 60); // 20-79 words, varied per document
+    const body = Array.from({ length: bodyLength }, pick).join(' ') + '.';
     corpus.push({ title, body });
   }
   return corpus;
 }
 
-const CORPUS = makeCorpus(2000, 40);
+const CORPUS = makeCorpus(2000);
 
 const STRATEGIES: Array<{ name: string; matcher: Matcher }> = [
-  { name: 'literal', matcher: LiteralSearchStrategy },
-  { name: 'fuzzy', matcher: FuzzySearchStrategy },
-  { name: 'wildcard', matcher: new WildcardSearchStrategy() },
-  { name: 'hybrid', matcher: new HybridSearchStrategy() },
-  { name: 'unified', matcher: new UnifiedSearchStrategy() },
+  { name: 'literal', matcher: StrategyFactory.create({ type: 'literal' }) },
+  { name: 'fuzzy', matcher: StrategyFactory.create({ type: 'fuzzy' }) },
+  { name: 'wildcard', matcher: StrategyFactory.create({ type: 'wildcard' }) },   // unified, fuzzy disabled
+  { name: 'hybrid', matcher: StrategyFactory.create({ type: 'hybrid' }) },       // unified, default (== 'unified' type)
+  { name: 'wildcard (legacy)', matcher: new WildcardSearchStrategy() },          // previous wildcard engine; baseline
+  { name: 'levenshtein', matcher: new SearchStrategy(findLevenshteinMatches) },  // removed from strategies; reference
+  { name: 'regex-fuzzy', matcher: new SearchStrategy(findRegexFuzzyMatches) },   // rejected alternative to findFuzzyMatches
 ];
 
 // One "scan" = what Repository.findMatches does across a whole dataset for a query:
