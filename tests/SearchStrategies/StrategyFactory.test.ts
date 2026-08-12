@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { StrategyFactory } from '../../src/SearchStrategies/StrategyFactory';
 import { LiteralSearchStrategy, FuzzySearchStrategy, WildcardSearchStrategy } from '../../src/SearchStrategies/SearchStrategy';
 import { HybridSearchStrategy } from '../../src/SearchStrategies/HybridSearchStrategy';
+import { UnifiedSearchStrategy } from '../../src/SearchStrategies/UnifiedSearchStrategy';
 
 describe('StrategyFactory', () => {
   describe('create', () => {
@@ -33,6 +34,13 @@ describe('StrategyFactory', () => {
     it('should create hybrid strategy', () => {
       const strategy = StrategyFactory.create({ type: 'hybrid' });
       expect(strategy).toBeInstanceOf(HybridSearchStrategy);
+    });
+
+    it('should create unified strategy', () => {
+      const strategy = StrategyFactory.create({ type: 'unified' });
+      expect(strategy).toBeInstanceOf(UnifiedSearchStrategy);
+      expect(strategy.matches('hello world', 'hello')).toBe(true);
+      expect(strategy.matches('hello world', 'hel*')).toBe(true);
     });
 
     it('should pass hybrid config', () => {
@@ -68,7 +76,8 @@ describe('StrategyFactory', () => {
       expect(strategies).toContain('fuzzy');
       expect(strategies).toContain('wildcard');
       expect(strategies).toContain('hybrid');
-      expect(strategies).toHaveLength(4);
+      expect(strategies).toContain('unified');
+      expect(strategies).toHaveLength(5);
     });
   });
 
@@ -78,6 +87,7 @@ describe('StrategyFactory', () => {
       expect(StrategyFactory.isValidStrategy('fuzzy')).toBe(true);
       expect(StrategyFactory.isValidStrategy('wildcard')).toBe(true);
       expect(StrategyFactory.isValidStrategy('hybrid')).toBe(true);
+      expect(StrategyFactory.isValidStrategy('unified')).toBe(true);
     });
 
     it('should return false for invalid strategies', () => {
