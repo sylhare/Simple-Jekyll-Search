@@ -17,6 +17,12 @@ export const FuzzySearchStrategy = new SearchStrategy(
   }
 );
 
+/**
+ * UNUSED at runtime — the `'wildcard'` strategy is now served by
+ * {@link UnifiedSearchStrategy} via {@link StrategyFactory}, so this class is not
+ * reachable from the public entry and is tree-shaken out of the bundle. Kept as the
+ * previous wildcard-engine baseline in `tests/performance/strategy.bench.ts`.
+ */
 export class WildcardSearchStrategy extends SearchStrategy {
   constructor(config: WildcardConfig = {}) {
     const normalizedConfig = { ...config };
