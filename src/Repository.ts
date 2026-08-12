@@ -40,7 +40,7 @@ export class Repository {
   }
 
   public setOptions(newOptions: RepositoryOptions): void {
-    let strategyConfig = this.normalizeStrategyOption(newOptions?.strategy ?? DEFAULT_OPTIONS.strategy);
+    let strategyConfig = this.normalizeStrategyOption(newOptions?.strategy);
     
     if (newOptions?.fuzzy && !newOptions?.strategy) {
       console.warn('[Simple Jekyll Search] Warning: fuzzy option is deprecated. Use strategy: "fuzzy" instead.');
@@ -88,26 +88,19 @@ export class Repository {
   private findMatchesInObject(obj: RepositoryData, criteria: string): RepositoryData | undefined {
     const strategy = this.options.searchStrategy;
     const matchInfoMap: Record<string, MatchInfo[]> = {};
-    let hasMatch = false;
 
     for (const key in obj) {
       if (this.isExcluded(obj[key])) {
         continue;
       }
 
-      if (strategy.findMatches) {
-        const matchInfo = strategy.findMatches(obj[key], criteria);
-        if (matchInfo.length === 0) {
-          continue;
-        }
+      const matchInfo = strategy.findMatches(obj[key], criteria);
+      if (matchInfo.length > 0) {
         matchInfoMap[key] = matchInfo;
-      } else if (!strategy.matches(obj[key], criteria)) {
-        continue;
       }
-      hasMatch = true;
     }
 
-    if (!hasMatch) {
+    if (Object.keys(matchInfoMap).length === 0) {
       return undefined;
     }
 
