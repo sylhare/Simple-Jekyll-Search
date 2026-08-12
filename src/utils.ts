@@ -18,21 +18,21 @@ export function isObject(obj: any): obj is RepositoryData {
   return Boolean(obj) && Object.prototype.toString.call(obj) === '[object Object]';
 }
 
-export function clone<T>(input: T): T {
-  if (input === null || typeof input !== 'object') {
-    return input;
-  }
-
-  if (Array.isArray(input)) {
-    return input.map(item => clone(item)) as unknown as T;
-  }
-
-  const output: Record<string, any> = {};
-  for (const key in input) {
-    if (Object.prototype.hasOwnProperty.call(input, key)) {
-      output[key] = clone((input as Record<string, any>)[key]);
+/** Memoizes the last result of `compute`, recomputing only when the key (the first argument, or `keyOf`) changes. */
+export function memoizeLast<A extends any[], V>(
+  compute: (...args: A) => V,
+  keyOf: (...args: A) => string = (...args) => String(args[0]),
+): (...args: A) => V {
+  let cachedKey: string | undefined;
+  let cachedValue: V;
+  let hasValue = false;
+  return (...args: A): V => {
+    const key = keyOf(...args);
+    if (!hasValue || key !== cachedKey) {
+      cachedKey = key;
+      cachedValue = compute(...args);
+      hasValue = true;
     }
-  }
-
-  return output as T;
+    return cachedValue;
+  };
 }
