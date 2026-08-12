@@ -18,7 +18,7 @@
     "copy-example-code": "cp dest/simple-jekyll-search.min.js docs/assets/js/",
     "test": "yarn run pretest && vitest run --coverage",
     "test:unit": "vitest run --exclude '**/performance/**' --coverage",
-    "test:benchmark": "NODE_OPTIONS='--max-old-space-size=4096' vitest run tests/performance/",
+    "test:benchmark": "NODE_OPTIONS='--max-old-space-size=4096' vitest bench --run tests/performance/",
     "test:watch": "vitest",
     "test:e2e": "yarn run cypress:run",
     "start": "cd docs; jekyll serve",
