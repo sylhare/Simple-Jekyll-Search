@@ -50,7 +50,19 @@ export function scoreResult(result: RepositoryData): number {
   return score;
 }
 
+const scoreCache = new WeakMap<RepositoryData, number>();
+
+/** Scores each result once per sort by reference identity (decorate-sort), instead of on every pairwise comparison. */
+function cachedScore(result: RepositoryData): number {
+  let score = scoreCache.get(result);
+  if (score === undefined) {
+    score = scoreResult(result);
+    scoreCache.set(result, score);
+  }
+  return score;
+}
+
 /** Sort comparator that ranks higher-relevance search results first. */
 export function RelevanceSort(a: RepositoryData, b: RepositoryData): number {
-  return scoreResult(b) - scoreResult(a);
+  return cachedScore(b) - cachedScore(a);
 }

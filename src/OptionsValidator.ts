@@ -17,10 +17,6 @@ export class OptionsValidator {
     this.requiredOptions = params.required;
   }
 
-  public getRequiredOptions(): string[] {
-    return this.requiredOptions;
-  }
-
   public validate(parameters: ValidatorOptions): string[] {
     const errors: string[] = [];
     this.requiredOptions.forEach((requiredOptionName: string) => {
