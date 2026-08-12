@@ -1,72 +1,84 @@
 # Search strategy benchmarks
 
 Throughput benchmarks for the search strategies, plus a record of which matching
-algorithms were tried, kept, or removed — and why.
+algorithms are used, kept for reference, or rejected — with measured numbers.
 
 ```bash
 yarn test:benchmark
 ```
 
-`strategy.bench.ts` builds a deterministic synthetic corpus (2000 documents, each a
-3-word title and a 40-word body) and, for a set of representative queries, measures
-one full "scan" per strategy — i.e. calling `findMatches` on every field of every
-document, which is what `Repository` does for a single search. Numbers are relative
-(vitest/tinybench `hz`), single machine, and meant for comparison between strategies,
-not as absolute figures.
+## Method
 
-## How to read the numbers
+`strategy.bench.ts` builds a deterministic synthetic corpus: 2000 documents, each a
+3-word title and a 20–79 word body, with words drawn from a ~580-word vocabulary
+(themed words so the scenario queries hit some documents, plus filler tokens so a
+common word lands in only ~6–7% of documents — closer to a real corpus than a tiny
+vocabulary where every query matches half the set). One "scan" calls `findMatches`
+on every field of every document, which is what `Repository` does for a single
+search. Numbers are relative `hz` (higher is faster), single machine.
 
-`literal`, `fuzzy`, and `wildcard` are **single-purpose** strategies. They often appear
-"fastest" on a query they don't actually support — e.g. `literal` on `java*` treats
-`*` as a literal character, finds nothing, and returns immediately. Speed from doing
-less (or returning wrong results) is not a win. The comparisons that matter:
+Rows are the strategies as `StrategyFactory` builds them (what `strategy: 'x'` gives
+you). `'hybrid'` and `'unified'` resolve to the same default `UnifiedSearchStrategy`,
+shown once as `hybrid`. Three extra rows are matchers that are **not** wired into any
+strategy (they tree-shake out of the bundle) but are benchmarked here so their cost is
+measured, not asserted:
 
-- **`unified` vs `hybrid`** — both are feature-complete (exact + fuzzy + wildcard with
-  fallbacks). This is the drop-in comparison.
-- **`unified` vs `wildcard`** — on wildcard queries, against the dedicated strategy.
+- **wildcard (legacy)** — the previous standalone wildcard engine, replaced by unified
+- **levenshtein** — a removed edit-distance matcher (`findLevenshteinMatches`)
+- **regex-fuzzy** — a rejected lazy-`.*?` fuzzy matcher (`findRegexFuzzyMatches`)
 
-### Results (unified relative to the meaningful baseline)
+## Results (hz, higher is faster)
 
-| Scenario | Query | unified vs hybrid | notes |
-|---|---|---|---|
-| exact single word | `search` | **1.79× faster** | |
-| multi-word | `technical content` | **5.11× faster** | fastest strategy overall — beats even `literal` (1.99×) |
-| short query | `re` | **1.16× faster** | |
-| wildcard | `java*` | **3.76× faster** | also **1.41× faster than the dedicated `wildcard` strategy** |
-| wildcard span | `wild*rd` | **3.10× faster** | also **1.15× faster than `wildcard`** |
-| no match | `zzzzzz` | **1.08× faster** | |
-| fuzzy typo | `serch` | ~1.0× (tie) | identical algorithm (`findFuzzyMatches`) |
-| fuzzy typo, long | `functionalty` | ~1.0× (tie) | identical algorithm |
+| scenario | literal | fuzzy | wildcard | hybrid | wildcard (legacy) | levenshtein | regex-fuzzy |
+|---|--:|--:|--:|--:|--:|--:|--:|
+| exact single word (`search`) | 5085 | 470 | 4990 | 458 | 2414 | 38 | 33 |
+| multi-word (`technical content`) | 1571 | 367 | 3520 | 3630 | 1005 | 14 | **0.97** |
+| short query (`re`) | 972 | 2471 | 2250 | 2320 | 969 | 99 | 944 |
+| fuzzy typo (`serch`) | 4754 | 480 | 3674 | 440 | 2129 | 44 | 19 |
+| fuzzy typo, long (`functionalty`) | 4796 | 462 | 4031 | 441 | 1818 | 20 | 213 |
+| wildcard (`java*`) | 5005 | 445 | 4705 | 4576 | 2553 | 46 | 425 |
+| wildcard span (`wild*rd`) | 4980 | 439 | 4319 | 4324 | 2515 | 33 | 326 |
+| no match (`zzzzzz`) | 5028 | 446 | 5679 | 449 | 2805 | 39 | 417 |
 
-`unified` is **faster or tied on every scenario**, with large wins on exact,
-multi-word, and wildcard matching. This is why the `'wildcard'` strategy is now backed
-by `UnifiedSearchStrategy` (same behaviour, configured with fuzzy disabled and
-`maxSpaces` defaulting to 0), and why `'unified'` is offered as a general-purpose
-strategy.
+### How to read it
+
+`literal` and `fuzzy` are single-purpose: `literal` is fast because it only does
+substring matching (and returns nothing for wildcard/typo queries); `fuzzy` always
+pays for a subsequence scan. Compare like-for-like.
+
+- **wildcard (unified, fuzzy off) is ~2× the legacy wildcard engine** across the board
+  (e.g. 4990 vs 2414, 5679 vs 2805) and runs near `literal` speed — it has no fuzzy
+  fallback. This is why `'wildcard'` is now backed by unified.
+- **hybrid/unified wins on multi-word (~2.3× `literal`) and wildcard (~1.8× the legacy
+  engine)** — the AND short-circuit and the compiled regex beat `literal`'s
+  whole-field lowercase + per-word `indexOf`, and beat the old wildcard engine.
+- **On single-word queries that mostly miss, hybrid is fuzzy-bound (~450 hz, same as
+  `fuzzy`)** — it runs the linear `findFuzzyMatches` on every non-matching document.
+  That is the unavoidable cost of typo tolerance, not a regression: `literal` and the
+  fuzzy-off `wildcard` strategy are faster precisely because they do no fuzzy work.
 
 ## Algorithms tried
 
+### Rejected: regex-fuzzy (`findRegexFuzzyMatches`)
+
+Matches a fuzzy token by joining the query characters with a lazy `.*?` and running
+one regex. The `regex-fuzzy` row shows why it is not used: **0.97 hz on the multi-word
+scenario** (≈1 second per scan) and 19–213 hz on typo queries. The lazy quantifier
+chain backtracks catastrophically on non-matching text — a ReDoS-class cliff. Fuzzy
+matching uses the linear, single-pass `findFuzzyMatches` instead (the `fuzzy`/`hybrid`
+rows), and regex is used only for the exact and wildcard paths.
+
 ### Removed: Levenshtein (`findLevenshteinMatches`)
 
-An edit-distance matcher (`similarity = 1 - distance / max(len)`, threshold 0.3). It was
-never wired into any strategy, and as written it compared the query against the **whole
-field**, so for any realistic document `distance ≈ field length` and it effectively only
-matched when the query length was close to the field length — useless as an in-document
-search matcher. Removed (see commit "Remove unused strategy"); `findFuzzyMatches`
-(subsequence) is the right tool for in-document typo tolerance.
-
-### Rejected: regex fuzzy (lazy `.*?` subsequence)
-
-The first `UnifiedSearchStrategy` prototype matched fuzzy tokens with a single regex
-built by joining the query characters with lazy `.*?`. It benchmarked **~78–80× slower**
-than `hybrid` on a long typo query against non-matching text (≈154 ms per scan) — the
-lazy quantifier chain backtracks catastrophically, a ReDoS-class cliff unacceptable for a
-search library. Fuzzy matching therefore uses the linear, single-pass `findFuzzyMatches`
-instead; regex is used only for the exact and wildcard paths, where it is a clear win.
+An edit-distance matcher, kept for reference. The `levenshtein` row is 14–99 hz
+(50–260× slower than `literal`): it runs an O(n·m) distance matrix per field. It also
+compares the query against the **whole field**, so it only matches when the query
+length is close to the field length — unsuitable for in-document search. Replaced by
+`findFuzzyMatches`.
 
 ### Adopted: unified
 
-Regex for exact and wildcard matching (native, compiled once per query and memoized),
-the linear `findFuzzyMatches` for fuzzy, and one inline extra-character budget check
-in place of the hybrid cascade + `applyFuzzyConstraints`. It also escapes regex
+Regex for exact and wildcard matching (compiled once per query, memoized), the linear
+`findFuzzyMatches` for fuzzy, and one inline extra-character budget check. It backs
+both `'hybrid'` (fuzzy on) and `'wildcard'` (fuzzy off), and escapes regex
 metacharacters in the query, closing an injection/ReDoS hole in the raw wildcard path.
