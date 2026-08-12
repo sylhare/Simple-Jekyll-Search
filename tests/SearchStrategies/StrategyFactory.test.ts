@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { StrategyFactory } from '../../src/SearchStrategies/StrategyFactory';
-import { LiteralSearchStrategy, FuzzySearchStrategy, WildcardSearchStrategy } from '../../src/SearchStrategies/SearchStrategy';
+import { LiteralSearchStrategy, FuzzySearchStrategy } from '../../src/SearchStrategies/SearchStrategy';
 import { HybridSearchStrategy } from '../../src/SearchStrategies/HybridSearchStrategy';
 import { UnifiedSearchStrategy } from '../../src/SearchStrategies/UnifiedSearchStrategy';
 
@@ -16,9 +16,9 @@ describe('StrategyFactory', () => {
       expect(strategy).toBe(FuzzySearchStrategy);
     });
 
-    it('should create wildcard strategy', () => {
+    it('should create wildcard strategy backed by the unified strategy', () => {
       const strategy = StrategyFactory.create({ type: 'wildcard' });
-      expect(strategy).toBeInstanceOf(WildcardSearchStrategy);
+      expect(strategy).toBeInstanceOf(UnifiedSearchStrategy);
       expect(strategy.matches('hello world', 'hel*')).toBe(true);
     });
 
@@ -28,7 +28,8 @@ describe('StrategyFactory', () => {
         options: { maxSpaces: 1 }
       });
       expect(strategy.matches('hello world', 'hel*rld')).toBe(true);
-      expect(new WildcardSearchStrategy().matches('hello world', 'hel*rld')).toBe(false);
+      // Default (maxSpaces 0) stops at spaces, so the same pattern must not match.
+      expect(StrategyFactory.create({ type: 'wildcard' }).matches('hello world', 'hel*rld')).toBe(false);
     });
 
     it('should create hybrid strategy', () => {

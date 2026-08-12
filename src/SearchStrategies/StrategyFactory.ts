@@ -1,5 +1,5 @@
 import { SearchStrategy, StrategyConfig } from './types';
-import { LiteralSearchStrategy, FuzzySearchStrategy, WildcardSearchStrategy } from './SearchStrategy';
+import { LiteralSearchStrategy, FuzzySearchStrategy } from './SearchStrategy';
 import { HybridSearchStrategy } from './HybridSearchStrategy';
 import { UnifiedSearchStrategy } from './UnifiedSearchStrategy';
 
@@ -18,7 +18,10 @@ export class StrategyFactory {
         return FuzzySearchStrategy;
       
       case 'wildcard':
-        return new WildcardSearchStrategy(options);
+        // Backed by the faster UnifiedSearchStrategy. Preserve the dedicated
+        // wildcard behaviour: wildcard + literal only (fuzzy off), stopping at
+        // spaces by default (maxSpaces 0), while still honouring an explicit maxSpaces.
+        return new UnifiedSearchStrategy({ maxSpaces: 0, ...options, preferFuzzy: false, minFuzzyLength: Number.POSITIVE_INFINITY });
       
       case 'hybrid':
         return new HybridSearchStrategy(options);
