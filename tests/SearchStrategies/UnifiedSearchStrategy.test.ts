@@ -1,206 +1,214 @@
 import { describe, expect, it } from 'vitest';
 import { UnifiedSearchStrategy } from '../../src/SearchStrategies/UnifiedSearchStrategy';
 import { HybridSearchStrategy } from '../../src/SearchStrategies/HybridSearchStrategy';
+import { StrategyFactory } from '../../src/SearchStrategies/StrategyFactory';
+import { findWildcardMatches } from '../../src/SearchStrategies/search/findWildcardMatches';
+import type { StrategyOptions } from '../../src/SearchStrategies/types';
 
-/**
- * Part 1 mirrors the HybridSearchStrategy suite's behavioural assertions.
- * Part 2 is a direct parity sweep: for a corpus of (text, query) pairs it asserts
- * UnifiedSearchStrategy's matches() boolean agrees with the hybrid strategy's.
- */
-describe('UnifiedSearchStrategy', () => {
+const implementations = [
+  { name: 'UnifiedSearchStrategy', make: (config?: StrategyOptions) => new UnifiedSearchStrategy(config) },
+  { name: 'HybridSearchStrategy', make: (config?: StrategyOptions) => new HybridSearchStrategy(config) },
+];
+
+describe.each(implementations)('$name shared behaviour', ({ make }) => {
+  const longText = 'This is an article with more technical content to test the search functionality. A command with some regex and special characters.';
+
   describe('wildcard', () => {
-    const strategy = new UnifiedSearchStrategy();
-
     it('matches across one space by default (maxSpaces: 1)', () => {
-      const matches = strategy.findMatches('hello world', 'hel*');
+      const matches = make().findMatches('hello world', 'hel*');
       expect(matches).toHaveLength(1);
       expect(matches[0].type).toBe('wildcard');
       expect(matches[0].text).toBe('hello world');
     });
 
-    it('stops at the word boundary with maxSpaces: 0', () => {
-      const noSpaces = new UnifiedSearchStrategy({ maxSpaces: 0 });
-      const matches = noSpaces.findMatches('hello world', 'hel*');
+    it('spans to the next word from a mid-text match', () => {
+      const matches = make().findMatches('hello amazing world', 'amaz*');
       expect(matches).toHaveLength(1);
+      expect(matches[0].type).toBe('wildcard');
+      expect(matches[0].text).toBe('amazing world');
+    });
+
+    it('stops at the word boundary with maxSpaces: 0', () => {
+      const matches = make({ maxSpaces: 0 }).findMatches('hello world', 'hel*');
+      expect(matches).toHaveLength(1);
+      expect(matches[0].type).toBe('wildcard');
       expect(matches[0].text).toBe('hello');
     });
 
     it('spans a mid-pattern wildcard within the space budget', () => {
-      expect(strategy.matches('hello world', 'hel*rld')).toBe(true);
-      expect(new UnifiedSearchStrategy({ maxSpaces: 0 }).matches('hello world', 'hel*rld')).toBe(false);
-
-      const twoSpaces = new UnifiedSearchStrategy({ maxSpaces: 2 });
-      expect(twoSpaces.matches('hello brave world', 'hel*rld')).toBe(true);
-      expect(twoSpaces.matches('hello brave new world', 'hel*rld')).toBe(false);
-      expect(new UnifiedSearchStrategy({ maxSpaces: 3 }).matches('hello brave new world', 'hel*rld')).toBe(true);
+      expect(make().matches('hello world', 'hel*rld')).toBe(true);
+      expect(make({ maxSpaces: 0 }).matches('hello world', 'hel*rld')).toBe(false);
+      expect(make({ maxSpaces: 2 }).matches('hello brave world', 'hel*rld')).toBe(true);
+      expect(make({ maxSpaces: 2 }).matches('hello brave new world', 'hel*rld')).toBe(false);
+      expect(make({ maxSpaces: 3 }).matches('hello brave new world', 'hel*rld')).toBe(true);
     });
 
     it('returns nothing when the wildcard pattern is absent', () => {
-      expect(strategy.findMatches('hello world', 'xyz*abc')).toEqual([]);
+      expect(make().findMatches('hello world', 'xyz*abc')).toEqual([]);
     });
   });
 
   describe('multi-word (exact per token, AND)', () => {
-    const strategy = new UnifiedSearchStrategy();
-
     it('matches when every word is present', () => {
-      const matches = strategy.findMatches('hello amazing world', 'hello world');
+      const matches = make().findMatches('hello amazing world', 'hello world');
       expect(matches.length).toBeGreaterThan(0);
       expect(matches[0].type).toBe('exact');
     });
 
     it('finds all words', () => {
-      expect(strategy.findMatches('test this amazing test', 'test amazing').length).toBeGreaterThan(0);
+      expect(make().findMatches('test this amazing test', 'test amazing').length).toBeGreaterThan(0);
     });
 
     it('fails when any word is missing', () => {
-      expect(strategy.findMatches('hello world', 'hello missing')).toEqual([]);
+      expect(make().findMatches('hello world', 'hello missing')).toEqual([]);
     });
   });
 
   describe('fuzzy single word', () => {
-    const strategy = new UnifiedSearchStrategy();
-
     it('tolerates a dropped character for words >= minFuzzyLength', () => {
-      const matches = strategy.findMatches('testing', 'tsting');
+      const matches = make().findMatches('testing', 'tsting');
       expect(matches.length).toBeGreaterThan(0);
       expect(matches[0].type).toBe('fuzzy');
     });
 
     it('tolerates a dropped character in a short-ish long word', () => {
-      const matches = strategy.findMatches('hello', 'hllo');
+      const matches = make().findMatches('hello', 'hllo');
       expect(matches.length).toBeGreaterThan(0);
       expect(matches[0].type).toBe('fuzzy');
     });
   });
 
   describe('fuzzy span budget', () => {
-    const longText = 'This is an article with more technical content to test the search functionality. A command with some regex and special characters.';
-
     it('rejects fuzzy matches that span too many extra characters by default', () => {
-      expect(new UnifiedSearchStrategy().findMatches(longText, 'high')).toEqual([]);
+      expect(make().findMatches(longText, 'high')).toEqual([]);
     });
 
     it('allows wider spans when configured', () => {
-      const permissive = new UnifiedSearchStrategy({ maxExtraFuzzyChars: Infinity });
-      const matches = permissive.findMatches(longText, 'high');
+      const matches = make({ maxExtraFuzzyChars: Infinity }).findMatches(longText, 'high');
       expect(matches.length).toBeGreaterThan(0);
       expect(matches[0].type).toBe('fuzzy');
     });
 
     it('honours an explicit extra-char budget', () => {
-      const strict = new UnifiedSearchStrategy({ maxExtraFuzzyChars: 0, minFuzzyLength: 1 });
-      expect(strict.findMatches('hello world', 'hw')).toEqual([]);
-
-      const lenient = new UnifiedSearchStrategy({ maxExtraFuzzyChars: 10, minFuzzyLength: 1 });
-      const matches = lenient.findMatches('hello world', 'hw');
+      expect(make({ maxExtraFuzzyChars: 0, minFuzzyLength: 1 }).findMatches('hello world', 'hw')).toEqual([]);
+      const matches = make({ maxExtraFuzzyChars: 10, minFuzzyLength: 1 }).findMatches('hello world', 'hw');
       expect(matches.length).toBeGreaterThan(0);
       expect(matches[0].type).toBe('fuzzy');
     });
   });
 
   describe('short queries stay exact', () => {
-    const strategy = new UnifiedSearchStrategy();
-
     it('uses exact matching below minFuzzyLength', () => {
-      const matches = strategy.findMatches('hello', 'he');
+      const matches = make().findMatches('hello', 'he');
       expect(matches.length).toBeGreaterThan(0);
       expect(matches[0].type).toBe('exact');
     });
 
     it('matches a 2-character query', () => {
-      expect(strategy.findMatches('ab cd ef', 'ab').length).toBeGreaterThan(0);
+      expect(make().findMatches('ab cd ef', 'ab').length).toBeGreaterThan(0);
     });
   });
 
   describe('configuration', () => {
-    it('respects minFuzzyLength', () => {
-      expect(new UnifiedSearchStrategy({ minFuzzyLength: 5 }).findMatches('test', 'test').length).toBeGreaterThan(0);
+    it('respects minFuzzyLength when the query is long enough', () => {
+      expect(make({ minFuzzyLength: 5 }).findMatches('test', 'test').length).toBeGreaterThan(0);
+    });
+
+    it('disables fuzzy for queries below minFuzzyLength', () => {
+      expect(make({ minFuzzyLength: 10 }).findMatches('javascript', 'jvscrpt')).toEqual([]);
     });
 
     it('respects preferFuzzy', () => {
-      const fuzzyPreferred = new UnifiedSearchStrategy({ preferFuzzy: true });
-      const matches = fuzzyPreferred.findMatches('testing', 'tsting');
+      const matches = make({ preferFuzzy: true }).findMatches('testing', 'tsting');
       expect(matches.length).toBeGreaterThan(0);
       expect(matches[0].type).toBe('fuzzy');
     });
 
     it('respects wildcardPriority = false', () => {
-      const noWildcardPriority = new UnifiedSearchStrategy({ wildcardPriority: false });
-      expect(noWildcardPriority.findMatches('hello world', 'hello').length).toBeGreaterThan(0);
+      expect(make({ wildcardPriority: false }).findMatches('hello world', 'hello').length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('intentional divergences from the original hybrid cascade', () => {
+    it('never falls back to whole-query fuzzy for multi-word queries', () => {
+      expect(make().findMatches('a b c d', 'ab cd')).toEqual([]);
+      expect(make().matches('a b c d', 'ab cd')).toBe(false);
+    });
+
+    it('returns one exact span per occurrence when the query is an exact substring', () => {
+      const matches = make().findMatches('test testing', 'test');
+      expect(matches).toHaveLength(2);
+      expect(matches.every(match => match.type === 'exact')).toBe(true);
+      expect(matches.map(match => match.text)).toEqual(['test', 'test']);
+    });
+  });
+
+  describe('fallback chain', () => {
+    it('falls back to a literal match when the wildcard path is not taken', () => {
+      expect(make().findMatches('hello world', 'world').length).toBeGreaterThan(0);
+    });
+
+    it('returns nothing when every path fails', () => {
+      expect(make().findMatches('abc', 'xyz')).toEqual([]);
     });
   });
 
   describe('edge cases', () => {
-    const strategy = new UnifiedSearchStrategy();
-
     it('handles empty text', () => {
-      expect(strategy.findMatches('', 'test')).toEqual([]);
+      expect(make().findMatches('', 'test')).toEqual([]);
     });
 
     it('handles special characters as literals (no regex injection)', () => {
-      expect(strategy.findMatches('test@example.com', '@example').length).toBeGreaterThan(0);
-      // A raw regex metachar in the query must be treated literally, not compiled.
-      expect(strategy.findMatches('a+b', 'a+b').length).toBeGreaterThan(0);
-      expect(strategy.findMatches('axxb', 'a+b')).toEqual([]);
+      expect(make().findMatches('test@example.com', '@example').length).toBeGreaterThan(0);
+      expect(make().findMatches('a+b', 'a+b').length).toBeGreaterThan(0);
+      expect(make().findMatches('axxb', 'a+b')).toEqual([]);
     });
 
     it('handles unicode', () => {
-      expect(strategy.findMatches('你好世界', '你好').length).toBeGreaterThan(0);
+      expect(make().findMatches('你好世界', '你好').length).toBeGreaterThan(0);
     });
   });
 
   describe('matches() method', () => {
-    const strategy = new UnifiedSearchStrategy();
-
     it('returns true for valid matches', () => {
-      expect(strategy.matches('hello world', 'hello')).toBe(true);
-      expect(strategy.matches('test', 'te*t')).toBe(true);
+      expect(make().matches('hello world', 'hello')).toBe(true);
+      expect(make().matches('test', 'te*t')).toBe(true);
     });
 
     it('returns false for no matches', () => {
-      expect(strategy.matches('hello', 'xyz')).toBe(false);
+      expect(make().matches('hello', 'xyz')).toBe(false);
     });
   });
+});
 
-  describe('parity sweep vs HybridSearchStrategy', () => {
-    const corpus = [
-      'The quick brown fox jumps over the lazy dog',
-      'hello world',
-      'hello amazing world',
-      'test@example.com',
-      'JavaScript client-side search library',
-      '你好世界',
-      'ab cd ef',
-      'testing the search functionality',
-    ];
-    const queries = [
-      'hello', 'world', 'hello world', 'hello missing', 'quick fox',
-      'hel*', 'hel*rld', 'te*t', 'xyz*abc',
-      'tsting', 'hllo', 'searh', 'functionalty', 'javascrpt',
-      'he', 'ab', 'xyz', '@example', '你好', 'client-side',
-    ];
+describe('wildcard strategy parity with findWildcardMatches', () => {
+  const cases: Array<[string, string, StrategyOptions | undefined]> = [
+    ['hello', 'he*o', undefined],
+    ['hello', 'he*o*', undefined],
+    ['test', 'te*t', undefined],
+    ['text', 'te*t', undefined],
+    ['hello amazing world', 'hello*world', undefined],
+    ['hello world', 'hello*world', undefined],
+    ['hello world', 'hello*', undefined],
+    ['hello world', 'hel*rld', { maxSpaces: 1 }],
+    ['hello brave new world', 'hel*rld', { maxSpaces: 2 }],
+    ['hello brave new world', 'hel*rld', { maxSpaces: 3 }],
+    ['world', 'h*o', undefined],
+    ['hello world', 'miss*', undefined],
+    ['hello world', '*world', undefined],
+    ['hello world', '*llo wor*', undefined],
+    ['this is a test article with many words', 't*', undefined],
+    ['hello this is a long world sequence', 'hel*rld', { maxSpaces: Infinity }],
+  ];
 
-    const configs: Array<Record<string, unknown>> = [
-      {},
-      { maxSpaces: 0 },
-      { preferFuzzy: true },
-      { minFuzzyLength: 1 },
-      { maxExtraFuzzyChars: Infinity },
-    ];
+  const spans = (matches: Array<{ text: string; start: number; end: number }>) =>
+    matches.map(({ text, start, end }) => ({ text, start, end }));
 
-    for (const config of configs) {
-      const label = JSON.stringify(config);
-      const hybrid = new HybridSearchStrategy(config);
-      const unified = new UnifiedSearchStrategy(config);
-
-      for (const text of corpus) {
-        for (const query of queries) {
-          it(`matches() agrees for text=${JSON.stringify(text)} query=${JSON.stringify(query)} config=${label}`, () => {
-            expect(unified.matches(text, query)).toBe(hybrid.matches(text, query));
-          });
-        }
-      }
-    }
-  });
+  for (const [text, pattern, options] of cases) {
+    it(`spans agree for text=${JSON.stringify(text)} pattern=${JSON.stringify(pattern)}`, () => {
+      const strategy = StrategyFactory.create({ type: 'wildcard', options });
+      const expected = findWildcardMatches(text, pattern, options ?? {});
+      expect(spans(strategy.findMatches(text, pattern))).toEqual(spans(expected));
+    });
+  }
 });
