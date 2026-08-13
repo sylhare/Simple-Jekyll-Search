@@ -150,6 +150,26 @@ describe('Repository', () => {
     expect(originalData[0]).toMatchObject({ name: 'Alice', role: 'Developer' });
   });
 
+  it('falls back to the default strategy when strategy is null', () => {
+    repository.setOptions({ strategy: null as any });
+    const results = repository.search('bar');
+    expect(results).toHaveLength(2);
+    expect(results[0]).toMatchObject(barElement);
+  });
+
+  it('supports a custom matcher that only implements matches()', () => {
+    const contains = {
+      matches: (text: string | null, criteria: string) =>
+        (text ?? '').toLowerCase().includes(criteria.toLowerCase()),
+    };
+    const custom = new Repository({}, () => contains);
+    custom.put(data);
+    const results = custom.search('bar');
+    expect(results).toHaveLength(2);
+    expect(results[0]).toMatchObject(barElement);
+    expect(results[0]._matchInfo).toEqual({});
+  });
+
   it('demonstrates README sortMiddleware example exactly', () => {
     // This test matches the exact example from the README
     const testData = [
