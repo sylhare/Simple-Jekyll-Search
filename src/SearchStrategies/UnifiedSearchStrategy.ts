@@ -17,6 +17,11 @@ import { findFuzzyMatches } from './search/findFuzzyMatches';
  * (measured ~80x slower + a ReDoS cliff), whereas findFuzzyMatches is a linear
  * single pass. A fuzzy-eligible token tries exact first, then fuzzy.
  *
+ * Two intentional differences from the original hybrid cascade (pinned in the tests):
+ * multi-word queries AND their tokens exact-per-token with no whole-query fuzzy
+ * fallback, and an exact substring returns one 'exact' span per occurrence rather
+ * than a single 'fuzzy' span.
+ *
  * It extends SearchStrategy (the Matcher API) and accepts the same
  * StrategyOptions as HybridSearchStrategy. See tests/performance for the
  * benchmark that motivated adopting it.
