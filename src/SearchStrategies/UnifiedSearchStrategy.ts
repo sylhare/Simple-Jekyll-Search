@@ -99,7 +99,7 @@ export class UnifiedSearchStrategy extends SearchStrategy {
   }
 
   private fuzzyMatcher(token: string): SpanMatcher {
-    const tokenLength = stripWhitespace(token).length;
+    const tokenLength = token.length;
     return (text: string) => {
       const matches = findFuzzyMatches(text, token);
       if (matches.length === 0 || !this.withinBudget(tokenLength, matches[0].text)) {
@@ -134,7 +134,7 @@ export class UnifiedSearchStrategy extends SearchStrategy {
 
   private withinBudget(tokenLength: number, matchText: string): boolean {
     const limit = this.config.maxExtraFuzzyChars;
-    if (!Number.isFinite(limit) || limit < 0 || tokenLength === 0) {
+    if (!Number.isFinite(limit) || limit < 0) {
       return true;
     }
     const extra = Math.max(0, stripWhitespace(matchText).length - tokenLength);
