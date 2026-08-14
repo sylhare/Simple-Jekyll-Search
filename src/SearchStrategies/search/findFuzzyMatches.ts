@@ -24,23 +24,25 @@ export function findFuzzyMatches(text: string, criteria: string): MatchInfo[] {
 
   let textIndex = 0;
   let criteriaIndex = 0;
-  const matchedIndices: number[] = [];
-  
+  let firstIndex = -1;
+  let lastIndex = -1;
+
   while (textIndex < text.length && criteriaIndex < criteria.length) {
     if (lowerText[textIndex] === lowerCriteria[criteriaIndex]) {
-      matchedIndices.push(textIndex);
+      if (firstIndex === -1) firstIndex = textIndex;
+      lastIndex = textIndex;
       criteriaIndex++;
     }
     textIndex++;
   }
-  
+
   if (criteriaIndex !== criteria.length) {
     return [];
   }
 
-  const start = matchedIndices[0];
-  const end = matchedIndices[matchedIndices.length - 1] + 1;
-  
+  const start = firstIndex;
+  const end = lastIndex + 1;
+
   return [{
     start,
     end,
