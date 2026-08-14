@@ -1,6 +1,5 @@
 import { SearchStrategy, StrategyConfig } from './types';
 import { LiteralSearchStrategy, FuzzySearchStrategy } from './SearchStrategy';
-import { HybridSearchStrategy } from './HybridSearchStrategy';
 import { UnifiedSearchStrategy } from './UnifiedSearchStrategy';
 
 export type StrategyType = 'literal' | 'fuzzy' | 'wildcard' | 'hybrid' | 'unified';
@@ -21,7 +20,7 @@ export class StrategyFactory {
         return new UnifiedSearchStrategy({ maxSpaces: 0, ...options, preferFuzzy: false, minFuzzyLength: Number.POSITIVE_INFINITY });
       
       case 'hybrid':
-        return new HybridSearchStrategy(options);
+        return new UnifiedSearchStrategy(options);
 
       case 'unified':
         return new UnifiedSearchStrategy(options);
