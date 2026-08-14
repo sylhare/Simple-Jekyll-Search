@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { bench, describe } from 'vitest';
 import { StrategyFactory } from '../../src/SearchStrategies/StrategyFactory';
-import { WildcardSearchStrategy } from '../../src/SearchStrategies/SearchStrategy';
+import { WildcardSearchStrategy } from '../../src/SearchStrategies/WildcardSearchStrategy';
 import { SearchStrategy, Matcher } from '../../src/SearchStrategies/types';
 import { findLevenshteinMatches } from '../../src/SearchStrategies/search/findLevenshteinMatches';
 import { findRegexFuzzyMatches } from '../../src/SearchStrategies/search/findRegexFuzzyMatches';
