@@ -1,4 +1,4 @@
-import { LiteralSearchStrategy } from './SearchStrategies/SearchStrategy';
+import { DefaultUnifiedSearchStrategy } from './SearchStrategies/UnifiedSearchStrategy';
 import { Matcher, MatchInfo, StrategyConfig, StrategyResolver } from './SearchStrategies/types';
 import type { StrategyType } from './SearchStrategies/StrategyFactory';
 import { isObject } from './utils';
@@ -11,7 +11,7 @@ export class Repository {
   private excludePatterns: RegExp[] = [];
   private readonly strategyResolver: StrategyResolver;
 
-  constructor(initialOptions: RepositoryOptions = {}, strategyResolver: StrategyResolver = () => LiteralSearchStrategy) {
+  constructor(initialOptions: RepositoryOptions = {}, strategyResolver: StrategyResolver = () => DefaultUnifiedSearchStrategy) {
     this.strategyResolver = strategyResolver;
     this.setOptions(initialOptions);
   }

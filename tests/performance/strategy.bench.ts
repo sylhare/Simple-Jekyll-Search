@@ -3,6 +3,7 @@ import path from 'node:path';
 import { bench, describe } from 'vitest';
 import { StrategyFactory } from '../../src/SearchStrategies/StrategyFactory';
 import { WildcardSearchStrategy } from '../../src/SearchStrategies/WildcardSearchStrategy';
+import { LiteralSearchStrategy, FuzzySearchStrategy } from '../../src/SearchStrategies/SearchStrategy';
 import { SearchStrategy, Matcher } from '../../src/SearchStrategies/types';
 import { findLevenshteinMatches } from '../../src/SearchStrategies/search/findLevenshteinMatches';
 import { findRegexFuzzyMatches } from '../../src/SearchStrategies/search/findRegexFuzzyMatches';
@@ -47,6 +48,8 @@ const STRATEGIES: Array<{ name: string; matcher: Matcher }> = [
   { name: 'fuzzy', matcher: StrategyFactory.create({ type: 'fuzzy' }) },
   { name: 'wildcard', matcher: StrategyFactory.create({ type: 'wildcard' }) },
   { name: 'hybrid', matcher: StrategyFactory.create({ type: 'hybrid' }) },
+  { name: 'literal (legacy)', matcher: LiteralSearchStrategy },
+  { name: 'fuzzy (legacy)', matcher: FuzzySearchStrategy },
   { name: 'wildcard (legacy)', matcher: new WildcardSearchStrategy() },
   { name: 'levenshtein', matcher: new SearchStrategy(findLevenshteinMatches) },
   { name: 'regex-fuzzy', matcher: new SearchStrategy(findRegexFuzzyMatches) },
