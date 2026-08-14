@@ -1,5 +1,4 @@
 import { SearchStrategy, StrategyConfig } from './types';
-import { LiteralSearchStrategy, FuzzySearchStrategy } from './SearchStrategy';
 import { UnifiedSearchStrategy } from './UnifiedSearchStrategy';
 
 export type StrategyType = 'literal' | 'fuzzy' | 'wildcard' | 'hybrid' | 'unified';
@@ -10,23 +9,19 @@ export class StrategyFactory {
     const type = this.isValidStrategy(config.type) ? config.type : 'literal';
 
     switch (type) {
-      case 'literal':
-        return LiteralSearchStrategy;
-      
       case 'fuzzy':
-        return FuzzySearchStrategy;
-      
+        return new UnifiedSearchStrategy({ ...options, wildcardPriority: false, preferFuzzy: true, minFuzzyLength: 1, maxExtraFuzzyChars: Number.POSITIVE_INFINITY });
+
       case 'wildcard':
         return new UnifiedSearchStrategy({ maxSpaces: 0, ...options, preferFuzzy: false, minFuzzyLength: Number.POSITIVE_INFINITY });
-      
-      case 'hybrid':
-        return new UnifiedSearchStrategy(options);
 
+      case 'hybrid':
       case 'unified':
         return new UnifiedSearchStrategy(options);
 
+      case 'literal':
       default:
-        return LiteralSearchStrategy;
+        return new UnifiedSearchStrategy({ ...options, wildcardPriority: false, preferFuzzy: false, minFuzzyLength: Number.POSITIVE_INFINITY });
     }
   }
 
@@ -38,4 +33,3 @@ export class StrategyFactory {
     return this.getAvailableStrategies().includes(type as StrategyType);
   }
 }
-
