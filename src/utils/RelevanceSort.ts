@@ -19,9 +19,14 @@ function fieldWeight(field: string): number {
 
 function proximityBonus(matches: MatchInfo[]): number {
   if (matches.length < 2) return 0;
-  const firstStart = Math.min(...matches.map(m => m.start));
-  const lastEnd = Math.max(...matches.map(m => m.end));
-  const totalMatchLength = matches.reduce((sum, m) => sum + (m.end - m.start), 0);
+  let firstStart = Infinity;
+  let lastEnd = -Infinity;
+  let totalMatchLength = 0;
+  for (const m of matches) {
+    if (m.start < firstStart) firstStart = m.start;
+    if (m.end > lastEnd) lastEnd = m.end;
+    totalMatchLength += m.end - m.start;
+  }
   const span = lastEnd - firstStart;
   const gap = span - totalMatchLength;
   if (gap <= 0) return PROXIMITY_BONUS_MAX;
