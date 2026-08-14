@@ -1,9 +1,6 @@
 import { MatchInfo } from '../types';
 
-/**
- * Unused — not wired into any strategy (tree-shaken from the bundle); a rejected
- * alternative to {@link findFuzzyMatches}. See `tests/performance/README.md`.
- */
+/** Unused — not wired into any strategy (tree-shaken from the bundle). See `tests/performance/README.md`. */
 export function findRegexFuzzyMatches(text: string, criteria: string): MatchInfo[] {
   const trimmed = criteria.trimEnd();
   if (trimmed.length === 0) {

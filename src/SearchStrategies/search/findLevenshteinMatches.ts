@@ -2,17 +2,7 @@ import { MatchInfo } from '../types';
 
 /** Unused — not wired into any strategy (tree-shaken from the bundle). See `tests/performance/README.md`. */
 
-/**
- * Calculates the Levenshtein distance between two strings.
- *
- * The Levenshtein distance is a measure of the difference between two strings.
- * It is calculated as the minimum number of single-character edits (insertions, deletions, or substitutions)
- * required to change one string into the other.
- *
- * @param a - The first string
- * @param b - The second string
- * @returns The Levenshtein distance
- */
+/** Levenshtein edit distance between two strings. */
 function levenshtein(a: string, b: string): number {
   const lenA = a.length;
   const lenB = b.length;
@@ -35,14 +25,7 @@ function levenshtein(a: string, b: string): number {
   return distanceMatrix[lenA][lenB];
 }
 
-/**
- * Finds matches based on Levenshtein distance (edit distance).
- * Returns a match if the similarity is >= 30% (edit distance allows for typos).
- *
- * @param text - The text to search in
- * @param pattern - The pattern to search for
- * @returns Array with single MatchInfo if similarity threshold met, empty array otherwise
- */
+/** Matches when edit-distance similarity to the whole text is >= 30%. */
 export function findLevenshteinMatches(text: string, pattern: string): MatchInfo[] {
   const distance = levenshtein(pattern, text);
   const similarity = 1 - distance / Math.max(pattern.length, text.length);
