@@ -49,7 +49,6 @@ describe('Repository', () => {
   });
 
   it('[v1.x deprecated] fuzzy option still works via backward compatibility', () => {
-    // Test backward compatibility: fuzzy: true should work and show warning
     const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     
     repository.setOptions({ fuzzy: true });
@@ -171,7 +170,6 @@ describe('Repository', () => {
   });
 
   it('demonstrates README sortMiddleware example exactly', () => {
-    // This test matches the exact example from the README
     const testData = [
       { section: 'API Reference', caption: 'Properties', title: 'Object properties' },
       { section: 'Getting Started', caption: 'Installation', title: 'How to install' },
@@ -188,10 +186,9 @@ describe('Repository', () => {
       },
     });
     
-    const results = repository.search('a'); // Search for 'a' to get all results
+    const results = repository.search('a');
     expect(results).toHaveLength(4);
-    
-    // Should be sorted by section first, then caption alphabetically
+
     expect(results[0].section).toBe('API Reference');
     expect(results[0].caption).toBe('Methods');
     expect(results[1].section).toBe('API Reference');

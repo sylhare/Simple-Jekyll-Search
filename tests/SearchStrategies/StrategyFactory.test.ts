@@ -28,7 +28,6 @@ describe('StrategyFactory', () => {
         options: { maxSpaces: 1 }
       });
       expect(strategy.matches('hello world', 'hel*rld')).toBe(true);
-      // Default (maxSpaces 0) stops at spaces, so the same pattern must not match.
       expect(StrategyFactory.create({ type: 'wildcard' }).matches('hello world', 'hel*rld')).toBe(false);
     });
 
