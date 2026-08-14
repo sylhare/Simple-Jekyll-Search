@@ -1,30 +1,16 @@
 import { SearchStrategy, MatchInfo, StrategyOptions } from './types';
-import { buildWildcardFragment } from './search/findWildcardMatches';
+import { buildWildcardFragment } from './search/buildWildcardFragment';
 import { findFuzzyMatches } from './search/findFuzzyMatches';
 
 /**
- * A single-strategy alternative to HybridSearchStrategy, selectable as the
- * 'unified' strategy and used to back the 'wildcard' strategy. It replaces the
- * findLiteralMatches path and the hybridFind cascade with per-token regexes, and
- * folds applyFuzzyConstraints into one inline budget check:
+ * Single strategy backing both 'unified' and 'wildcard'. Per token it tries, in order:
+ * exact (escaped literal, all occurrences), wildcard (`*` → shared buildWildcardFragment),
+ * then linear findFuzzyMatches under a span budget (not a regex — see the benchmark).
+ * Accepts the same StrategyOptions as HybridSearchStrategy.
  *
- *   exact    → the escaped token           (native literal substring, all occurrences)
- *   wildcard → `*` swapped for the shared wildcard fragment (reuses buildWildcardFragment)
- *   fuzzy    → the existing linear findFuzzyMatches, then a budget check
- *
- * Fuzzy deliberately does NOT use a regex: a lazy `.*?` subsequence pattern
- * backtracks catastrophically on long queries against non-matching text
- * (measured ~80x slower + a ReDoS cliff), whereas findFuzzyMatches is a linear
- * single pass. A fuzzy-eligible token tries exact first, then fuzzy.
- *
- * Two intentional differences from the original hybrid cascade (pinned in the tests):
- * multi-word queries AND their tokens exact-per-token with no whole-query fuzzy
- * fallback, and an exact substring returns one 'exact' span per occurrence rather
- * than a single 'fuzzy' span.
- *
- * It extends SearchStrategy (the Matcher API) and accepts the same
- * StrategyOptions as HybridSearchStrategy. See tests/performance for the
- * benchmark that motivated adopting it.
+ * Two intentional differences from the old hybrid cascade (pinned in the tests): multi-word
+ * queries AND their tokens with no whole-query fuzzy fallback, and an exact substring yields
+ * one 'exact' span per occurrence, not a single 'fuzzy' span. See `tests/performance/README.md`.
  */
 
 type ResolvedOptions = Required<Pick<StrategyOptions,
@@ -116,7 +102,7 @@ export class UnifiedSearchStrategy extends SearchStrategy {
   private fuzzyMatcher(token: string): SpanMatcher {
     const tokenLength = stripWhitespace(token).length;
     return (text: string) => {
-      const matches = findFuzzyMatches(text, token); // linear subsequence scan, no backtracking
+      const matches = findFuzzyMatches(text, token);
       if (matches.length === 0 || !this.withinBudget(tokenLength, matches[0].text)) {
         return [];
       }
@@ -141,7 +127,7 @@ export class UnifiedSearchStrategy extends SearchStrategy {
     while ((match = regex.exec(text)) !== null) {
       spans.push({ start: match.index, end: match.index + match[0].length, text: match[0], type });
       if (regex.lastIndex === match.index) {
-        regex.lastIndex++; // avoid an infinite loop on a zero-width match
+        regex.lastIndex++;
       }
     }
     return spans;

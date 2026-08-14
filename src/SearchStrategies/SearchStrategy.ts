@@ -1,7 +1,6 @@
 import { findLiteralMatches } from './search/findLiteralMatches';
 import { findFuzzyMatches } from './search/findFuzzyMatches';
-import { findWildcardMatches } from './search/findWildcardMatches';
-import { SearchStrategy, WildcardConfig } from './types';
+import { SearchStrategy } from './types';
 
 export const LiteralSearchStrategy = new SearchStrategy(
   findLiteralMatches
@@ -16,17 +15,3 @@ export const FuzzySearchStrategy = new SearchStrategy(
     return findLiteralMatches(text, criteria);
   }
 );
-
-/** Unused — superseded by {@link UnifiedSearchStrategy} (tree-shaken from the bundle). See `tests/performance/README.md`. */
-export class WildcardSearchStrategy extends SearchStrategy {
-  constructor(config: WildcardConfig = {}) {
-    const normalizedConfig = { ...config };
-    super((text: string, criteria: string) => {
-      const wildcardMatches = findWildcardMatches(text, criteria, normalizedConfig);
-      if (wildcardMatches.length > 0) {
-        return wildcardMatches;
-      }
-      return findLiteralMatches(text, criteria);
-    });
-  }
-}
