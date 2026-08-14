@@ -3,7 +3,7 @@ import { OptionsValidator } from './OptionsValidator';
 import { Repository } from './Repository';
 import { StrategyResolver } from './SearchStrategies/types';
 import { compile as compileTemplate, setOptions as setTemplaterOptions } from './Templater';
-import { isJSON, merge } from './utils';
+import { isJSON } from './utils';
 import { DEFAULT_OPTIONS, REQUIRED_OPTIONS, WHITELISTED_KEYS } from './utils/default';
 import { SearchData, SearchOptions, SearchResult, SimpleJekyllSearchInstance } from './utils/types';
 
@@ -210,7 +210,7 @@ class SimpleJekyllSearch {
       this.throwError(`Missing required options: ${REQUIRED_OPTIONS.join(', ')}`);
     }
 
-    this.options = merge<SearchOptions>(this.options, _options);
+    this.options = { ...this.options, ..._options };
 
     setTemplaterOptions({
       template: this.options.searchResultTemplate,
