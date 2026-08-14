@@ -1,10 +1,9 @@
-import { UnifiedSearchStrategy } from './UnifiedSearchStrategy';
-
 /**
- * Backed by UnifiedSearchStrategy; a distinct exported class only for public-API /
- * `instanceof` compatibility. Match results follow UnifiedSearchStrategy (see its
- * docblock for the intentional differences from the old hybrid cascade).
+ * Backward-compatible alias of UnifiedSearchStrategy; the 'hybrid' strategy is now
+ * the unified engine. Kept only so existing `HybridSearchStrategy` imports and
+ * `instanceof` checks keep working.
  */
-export class HybridSearchStrategy extends UnifiedSearchStrategy {}
-
-export const DefaultHybridSearchStrategy = new HybridSearchStrategy();
+export {
+  UnifiedSearchStrategy as HybridSearchStrategy,
+  DefaultUnifiedSearchStrategy as DefaultHybridSearchStrategy,
+} from './UnifiedSearchStrategy';
