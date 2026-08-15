@@ -1,8 +1,8 @@
 import { SearchStrategy, StrategyConfig } from './types';
-import { LiteralSearchStrategy, FuzzySearchStrategy, WildcardSearchStrategy } from './SearchStrategy';
-import { HybridSearchStrategy } from './HybridSearchStrategy';
+import { LiteralSearchStrategy, FuzzySearchStrategy } from './SearchStrategy';
+import { UnifiedSearchStrategy } from './UnifiedSearchStrategy';
 
-export type StrategyType = 'literal' | 'fuzzy' | 'wildcard' | 'hybrid';
+export type StrategyType = 'literal' | 'fuzzy' | 'wildcard' | 'hybrid' | 'unified';
 
 export class StrategyFactory {
   static create(config: StrategyConfig = { type: 'literal' }): SearchStrategy {
@@ -17,18 +17,21 @@ export class StrategyFactory {
         return FuzzySearchStrategy;
       
       case 'wildcard':
-        return new WildcardSearchStrategy(options);
+        return new UnifiedSearchStrategy({ maxSpaces: 0, ...options, preferFuzzy: false, minFuzzyLength: Number.POSITIVE_INFINITY });
       
       case 'hybrid':
-        return new HybridSearchStrategy(options);
-      
+        return new UnifiedSearchStrategy(options);
+
+      case 'unified':
+        return new UnifiedSearchStrategy(options);
+
       default:
         return LiteralSearchStrategy;
     }
   }
 
   static getAvailableStrategies(): StrategyType[] {
-    return ['literal', 'fuzzy', 'wildcard', 'hybrid'];
+    return ['literal', 'fuzzy', 'wildcard', 'hybrid', 'unified'];
   }
 
   static isValidStrategy(type: string): type is StrategyType {
