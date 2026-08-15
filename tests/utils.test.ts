@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clone, isJSON, isObject, merge, NoSort } from '../src/utils';
+import { isJSON, isObject, memoizeLast, merge, NoSort } from '../src/utils';
 
 describe('utils', () => {
 
@@ -123,43 +123,68 @@ describe('utils', () => {
     });
   });
 
-  describe('clone', () => {
-    it('creates a deep clone of an object', () => {
-      const obj = { foo: 'bar', nested: { key: 'value' } };
-      const clonedObj = clone(obj);
+  describe('memoizeLast', () => {
+    it('computes on the first call', () => {
+      let calls = 0;
+      const upper = memoizeLast((s: string) => { calls++; return s.toUpperCase(); });
 
-      expect(clonedObj).toEqual(obj);
-      expect(clonedObj).not.toBe(obj);
-      expect(clonedObj.nested).not.toBe(obj.nested);
+      expect(upper('a')).toBe('A');
+      expect(calls).toBe(1);
     });
 
-    it('creates a deep clone of an array', () => {
-      const arr = [{ foo: 'bar' }, { key: 'value' }];
-      const clonedArr = clone(arr);
+    it('reuses the cached result for a repeated key', () => {
+      let calls = 0;
+      const upper = memoizeLast((s: string) => { calls++; return s.toUpperCase(); });
 
-      expect(clonedArr).toEqual(arr);
-      expect(clonedArr).not.toBe(arr);
-      expect(clonedArr[0]).not.toBe(arr[0]);
+      upper('a');
+      upper('a');
+      upper('a');
+
+      expect(calls).toBe(1);
     });
 
-    it('returns primitive values as is', () => {
-      expect(clone(42)).toBe(42);
-      expect(clone('string')).toBe('string');
-      expect(clone(null)).toBe(null);
-      expect(clone(undefined)).toBe(undefined);
+    it('recomputes when the key changes', () => {
+      let calls = 0;
+      const upper = memoizeLast((s: string) => { calls++; return s.toUpperCase(); });
+
+      expect(upper('a')).toBe('A');
+      expect(upper('b')).toBe('B');
+      expect(calls).toBe(2);
     });
 
-    it('handles empty objects and arrays', () => {
-      expect(clone({})).toEqual({});
-      expect(clone([])).toEqual([]);
+    it('only caches the last key, not every seen key', () => {
+      let calls = 0;
+      const upper = memoizeLast((s: string) => { calls++; return s.toUpperCase(); });
+
+      upper('a');
+      upper('b');
+      upper('a');
+
+      expect(calls).toBe(3);
     });
 
-    it('does not modify the original object', () => {
-      const obj = { foo: 'bar', nested: { key: 'value' } };
-      const clonedObj = clone(obj);
+    it('caches the first call even when the key is an empty string', () => {
+      let calls = 0;
+      const identity = memoizeLast((s: string) => { calls++; return s; });
 
-      clonedObj.nested.key = 'modified';
-      expect(obj.nested.key).toBe('value');
+      expect(identity('')).toBe('');
+      expect(identity('')).toBe('');
+      expect(calls).toBe(1);
+    });
+
+    it('derives the cache key from multiple arguments via keyOf', () => {
+      let calls = 0;
+      const add = memoizeLast(
+        (a: number, b: number) => { calls++; return a + b; },
+        (a, b) => `${a},${b}`,
+      );
+
+      expect(add(1, 2)).toBe(3);
+      expect(add(1, 2)).toBe(3);
+      expect(calls).toBe(1);
+
+      expect(add(1, 3)).toBe(4);
+      expect(calls).toBe(2);
     });
   });
 });

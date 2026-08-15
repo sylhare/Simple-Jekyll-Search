@@ -18,8 +18,6 @@ export const FuzzySearchStrategy = new SearchStrategy(
 );
 
 export class WildcardSearchStrategy extends SearchStrategy {
-  private readonly config: Readonly<WildcardConfig>;
-
   constructor(config: WildcardConfig = {}) {
     const normalizedConfig = { ...config };
     super((text: string, criteria: string) => {
@@ -29,10 +27,5 @@ export class WildcardSearchStrategy extends SearchStrategy {
       }
       return findLiteralMatches(text, criteria);
     });
-    this.config = normalizedConfig;
-  }
-
-  getConfig(): Readonly<WildcardConfig> {
-    return { ...this.config };
   }
 }

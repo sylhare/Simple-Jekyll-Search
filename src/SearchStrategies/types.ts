@@ -9,7 +9,7 @@ export interface MatchInfo {
 
 export interface Matcher {
   matches(text: string | null, criteria: string): boolean;
-  findMatches?(text: string | null, criteria: string): MatchInfo[];
+  findMatches(text: string | null, criteria: string): MatchInfo[];
 }
 
 export interface HybridConfig {
@@ -51,12 +51,7 @@ export class SearchStrategy implements Matcher {
   }
 
   matches(text: string | null, criteria: string): boolean {
-    if (text === null || text.trim() === '' || !criteria) {
-      return false;
-    }
-
-    const matchInfo = this.findMatchesFunction(text, criteria);
-    return matchInfo.length > 0;
+    return this.findMatches(text, criteria).length > 0;
   }
 
   findMatches(text: string | null, criteria: string): MatchInfo[] {

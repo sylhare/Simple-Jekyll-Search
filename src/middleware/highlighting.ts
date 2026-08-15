@@ -50,18 +50,9 @@ export function highlightWithMatchInfo(
   const maxLength = options.maxLength;
   
   const mergedMatches = mergeOverlappingMatches(matchInfo);
-  
-  let result = '';
-  let lastIndex = 0;
-  
-  for (const match of mergedMatches) {
-    result += escapeHtml(text.substring(lastIndex, match.start));
-    result += `<span class="${className}">${escapeHtml(text.substring(match.start, match.end))}</span>`;
-    lastIndex = match.end;
-  }
-  
-  result += escapeHtml(text.substring(lastIndex));
-  
+
+  let result = wrapMatches(text, mergedMatches, className);
+
   if (maxLength && result.length > maxLength) {
     result = truncateAroundMatches(text, mergedMatches, maxLength, options.contextLength || 30, className);
   }
@@ -100,18 +91,24 @@ function truncateAroundMatches(
       end: Math.min(snippet.length, m.end - start)
     }));
   
-  let lastIndex = 0;
-  for (const match of adjustedMatches) {
-    result += escapeHtml(snippet.substring(lastIndex, match.start));
-    result += `<span class="${className}">${escapeHtml(snippet.substring(match.start, match.end))}</span>`;
-    lastIndex = match.end;
-  }
-  result += escapeHtml(snippet.substring(lastIndex));
-  
+  result += wrapMatches(snippet, adjustedMatches, className);
+
   if (end < text.length) {
     result += '...';
   }
-  
+
+  return result;
+}
+
+function wrapMatches(source: string, matches: MatchInfo[], className: string): string {
+  let result = '';
+  let lastIndex = 0;
+  for (const match of matches) {
+    result += escapeHtml(source.substring(lastIndex, match.start));
+    result += `<span class="${className}">${escapeHtml(source.substring(match.start, match.end))}</span>`;
+    lastIndex = match.end;
+  }
+  result += escapeHtml(source.substring(lastIndex));
   return result;
 }
 
