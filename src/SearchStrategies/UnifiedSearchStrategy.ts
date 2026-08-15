@@ -3,7 +3,8 @@ import { buildWildcardFragment } from './search/buildWildcardFragment';
 import { findFuzzyMatches } from './search/findFuzzyMatches';
 
 /**
- * Single strategy backing both 'unified' and 'wildcard'. Per token it tries, in order:
+ * Single strategy backing every StrategyFactory type (literal/fuzzy/wildcard/hybrid/unified),
+ * each a different StrategyOptions configuration. Per token it tries, in order:
  * exact (escaped literal, all occurrences), wildcard (`*` → shared buildWildcardFragment),
  * then linear findFuzzyMatches under a span budget (not a regex — see the benchmark).
  * Accepts the same StrategyOptions as HybridSearchStrategy.
@@ -26,9 +27,8 @@ function stripWhitespace(value: string): string {
 
 type SpanMatcher = (text: string) => MatchInfo[];
 
-interface Clause {
-  matchers: SpanMatcher[];
-}
+/** A clause is a list of matchers tried in order; the first non-empty result wins. */
+type Clause = SpanMatcher[];
 
 export class UnifiedSearchStrategy extends SearchStrategy {
   private readonly config: Readonly<ResolvedOptions>;
@@ -74,17 +74,16 @@ export class UnifiedSearchStrategy extends SearchStrategy {
 
   private buildClauses(criteria: string): Clause[] {
     if (this.config.wildcardPriority && criteria.includes('*')) {
-      return [{ matchers: [this.wildcardMatcher(criteria)] }];
+      return [[this.wildcardMatcher(criteria)]];
     }
 
     const tokens = criteria.split(/\s+/).filter(Boolean);
     const multiWord = tokens.length > 1;
     return tokens.map(token => {
       const fuzzy = !multiWord && (this.config.preferFuzzy || token.length >= this.config.minFuzzyLength);
-      const matchers = fuzzy
+      return fuzzy
         ? [this.exactMatcher(token), this.fuzzyMatcher(token)]
         : [this.exactMatcher(token)];
-      return { matchers };
     });
   }
 
@@ -100,7 +99,7 @@ export class UnifiedSearchStrategy extends SearchStrategy {
   }
 
   private fuzzyMatcher(token: string): SpanMatcher {
-    const tokenLength = stripWhitespace(token).length;
+    const tokenLength = token.length;
     return (text: string) => {
       const matches = findFuzzyMatches(text, token);
       if (matches.length === 0 || !this.withinBudget(tokenLength, matches[0].text)) {
@@ -111,7 +110,7 @@ export class UnifiedSearchStrategy extends SearchStrategy {
   }
 
   private run(clause: Clause, text: string): MatchInfo[] {
-    for (const matcher of clause.matchers) {
+    for (const matcher of clause) {
       const spans = matcher(text);
       if (spans.length > 0) {
         return spans;
@@ -135,7 +134,7 @@ export class UnifiedSearchStrategy extends SearchStrategy {
 
   private withinBudget(tokenLength: number, matchText: string): boolean {
     const limit = this.config.maxExtraFuzzyChars;
-    if (!Number.isFinite(limit) || limit < 0 || tokenLength === 0) {
+    if (!Number.isFinite(limit) || limit < 0) {
       return true;
     }
     const extra = Math.max(0, stripWhitespace(matchText).length - tokenLength);

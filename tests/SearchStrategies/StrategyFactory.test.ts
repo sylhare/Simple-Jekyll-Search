@@ -1,19 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import { StrategyFactory } from '../../src/SearchStrategies/StrategyFactory';
-import { LiteralSearchStrategy, FuzzySearchStrategy } from '../../src/SearchStrategies/SearchStrategy';
 import { HybridSearchStrategy } from '../../src/SearchStrategies/HybridSearchStrategy';
 import { UnifiedSearchStrategy } from '../../src/SearchStrategies/UnifiedSearchStrategy';
 
 describe('StrategyFactory', () => {
   describe('create', () => {
-    it('should create literal strategy', () => {
+    it('should create literal strategy backed by the unified strategy', () => {
       const strategy = StrategyFactory.create({ type: 'literal' });
-      expect(strategy).toBe(LiteralSearchStrategy);
+      expect(strategy).toBeInstanceOf(UnifiedSearchStrategy);
+      expect(strategy.matches('hello world', 'hello')).toBe(true);
+      expect(strategy.findMatches('hello world', 'hello')[0].type).toBe('exact');
     });
 
-    it('should create fuzzy strategy', () => {
+    it('should create fuzzy strategy backed by the unified strategy', () => {
       const strategy = StrategyFactory.create({ type: 'fuzzy' });
-      expect(strategy).toBe(FuzzySearchStrategy);
+      expect(strategy).toBeInstanceOf(UnifiedSearchStrategy);
+      const matches = strategy.findMatches('hello', 'hlo');
+      expect(matches.length).toBeGreaterThan(0);
+      expect(matches[0].type).toBe('fuzzy');
     });
 
     it('should create wildcard strategy backed by the unified strategy', () => {
@@ -62,10 +66,40 @@ describe('StrategyFactory', () => {
     });
   });
 
+  describe('unified-backed literal/fuzzy behaviour (accepted divergences)', () => {
+    it('fuzzy matches a single-word typo via subsequence', () => {
+      const matches = StrategyFactory.create({ type: 'fuzzy' }).findMatches('lorem ipsum', 'lrm');
+      expect(matches.length).toBeGreaterThan(0);
+      expect(matches[0].type).toBe('fuzzy');
+    });
+
+    it('fuzzy no longer does whole-query subsequence for multi-word queries', () => {
+      expect(StrategyFactory.create({ type: 'fuzzy' }).findMatches('lorem ipsum', 'lrm ism')).toEqual([]);
+    });
+
+    it('fuzzy returns exact spans when the query is an exact substring', () => {
+      const matches = StrategyFactory.create({ type: 'fuzzy' }).findMatches('test testing', 'test');
+      expect(matches).toHaveLength(2);
+      expect(matches.every(match => match.type === 'exact')).toBe(true);
+    });
+
+    it('literal ANDs the words of a trailing-space query instead of matching the phrase', () => {
+      const matches = StrategyFactory.create({ type: 'literal' }).findMatches('hello world', 'hello world ');
+      expect(matches.length).toBeGreaterThan(0);
+      expect(matches.every(match => match.type === 'exact')).toBe(true);
+    });
+
+    it('wildcard stays enabled even when wildcardPriority: false is passed', () => {
+      const strategy = StrategyFactory.create({ type: 'wildcard', options: { wildcardPriority: false } });
+      expect(strategy.matches('hello world', 'hel*')).toBe(true);
+    });
+  });
+
   describe('error handling', () => {
     it('should default to literal for unknown type', () => {
       const strategy = StrategyFactory.create({ type: 'unknown' as any });
-      expect(strategy).toBe(LiteralSearchStrategy);
+      expect(strategy).toBeInstanceOf(UnifiedSearchStrategy);
+      expect(strategy.matches('hello world', 'hello')).toBe(true);
     });
   });
 
