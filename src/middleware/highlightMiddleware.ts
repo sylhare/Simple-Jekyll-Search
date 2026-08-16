@@ -75,24 +75,6 @@ export function createHighlightTemplateMiddleware(options: HighlightMiddlewareOp
   };
 }
 
-/**
- * Pre-configured highlight middleware with default options.
- * 
- * @param prop - The property name being rendered
- * @param value - The property value
- * @param template - The template string
- * @param query - The search query
- * @param matchInfo - Match position information for highlighting
- * @returns The highlighted/truncated value, or undefined to use original
- */
-export function defaultHighlightMiddleware(
-  prop: string, 
-  value: string, 
-  template: string, 
-  query?: string, 
-  matchInfo?: MatchInfo[]
-): string | undefined {
-  const middleware = createHighlightTemplateMiddleware();
-  return middleware(prop, value, template, query, matchInfo);
-}
+/** Pre-configured highlight middleware with default options. */
+export const defaultHighlightMiddleware = createHighlightTemplateMiddleware();
 
