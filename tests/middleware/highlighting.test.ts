@@ -106,6 +106,13 @@ describe('highlightWithMatchInfo', () => {
     expect(highlightWithMatchInfo(text, matches)).toBe('hello world');
   });
 
+  it('should not truncate or crash for empty matchInfo even when maxLength is set', () => {
+    const text = 'This is a very long text that should not be truncated when there are no matches at all';
+    const matches: MatchInfo[] = [];
+    const result = highlightWithMatchInfo(text, matches, { maxLength: 20, contextLength: 5 });
+    expect(result).toBe(text);
+  });
+
   it('should highlight single match', () => {
     const text = 'hello world';
     const matches: MatchInfo[] = [
