@@ -14,8 +14,6 @@ class SimpleJekyllSearch {
   private debounceTimerHandle: NodeJS.Timeout | null = null;
   private eventHandler: ((e: Event) => void) | null = null;
   private pageShowHandler: (() => void) | null = null;
-  private pendingRequest: XMLHttpRequest | null = null;
-  private isInitialized: boolean = false;
   private readonly STORAGE_KEY = 'sjs-search-state';
 
   constructor(strategyResolver?: StrategyResolver) {
