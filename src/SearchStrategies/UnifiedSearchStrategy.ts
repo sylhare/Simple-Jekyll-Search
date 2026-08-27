@@ -9,9 +9,11 @@ import { findFuzzyMatches } from './search/findFuzzyMatches';
  * then linear findFuzzyMatches under a span budget (not a regex — see the benchmark).
  * Accepts the same StrategyOptions as HybridSearchStrategy.
  *
- * Two intentional differences from the old hybrid cascade (pinned in the tests): multi-word
- * queries AND their tokens with no whole-query fuzzy fallback, and an exact substring yields
- * one 'exact' span per occurrence, not a single 'fuzzy' span. See `tests/performance/README.md`.
+ * Multi-word queries OR their tokens: a document matches when any token matches, and every
+ * matched span is returned so RelevanceSort ranks documents that hit more tokens — and hit
+ * them closer together — higher. Fuzzy matching drops a trailing plural 's' so "reviews"
+ * matches "review" and vice versa. An exact substring still yields one 'exact' span per
+ * occurrence, not a single 'fuzzy' span. See `tests/performance/README.md`.
  */
 
 type ResolvedOptions = Required<Pick<StrategyOptions,
@@ -23,6 +25,11 @@ const META_NO_STAR = /[.+?^${}()|[\]\\]/g;
 
 function stripWhitespace(value: string): string {
   return value.replace(/\s+/g, '');
+}
+
+/** Drops a trailing plural 's' (keeping at least three characters) so a plural query fuzzy-matches its singular form and vice versa. */
+function singularize(token: string): string {
+  return token.length >= 4 && /s$/i.test(token) ? token.slice(0, -1) : token;
 }
 
 type SpanMatcher = (text: string) => MatchInfo[];
@@ -47,18 +54,9 @@ export class UnifiedSearchStrategy extends SearchStrategy {
   }
 
   private find(text: string, criteria: string): MatchInfo[] {
-    const clauses = this.compile(criteria);
-    if (clauses.length === 0) {
-      return [];
-    }
-
     const matches: MatchInfo[] = [];
-    for (const clause of clauses) {
-      const spans = this.run(clause, text);
-      if (spans.length === 0) {
-        return [];
-      }
-      matches.push(...spans);
+    for (const clause of this.compile(criteria)) {
+      matches.push(...this.run(clause, text));
     }
     return matches;
   }
@@ -78,9 +76,8 @@ export class UnifiedSearchStrategy extends SearchStrategy {
     }
 
     const tokens = criteria.split(/\s+/).filter(Boolean);
-    const multiWord = tokens.length > 1;
     return tokens.map(token => {
-      const fuzzy = !multiWord && (this.config.preferFuzzy || token.length >= this.config.minFuzzyLength);
+      const fuzzy = this.config.preferFuzzy || token.length >= this.config.minFuzzyLength;
       return fuzzy
         ? [this.exactMatcher(token), this.fuzzyMatcher(token)]
         : [this.exactMatcher(token)];
@@ -99,10 +96,11 @@ export class UnifiedSearchStrategy extends SearchStrategy {
   }
 
   private fuzzyMatcher(token: string): SpanMatcher {
-    const tokenLength = token.length;
+    const stem = singularize(token);
+    const stemLength = stem.length;
     return (text: string) => {
-      const matches = findFuzzyMatches(text, token);
-      if (matches.length === 0 || !this.withinBudget(tokenLength, matches[0].text)) {
+      const matches = findFuzzyMatches(text, stem);
+      if (matches.length === 0 || !this.withinBudget(stemLength, matches[0].text)) {
         return [];
       }
       return matches;

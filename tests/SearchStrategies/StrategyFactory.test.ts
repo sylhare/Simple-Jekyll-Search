@@ -73,8 +73,10 @@ describe('StrategyFactory', () => {
       expect(matches[0].type).toBe('fuzzy');
     });
 
-    it('fuzzy no longer does whole-query subsequence for multi-word queries', () => {
-      expect(StrategyFactory.create({ type: 'fuzzy' }).findMatches('lorem ipsum', 'lrm ism')).toEqual([]);
+    it('fuzzy matches multi-word queries per token (OR) rather than as one whole-query subsequence', () => {
+      const matches = StrategyFactory.create({ type: 'fuzzy' }).findMatches('lorem ipsum', 'lrm ism');
+      expect(matches.length).toBeGreaterThan(0);
+      expect(matches.every(match => match.type === 'fuzzy')).toBe(true);
     });
 
     it('fuzzy returns exact spans when the query is an exact substring', () => {
