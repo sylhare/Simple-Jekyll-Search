@@ -22,12 +22,33 @@ const DEFAULT_TRUNCATE_FIELDS = ['content', 'desc', 'description'];
 /** Fields that should never be highlighted (used in HTML attributes) */
 const DEFAULT_NO_HIGHLIGHT_FIELDS = ['url', 'link', 'href', 'query'];
 
+function highlightField(
+  value: string,
+  matchInfo: MatchInfo[],
+  highlightOptions: HighlightOptions,
+  shouldTruncate: boolean
+): string | undefined {
+  const fieldOptions: HighlightOptions = {
+    ...highlightOptions,
+    maxLength: shouldTruncate ? highlightOptions.maxLength : undefined
+  };
+  const highlighted = highlightWithMatchInfo(value, matchInfo, fieldOptions);
+  return highlighted !== value ? highlighted : undefined;
+}
+
+function truncateField(value: string, maxLength?: number): string | undefined {
+  if (!maxLength || value.length <= maxLength) {
+    return undefined;
+  }
+  return escapeHtml(value.substring(0, maxLength - 3) + '...');
+}
+
 /**
  * Creates a template middleware that highlights search matches and truncates long content.
- * 
+ *
  * When a field has match info, the matched text is wrapped in a highlight span.
  * Fields in `truncateFields` are truncated to `maxLength` even without matches.
- * 
+ *
  * @param options - Configuration options for highlighting and truncation
  * @returns A middleware function for use with SimpleJekyllSearch's templateMiddleware option
  */
@@ -37,41 +58,28 @@ export function createHighlightTemplateMiddleware(options: HighlightMiddlewareOp
     maxLength: options.maxLength,
     contextLength: options.contextLength || 30
   };
-  
+
   const truncateFields = options.truncateFields || DEFAULT_TRUNCATE_FIELDS;
   const noHighlightFields = options.noHighlightFields || DEFAULT_NO_HIGHLIGHT_FIELDS;
 
   return function(
-    prop: string, 
-    value: string, 
-    _template: string, 
-    query?: string, 
+    prop: string,
+    value: string,
+    _template: string,
+    query?: string,
     matchInfo?: MatchInfo[]
   ): string | undefined {
-    if (typeof value !== 'string') {
-      return undefined;
-    }
-
-    if (noHighlightFields.includes(prop)) {
+    if (typeof value !== 'string' || noHighlightFields.includes(prop)) {
       return undefined;
     }
 
     const shouldTruncate = truncateFields.includes(prop);
 
     if (matchInfo && matchInfo.length > 0 && query) {
-      const fieldOptions: HighlightOptions = {
-        ...highlightOptions,
-        maxLength: shouldTruncate ? highlightOptions.maxLength : undefined
-      };
-      const highlighted = highlightWithMatchInfo(value, matchInfo, fieldOptions);
-      return highlighted !== value ? highlighted : undefined;
+      return highlightField(value, matchInfo, highlightOptions, shouldTruncate);
     }
-    
-    if (shouldTruncate && highlightOptions.maxLength && value.length > highlightOptions.maxLength) {
-      return escapeHtml(value.substring(0, highlightOptions.maxLength - 3) + '...');
-    }
-    
-    return undefined;
+
+    return shouldTruncate ? truncateField(value, highlightOptions.maxLength) : undefined;
   };
 }
 
