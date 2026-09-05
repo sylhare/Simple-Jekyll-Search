@@ -46,14 +46,14 @@
     "@types/node": "^26.4.0",
     "@typescript-eslint/eslint-plugin": "^8.68.0",
     "@typescript-eslint/parser": "^8.68.0",
-    "@vitest/coverage-v8": "^4.1.10",
+    "@vitest/coverage-v8": "^4.1.11",
     "cypress": "^15.19.0",
     "eslint": "^10.9.1",
     "jsdom": "^30.0.1",
     "terser": "^5.51.2",
     "typescript": "^6.0.3",
     "vite": "8.2.2",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.11"
   },
   "resolutions": {
     "js-yaml": "^4.1.1"
