@@ -9,7 +9,7 @@ export interface MatchInfo {
 
 export interface Matcher {
   matches(text: string | null, criteria: string): boolean;
-  findMatches(text: string | null, criteria: string): MatchInfo[];
+  findMatches?(text: string | null, criteria: string): MatchInfo[];
 }
 
 export interface HybridConfig {

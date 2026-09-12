@@ -16,6 +16,7 @@ export { highlightWithMatchInfo, escapeHtml, mergeOverlappingMatches } from './m
 export { createHighlightTemplateMiddleware, defaultHighlightMiddleware } from './middleware/highlightMiddleware';
 
 export { HybridSearchStrategy, DefaultHybridSearchStrategy } from './SearchStrategies/HybridSearchStrategy';
+export { UnifiedSearchStrategy, DefaultUnifiedSearchStrategy } from './SearchStrategies/UnifiedSearchStrategy';
 export type { HybridConfig } from './SearchStrategies/types';
 export { StrategyFactory } from './SearchStrategies/StrategyFactory';
 export type { StrategyType } from './SearchStrategies/StrategyFactory';

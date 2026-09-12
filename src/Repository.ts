@@ -88,19 +88,25 @@ export class Repository {
   private findMatchesInObject(obj: RepositoryData, criteria: string): RepositoryData | undefined {
     const strategy = this.options.searchStrategy;
     const matchInfoMap: Record<string, MatchInfo[]> = {};
+    let hasMatch = false;
 
     for (const key in obj) {
       if (this.isExcluded(obj[key])) {
         continue;
       }
 
-      const matchInfo = strategy.findMatches(obj[key], criteria);
-      if (matchInfo.length > 0) {
-        matchInfoMap[key] = matchInfo;
+      if (strategy.findMatches) {
+        const matchInfo = strategy.findMatches(obj[key], criteria);
+        if (matchInfo.length > 0) {
+          matchInfoMap[key] = matchInfo;
+          hasMatch = true;
+        }
+      } else if (strategy.matches(obj[key], criteria)) {
+        hasMatch = true;
       }
     }
 
-    if (Object.keys(matchInfoMap).length === 0) {
+    if (!hasMatch) {
       return undefined;
     }
 
@@ -118,7 +124,8 @@ export class Repository {
     return this.strategyResolver(strategy);
   }
 
-  private normalizeStrategyOption(strategy: StrategyType | StrategyConfig = DEFAULT_OPTIONS.strategy): StrategyConfig {
-    return typeof strategy === 'string' ? { type: strategy } : strategy;
+  private normalizeStrategyOption(strategy?: StrategyType | StrategyConfig | null): StrategyConfig {
+    const resolved = strategy || DEFAULT_OPTIONS.strategy;
+    return typeof resolved === 'string' ? { type: resolved } : resolved;
   }
 }
