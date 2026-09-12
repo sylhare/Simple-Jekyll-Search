@@ -28,9 +28,6 @@ export class OptionsValidator {
   }
 
   private validateParams(params: ValidatorParams): boolean {
-    if (!params) {
-      return false;
-    }
-    return typeof params.required !== 'undefined' && Array.isArray(params.required);
+    return !!params && Array.isArray(params.required);
   }
 } 

@@ -48,7 +48,7 @@ describe.each(implementations)('$name shared behaviour', ({ make }) => {
     });
   });
 
-  describe('multi-word (exact per token, AND)', () => {
+  describe('multi-word (per token, OR)', () => {
     it('matches when every word is present', () => {
       const matches = make().findMatches('hello amazing world', 'hello world');
       expect(matches.length).toBeGreaterThan(0);
@@ -59,8 +59,15 @@ describe.each(implementations)('$name shared behaviour', ({ make }) => {
       expect(make().findMatches('test this amazing test', 'test amazing').length).toBeGreaterThan(0);
     });
 
-    it('fails when any word is missing', () => {
-      expect(make().findMatches('hello world', 'hello missing')).toEqual([]);
+    it('still matches on the present word when another word is missing', () => {
+      const matches = make().findMatches('hello world', 'hello missing');
+      expect(matches.length).toBeGreaterThan(0);
+      expect(matches.map(match => match.text)).toContain('hello');
+    });
+
+    it('matches a plural query token against its singular form and vice versa', () => {
+      expect(make().findMatches('a code review here', 'code reviews').map(match => match.text)).toContain('review');
+      expect(make().findMatches('a code reviews here', 'code review').map(match => match.text)).toContain('review');
     });
   });
 
