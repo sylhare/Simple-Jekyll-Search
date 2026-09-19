@@ -1,4 +1,4 @@
-import { Matcher, StrategyConfig } from '../SearchStrategies/types';
+import { Matcher, MatchInfo, StrategyConfig } from '../SearchStrategies/types';
 import type { StrategyType } from '../SearchStrategies/StrategyFactory';
 
 export interface SearchResult {
@@ -29,7 +29,7 @@ export interface RepositoryOptions {
 
 export interface RepositoryData {
   [key: string]: any;
-  _matchInfo?: Record<string, import('../SearchStrategies/types').MatchInfo[]>;
+  _matchInfo?: Record<string, MatchInfo[]>;
 }
 
 export interface SearchOptions extends Omit<RepositoryOptions, 'searchStrategy'> {
@@ -43,7 +43,7 @@ export interface SearchOptions extends Omit<RepositoryOptions, 'searchStrategy'>
     value: string, 
     template: string, 
     query?: string, 
-    matchInfo?: import('../SearchStrategies/types').MatchInfo[]
+    matchInfo?: MatchInfo[]
   ) => string | undefined;
   noResultsText?: string;
   debounceTime?: number | null;
