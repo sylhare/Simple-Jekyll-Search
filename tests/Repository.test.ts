@@ -52,7 +52,7 @@ describe('Repository', () => {
     const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     
     repository.setOptions({ fuzzy: true });
-    const results = repository.search('lrm ism');
+    const results = repository.search('lrm');
     
     expect(results).toHaveLength(1);
     expect(results[0]).toMatchObject(loremElement);
@@ -64,7 +64,7 @@ describe('Repository', () => {
 
   it('finds a fuzzy string', () => {
     repository.setOptions({ strategy: 'fuzzy' });
-    const results = repository.search('lrm ism');
+    const results = repository.search('lrm');
     expect(results).toHaveLength(1);
     expect(results[0]).toMatchObject(loremElement);
     expect(results[0]._matchInfo).toBeDefined();

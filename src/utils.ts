@@ -2,10 +2,6 @@ import { RepositoryData } from './utils/types';
 
 export { RelevanceSort } from './utils/RelevanceSort';
 
-export function merge<T>(target: T, source: Partial<T>): T {
-  return { ...target, ...source } as T;
-}
-
 export function isJSON(json: any): boolean {
   return Array.isArray(json) || (json !== null && typeof json === 'object');
 }

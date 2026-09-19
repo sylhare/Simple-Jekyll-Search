@@ -1,6 +1,8 @@
 import { MatchInfo } from '../types';
 import { memoizeLast } from '../../utils';
 
+/** Unused at runtime — kept for tests/benchmark (tree-shaken from the bundle). See `tests/performance/README.md`. */
+
 /** Memoizes the word-split/lowercase of the criteria, reused across every item in a search. */
 const normalizePattern = memoizeLast((criteria: string): string[] =>
   criteria.endsWith(' ')

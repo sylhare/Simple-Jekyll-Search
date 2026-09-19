@@ -263,12 +263,13 @@ describe('SimpleJekyllSearch', () => {
   });
 
   describe('relevance sorting', () => {
-    function initWithRelevance(searchData: SearchData[], template = '<li>{title}</li>') {
+    function initWithRelevance(searchData: SearchData[], template = '<li>{title}</li>', strategy?: SearchOptions['strategy']) {
       searchInstance.init({
         ...mockOptions,
         json: searchData,
         searchResultTemplate: template,
         sortMiddleware: RelevanceSort,
+        ...(strategy ? { strategy } : {}),
       });
     }
 
@@ -307,6 +308,24 @@ describe('SimpleJekyllSearch', () => {
       const links = mockOptions.resultsContainer.querySelectorAll('a');
       expect(links).toHaveLength(2);
       expect(links[0].getAttribute('href')).toBe('/adjacent');
+    });
+
+    it('surfaces the "code reviews" phrase above articles that only mention code or only review (unified)', () => {
+      initWithRelevance([
+        { title: 'Coding Tips', url: '/code-only', content: 'Some tips about writing code well.' },
+        { title: 'Review Culture', url: '/review-only', content: 'A healthy review culture matters a lot.' },
+        { title: 'Code Reviews', url: '/code-reviews', content: 'How to run effective code reviews on your team.' },
+        { title: 'Gardening', url: '/unrelated', content: 'Nothing here about software at all.' },
+      ], '<li><a href="{url}">{title}</a></li>', 'unified');
+      searchInstance.search('code reviews');
+
+      const hrefs = Array.from(mockOptions.resultsContainer.querySelectorAll('a'))
+        .map(link => link.getAttribute('href'));
+
+      expect(hrefs[0]).toBe('/code-reviews');
+      expect(hrefs).toContain('/code-only');
+      expect(hrefs).toContain('/review-only');
+      expect(hrefs).not.toContain('/unrelated');
     });
   });
 

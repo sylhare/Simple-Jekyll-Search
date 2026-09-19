@@ -1,11 +1,4 @@
 import { MatchInfo } from '../types';
-import { memoizeLast } from '../../utils';
-
-/** Memoizes the trim/lowercase of the criteria, reused across every item in a search. */
-const normalizeCriteria = memoizeLast((raw: string) => {
-  const criteria = raw.trimEnd();
-  return { criteria, lower: criteria.toLowerCase() };
-});
 
 /**
  * Finds fuzzy matches where characters appear in sequence (but not necessarily consecutively).
@@ -16,31 +9,33 @@ const normalizeCriteria = memoizeLast((raw: string) => {
  * @returns Array with single MatchInfo if all characters found in sequence, empty array otherwise
  */
 export function findFuzzyMatches(text: string, criteria: string): MatchInfo[] {
-  const { criteria: normalized, lower: lowerCriteria } = normalizeCriteria(criteria);
-  criteria = normalized;
+  criteria = criteria.trimEnd();
   if (criteria.length === 0) return [];
 
+  const lowerCriteria = criteria.toLowerCase();
   const lowerText = text.toLowerCase();
 
   let textIndex = 0;
   let criteriaIndex = 0;
-  const matchedIndices: number[] = [];
-  
+  let firstIndex = -1;
+  let lastIndex = -1;
+
   while (textIndex < text.length && criteriaIndex < criteria.length) {
     if (lowerText[textIndex] === lowerCriteria[criteriaIndex]) {
-      matchedIndices.push(textIndex);
+      if (firstIndex === -1) firstIndex = textIndex;
+      lastIndex = textIndex;
       criteriaIndex++;
     }
     textIndex++;
   }
-  
+
   if (criteriaIndex !== criteria.length) {
     return [];
   }
 
-  const start = matchedIndices[0];
-  const end = matchedIndices[matchedIndices.length - 1] + 1;
-  
+  const start = firstIndex;
+  const end = lastIndex + 1;
+
   return [{
     start,
     end,

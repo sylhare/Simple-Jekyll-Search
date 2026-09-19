@@ -54,7 +54,7 @@ export function highlightWithMatchInfo(
   let result = wrapMatches(text, mergedMatches, className);
 
   if (maxLength && result.length > maxLength) {
-    result = truncateAroundMatches(text, mergedMatches, maxLength, options.contextLength || 30, className);
+    result = truncateAroundMatches(text, mergedMatches, options.contextLength || 30, className);
   }
   
   return result;
@@ -63,16 +63,14 @@ export function highlightWithMatchInfo(
 function truncateAroundMatches(
   text: string,
   matches: MatchInfo[],
-  maxLength: number,
   contextLength: number,
   className: string
 ): string {
-  if (matches.length === 0) {
-    const truncated = text.substring(0, maxLength - 3);
-    return escapeHtml(truncated) + '...';
-  }
-  
   const firstMatch = matches[0];
+  if (!firstMatch) {
+    return escapeHtml(text);
+  }
+
   const start = Math.max(0, firstMatch.start - contextLength);
   const end = Math.min(text.length, firstMatch.end + contextLength);
   
