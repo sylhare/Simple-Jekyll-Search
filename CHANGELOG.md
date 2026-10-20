@@ -2,6 +2,9 @@
 
 Notable user-facing changes. Follows [Semantic Versioning](https://semver.org/).
 
+## [2.1.6]
+- Fixed: Security vulnerability dependency updates.
+
 ## [2.1.5]
 - Fixed: matches in text with leading whitespace now highlight at the correct position.
 
