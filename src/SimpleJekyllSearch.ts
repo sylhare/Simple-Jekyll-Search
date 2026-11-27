@@ -25,7 +25,7 @@ class SimpleJekyllSearch {
   }
 
   private debounce(func: () => void, delayMillis: number | null): void {
-    if (delayMillis) {
+    if (delayMillis != null && delayMillis > 0) {
       if (this.debounceTimerHandle) {
         clearTimeout(this.debounceTimerHandle);
       }
