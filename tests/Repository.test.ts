@@ -198,4 +198,14 @@ describe('Repository', () => {
     expect(results[3].section).toBe('Getting Started');
     expect(results[3].caption).toBe('Installation');
   });
+
+  it('put() with an array returns all newly added items', () => {
+    const item1 = { title: 'first', content: 'one' };
+    const item2 = { title: 'second', content: 'two' };
+    const item3 = { title: 'third', content: 'three' };
+
+    const added = repository.put([item1, item2, item3]);
+
+    expect(added).toEqual([item1, item2, item3]);
+  });
 });

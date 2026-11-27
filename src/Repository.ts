@@ -67,7 +67,8 @@ export class Repository {
     this.clear();
     for (const item of arr) {
       if (isObject(item)) {
-        added.push(this.addObject(item)[0]);
+        this.addObject(item);
+        added.push(item);
       }
     }
     return added;

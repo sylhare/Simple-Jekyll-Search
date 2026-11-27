@@ -263,6 +263,20 @@ describe('createHighlightTemplateMiddleware', () => {
       expect(customResult).toBeUndefined();
     });
   });
+
+  it('should escape HTML characters in truncated field and append ellipsis after escaping', () => {
+    const middleware = createHighlightTemplateMiddleware({
+      maxLength: 20
+    });
+    const value = '<script> & "test" > long content here';
+
+    const result = middleware('content', value, '<div>{content}</div>', 'other', undefined);
+
+    expect(result).toBeDefined();
+    expect(result).toBe('&lt;script&gt; &amp; &quot;test&quot;...');
+    expect(result).not.toContain('<script>');
+    expect(result!.endsWith('...')).toBe(true);
+  });
 });
 
 describe('defaultHighlightMiddleware', () => {
