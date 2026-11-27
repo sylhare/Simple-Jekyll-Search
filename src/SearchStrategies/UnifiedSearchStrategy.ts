@@ -97,10 +97,9 @@ export class UnifiedSearchStrategy extends SearchStrategy {
 
   private fuzzyMatcher(token: string): SpanMatcher {
     const stem = singularize(token);
-    const stemLength = stem.length;
     return (text: string) => {
       const matches = findFuzzyMatches(text, stem);
-      if (matches.length === 0 || !this.withinBudget(stemLength, matches[0].text)) {
+      if (matches.length === 0 || !this.withinBudget(stem, matches[0].text)) {
         return [];
       }
       return matches;
@@ -130,12 +129,12 @@ export class UnifiedSearchStrategy extends SearchStrategy {
     return spans;
   }
 
-  private withinBudget(tokenLength: number, matchText: string): boolean {
+  private withinBudget(token: string, matchText: string): boolean {
     const limit = this.config.maxExtraFuzzyChars;
     if (!Number.isFinite(limit) || limit < 0) {
       return true;
     }
-    const extra = Math.max(0, stripWhitespace(matchText).length - tokenLength);
+    const extra = Math.max(0, stripWhitespace(matchText).length - stripWhitespace(token).length);
     return extra <= limit;
   }
 }

@@ -102,6 +102,13 @@ describe.each(implementations)('$name shared behaviour', ({ make }) => {
       expect(matches.length).toBeGreaterThan(0);
       expect(matches[0].type).toBe('fuzzy');
     });
+
+    it('ignores whitespace in matchText when counting extra fuzzy characters', () => {
+      const matches = make({ maxExtraFuzzyChars: 0, minFuzzyLength: 1 }).findMatches('hello world', 'helloworld');
+      expect(matches).toHaveLength(1);
+      expect(matches[0].type).toBe('fuzzy');
+      expect(make({ maxExtraFuzzyChars: 0, minFuzzyLength: 1 }).findMatches('hello x world', 'helloworld')).toEqual([]);
+    });
   });
 
   describe('short queries stay exact', () => {
@@ -185,6 +192,19 @@ describe.each(implementations)('$name shared behaviour', ({ make }) => {
     it('returns false for no matches', () => {
       expect(make().matches('hello', 'xyz')).toBe(false);
     });
+  });
+});
+
+describe('UnifiedSearchStrategy withinBudget', () => {
+  type StrategyWithBudget = { withinBudget(token: string, matchText: string): boolean };
+
+  it('strips whitespace symmetrically from both token and matchText', () => {
+    const strict = new UnifiedSearchStrategy({ maxExtraFuzzyChars: 0 }) as unknown as StrategyWithBudget;
+    expect(strict.withinBudget('h w', 'h   w')).toBe(true);
+    expect(strict.withinBudget('h w', 'h x w')).toBe(false);
+
+    const relaxed = new UnifiedSearchStrategy({ maxExtraFuzzyChars: 1 }) as unknown as StrategyWithBudget;
+    expect(relaxed.withinBudget('h w', 'h x w')).toBe(true);
   });
 });
 
