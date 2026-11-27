@@ -28,7 +28,13 @@ export function mergeOverlappingMatches(matches: MatchInfo[]): MatchInfo[] {
     const last = merged[merged.length - 1];
     
     if (current.start <= last.end) {
-      last.end = Math.max(last.end, current.end);
+      if (current.end > last.end) {
+        const overlapOffset = last.end - current.start;
+        if (last.text.length === last.end - last.start && current.text.length >= current.end - current.start) {
+          last.text += current.text.slice(overlapOffset, current.end - current.start);
+        }
+        last.end = current.end;
+      }
     } else {
       merged.push({ ...current });
     }
@@ -53,7 +59,7 @@ export function highlightWithMatchInfo(
 
   let result = wrapMatches(text, mergedMatches, className);
 
-  if (maxLength && result.length > maxLength) {
+  if (maxLength && text.length > maxLength) {
     result = truncateAroundMatches(text, mergedMatches, options.contextLength || 30, className);
   }
   

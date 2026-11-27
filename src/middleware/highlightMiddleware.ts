@@ -40,7 +40,7 @@ function truncateField(value: string, maxLength?: number): string | undefined {
   if (!maxLength || value.length <= maxLength) {
     return undefined;
   }
-  return escapeHtml(value.substring(0, maxLength - 3) + '...');
+  return escapeHtml(value.substring(0, maxLength - 3)) + '...';
 }
 
 /**

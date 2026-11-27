@@ -49,6 +49,7 @@ describe('mergeOverlappingMatches', () => {
     expect(result).toHaveLength(1);
     expect(result[0].start).toBe(0);
     expect(result[0].end).toBe(8);
+    expect(result[0].text).toBe('hello wo');
   });
 
   it('should merge adjacent matches', () => {
@@ -60,6 +61,7 @@ describe('mergeOverlappingMatches', () => {
     expect(result).toHaveLength(1);
     expect(result[0].start).toBe(0);
     expect(result[0].end).toBe(11);
+    expect(result[0].text).toBe('hello world');
   });
 
   it('should keep separate non-overlapping matches', () => {
@@ -96,6 +98,19 @@ describe('mergeOverlappingMatches', () => {
     expect(result).toHaveLength(1);
     expect(result[0].start).toBe(0);
     expect(result[0].end).toBe(11);
+    expect(result[0].text).toBe('hello world');
+  });
+
+  it('should preserve text for nested/contained matches', () => {
+    const matches: MatchInfo[] = [
+      { start: 0, end: 11, text: 'hello world', type: 'exact' },
+      { start: 3, end: 8, text: 'lo wo', type: 'exact' }
+    ];
+    const result = mergeOverlappingMatches(matches);
+    expect(result).toHaveLength(1);
+    expect(result[0].start).toBe(0);
+    expect(result[0].end).toBe(11);
+    expect(result[0].text).toBe('hello world');
   });
 });
 
@@ -202,6 +217,18 @@ describe('highlightWithMatchInfo', () => {
     ];
     const result = highlightWithMatchInfo(text, matches);
     expect(result).toBe('<span class="search-highlight">hello</span>');
+  });
+
+  it('should not truncate when plain text fits within maxLength but HTML result is longer', () => {
+    // Plain text: 'hello beautiful world today' = 27 chars. maxLength = 30 (> 27, no truncation expected).
+    // HTML result with <span> around 'hello' = 65 chars (> 30).
+    // Bug: check uses result.length (65 > 30 → truncates). Fix: use text.length (27 ≤ 30 → no truncation).
+    const text = 'hello beautiful world today';
+    const matches: MatchInfo[] = [
+      { start: 0, end: 5, text: 'hello', type: 'exact' }
+    ];
+    const result = highlightWithMatchInfo(text, matches, { maxLength: 30, contextLength: 5 });
+    expect(result).toBe('<span class="search-highlight">hello</span> beautiful world today');
   });
 });
 
